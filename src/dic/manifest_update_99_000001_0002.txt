@@ -1,0 +1,53 @@
+MANIFESTO DE ATUALIZAÇÃO
+
+Data : 22/07/2025
+Hora : 09:15:55
+Arquivo de atualização diferencial baseado em projeto gerado pelo Configurador
+Projeto : 000001
+Descrição : BARENTZ                                           
+Versão : 0002
+Release de referência : 12.1.2410 
+Responsável pelo Projeto: 000000 - Administrador
+Geração do Pacote: 000000 - Administrador
+-----------------------------
+Componentes do arquivo de atualização :
+
+------------
+SX3
+
+Operação:Inclusão ou Alteração
+Campo : C5_XBLFIS 
+
+Operação:Inclusão ou Alteração
+Campo : C5_XCMTBLF
+
+Operação:Inclusão ou Alteração
+Campo : C5_XDMTBLF
+
+Operação:Inclusão ou Alteração
+Campo : C5_XOMTBLF
+
+
+------------
+SX5
+
+Operação:Inclusão ou Alteração
+Tabela : 00
+Chave : Z0    
+
+Operação:Inclusão ou Alteração
+Tabela : Z0
+Chave : 000001
+
+Operação:Inclusão ou Alteração
+Tabela : Z0
+Chave : 000002
+
+
+------------
+Helps (hlppack*.txt)
+
+Chave : C5_XBLFIS 
+Chave : C5_XCMTBLF
+Chave : C5_XDMTBLF
+Chave : C5_XOMTBLF
