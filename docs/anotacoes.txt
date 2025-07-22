@@ -1,2 +1,3 @@
-22/07 - 09:00 a xx:xx
-1) Finalização da tabela "Z0"
+22/07 - 09:00 a 09:15
+1) Finalização da tabela "Z0" e envio de pacote
+2) Criação da issue: https://github.com/mobilecosta/dothink/issues/1
