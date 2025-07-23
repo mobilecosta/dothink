@@ -60,7 +60,6 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
     local aFWMBrowseQryIndex:=Array(0) as array
     local aFWGetDialogSizeCoors as array
 
-    local bCustomMarkRec as codeblock
     local bFWTmpTblIdxOrder as codeblock
 
     local cAlias as character
@@ -126,7 +125,6 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
         ,{"SB1RECNO",{18,0,"N"},"RecNo SB1","@R 999999999999999999","SB1.R_E_C_N_O_ AS SB1RECNO"};
         ,{"SA1RECNO",{18,0,"N"},"RecNo SA1","@R 999999999999999999","SA1.R_E_C_N_O_ AS SA1RECNO"};
         ,{"SF4RECNO",{18,0,"N"},"RecNo SF4","@R 999999999999999999","SF4.R_E_C_N_O_ AS SF4RECNO"};
-        ,{"COLMARK",{1,0,"C"},"Mark","@!","' ' AS COLMARK"};
     }
 
     nFields:=Len(aCustomFields)
@@ -299,11 +297,6 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
         oFWMarkBrowse:SetDataTable()
         oFWMarkBrowse:SetTemporary(.T.)
         oFWMarkBrowse:SetAlias(cAlias)
-        oFWMarkBrowse:SetFieldMark("COLMARK")
-        oFWMarkBrowse:SetMark(NIL,cAlias,"COLMARK")
-
-        bCustomMarkRec:={||TRK0005CMK(oFWMarkBrowse,cAlias)}
-        oFWMarkBrowse:SetCustomMarkRec(bCustomMarkRec)
 
         oFWMarkBrowse:AddLegend("C5_XBLFIS=='1'"/*<xCondition>*/,"RED"/*<cColor>*/,"Bloqueados"/*[<cTitle>]*/,"ID_C5_XBLFIS"/*[<cID>]*/,.T./*[<lFilter>]*/)
         oFWMarkBrowse:AddLegend("C5_XBLFIS=='2'"/*<xCondition>*/,"GREEN"/*<cColor>*/,"Liberados"/*[<cTitle>]*/,"ID_C5_XBLFIS"/*[<cID>]*/,.T./*[<lFilter>]*/)
@@ -480,17 +473,18 @@ static function TRK0005Lib(cTitulo,cAlias,oFWMarkBrowse)
     local aAreaAlias:=(cAlias)->(FWGetArea())
     local aFilBRWQry:=Array(0) as array
 
-    local cMark as character
+    local cC5Num:=(cAlias)->C5_NUM as character
+    local cC5Cliente:=(cAlias)->C5_CLIENTE as character
+
     local cFilBRWExp as character
+
     local cProcTitle:=cTitulo+" :: Liberação"
 
     local lRet:=.F. as logical
     local lContinue as logical
 
-    cMark:=oFWMarkBrowse:cMark
-
-    //Filtra os campos marcados
-    cFilBRWExp:=("COLMARK=='"+cMark+"'")
+    //Filtra o Pedido/Cliente
+    cFilBRWExp:=("(C5_NUM=='"+cC5Num+"').AND.(C5_CLIENTE=='"+cC5Cliente+"')")
     (cAlias)->(FilBrowse(cAlias,@aFilBRWQry,cFilBRWExp))
     (cAlias)->(dbGoTop())
 
@@ -501,14 +495,6 @@ static function TRK0005Lib(cTitulo,cAlias,oFWMarkBrowse)
 
         //Verifica se o Item Está Bloqueado
         lRet:=((cAlias)->C5_XBLFIS=="1")
-        //Processa todos os Registros para verificar se algum não atende à condição
-        while ((cAlias)->(!eof()))
-            lRet:=((cAlias)->C5_XBLFIS=="1")
-            if (!lRet)
-                exit
-            endif
-            (cAlias)->(dbSkip())
-        end while
 
         if (lRet)
 
@@ -578,10 +564,14 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
     local aAreaAlias:=(cAlias)->(FWGetArea())
     local aFilBRWQry:=Array(0) as array
 
-    local cMark as character
     local cRejCod as character
     local cRejObs as character
+
+    local cC5Num:=(cAlias)->C5_NUM as character
+    local cC5Cliente:=(cAlias)->C5_CLIENTE as character
+
     local cFilBRWExp as character
+
     local cProcTitle:=cTitulo+" :: Rejeição"
 
     local lRet:=.F. as logical
@@ -596,12 +586,11 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
     local oCodRej as object
     local oRejObs as object
 
-    cMark:=oFWMarkBrowse:cMark
     cRejCod:=Space(Min(GetSX3Cache("X5_CHAVE","X3_TAMANHO"),nRejSiz))
     cRejObs:=Space(50)
 
-    //Filtra os campos marcados
-    cFilBRWExp:=("COLMARK=='"+cMark+"'")
+    //Filtra o Pedido/Cliente
+    cFilBRWExp:=("(C5_NUM=='"+cC5Num+"').AND.(C5_CLIENTE=='"+cC5Cliente+"')")
     (cAlias)->(FilBrowse(cAlias,@aFilBRWQry,cFilBRWExp))
     (cAlias)->(dbGoTop())
 
@@ -612,14 +601,6 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
 
         //Verifica se o Item Está Bloqueado
         lContinue:=((cAlias)->C5_XBLFIS=="1")
-        //Processa todos os Registros para verificar se algum não atende à condição
-        while ((cAlias)->(!eof()))
-            lContinue:=((cAlias)->C5_XBLFIS=="1")
-            if (!lContinue)
-                exit
-            endif
-            (cAlias)->(dbSkip())
-        end while
 
         if (lContinue)
 
@@ -735,17 +716,18 @@ static function TRK0005Blq(cTitulo,cAlias,oFWMarkBrowse)
     local aAreaAlias:=(cAlias)->(FWGetArea())
     local aFilBRWQry:=Array(0) as array
 
-    local cMark as character
+    local cC5Num:=(cAlias)->C5_NUM as character
+    local cC5Cliente:=(cAlias)->C5_CLIENTE as character
+
     local cFilBRWExp as character
+
     local cProcTitle:=cTitulo+" :: Bloqueio"
 
     local lRet:=.F. as logical
     local lContinue as logical
 
-    cMark:=oFWMarkBrowse:cMark
-
-    //Filtra os campos marcados
-    cFilBRWExp:=("COLMARK=='"+cMark+"'")
+    //Filtra o Pedido/Cliente
+    cFilBRWExp:=("(C5_NUM=='"+cC5Num+"').AND.(C5_CLIENTE=='"+cC5Cliente+"')")
     (cAlias)->(FilBrowse(cAlias,@aFilBRWQry,cFilBRWExp))
     (cAlias)->(dbGoTop())
 
@@ -756,14 +738,6 @@ static function TRK0005Blq(cTitulo,cAlias,oFWMarkBrowse)
 
         //Verifica se o Item Está Bloqueado
         lRet:=((cAlias)->C5_XBLFIS!="1")
-        //Processa todos os Registros para verificar se algum não atende à condição
-        while ((cAlias)->(!eof()))
-            lRet:=((cAlias)->C5_XBLFIS!="1")
-            if (!lRet)
-                exit
-            endif
-            (cAlias)->(dbSkip())
-        end while
 
         if (lRet)
 
@@ -840,51 +814,3 @@ function u_TRK005Fld(cField as character,xValue,xAscan as variant)
         endif
     endif
 return(xRet)
-
-/*/{Protheus.doc} TRK0005CMK
-Marca e Desmarca os Registros.
-@type function
-@version 1.0
-@author Conceitho
-@since 22/07/2025
-/*/
-static procedure TRK0005CMK(oFWMarkBrowse,cAlias)
-
-    local aArea:=FWGetArea()
-    local aAreaAlias:=(cAlias)->(FWGetArea())
-
-    local aFilBRWQry:=Array(0) as array
-
-    local bCustomMarkRec:=oFWMarkBrowse:bCustomMarkRec as codeblock
-
-    local cC5Num:=(cAlias)->C5_NUM as character
-    local cC5Cliente:=(cAlias)->C5_CLIENTE as character
-    local cFilBRWExp as character
-
-    //Filtra os campos marcados
-    cFilBRWExp:=("(C5_NUM=='"+cC5Num+"').AND.(C5_CLIENTE=='"+cC5Cliente+"')")
-    (cAlias)->(FilBrowse(cAlias,@aFilBRWQry,cFilBRWExp))
-    (cAlias)->(dbGoTop())
-
-    //Remove CustomMark para usar o MarkPadrao
-    oFWMarkBrowse:bCustomMarkRec:=nil
-    while ((cAlias)->(!eof()))
-        oFWMarkBrowse:MarkRec()
-        (cAlias)->(dbSkip())
-    end while
-    //Restaura o CustomMark
-    oFWMarkBrowse:bCustomMarkRec:=bCustomMarkRec
-
-    (cAlias)->(EndFilBrw(cAlias,@aFilBRWQry))
-    aSize(aFilBRWQry,0)
-    FWFreeArray(@aFilBRWQry)
-
-    FWRestArea(aAreaAlias)
-    FWFreeArray(@aAreaAlias)
-
-    FWRestArea(aArea)
-    FWFreeArray(@aArea)
-
-    oFWMarkBrowse:Refresh()
-
-return
