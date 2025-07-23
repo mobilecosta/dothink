@@ -5,51 +5,14 @@
 
 static __cTitulo := "Validação Fiscal"
 
-/*/{Protheus.doc} U_TRK0003
-Informações Fiscais de Pedido
-@type function
-@version 1.0
-@author Conceitho
-@since 22/07/2025
-/*/
-Function U_TRK0003()
-
-    Local aArea   := FWGetArea()
-    Local oBrowse
-
-    //Instânciando FWMBrowse - Alterar para query
-    oBrowse := FWMBrowse():New()
-
-    //Setando a tabela de cadastro de Autor/Interprete
-    oBrowse:SetAlias("SC5")
-
-    //Setando a descrição da rotina
-    oBrowse:SetDescription(__cTitulo)
-    oBrowse:SetMenuDef("TRK0005")
-
-    //Ativa a Browse
-    oBrowse:Activate()
-
-    FWRestArea(aArea)
-
-Return
-
-static function MenuDef()
-
-    local aMenuDef:=Array(0) as array
-
-    ADD OPTION aMenuDef TITLE "Filtrar Pedidos" ACTION "U_TRK00030" OPERATION MODEL_OPERATION_UPDATE ACCESS 0 //OPERATION 4
-
-return(aMenuDef)
-
-/*/{Protheus.doc} U_TRK00030
+/*/{Protheus.doc} U_TRK00005
 Parametros para Filtro do Browse
 @type function
 @version 1.0
 @author Conceitho
 @since 22/07/2025
 /*/
-function U_TRK00030() as logical
+function U_TRK0005() as logical
 
     local aParamBox:=Array(0) as array
     local aParamRet:=Array(0) as array
@@ -57,7 +20,7 @@ function U_TRK00030() as logical
 
     local cTipoPedido as character
 
-    local lTRK00030 as logical
+    local lExecute as logical
 
         SaveInter()
             aTiposDePedidos:={;
@@ -67,10 +30,10 @@ function U_TRK00030() as logical
                 ,"7=Todos";
             }
             aAdd(aParamBox,{2,"Listar Pedidos",0,aTiposDePedidos,100,"",.F.})
-            lTRK00030:=ParamBox(@aParamBox,"Selecione os Parametros",@aParamRet,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
-            if (lTRK00030)
+            lExecute:=ParamBox(@aParamBox,"Selecione os Parametros",@aParamRet,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
+            if (lExecute)
                 cTipoPedido:=Left(if(valtype(aParamRet[1])=="N",aTiposDePedidos[aParamRet[1]],allTrim(aParamRet[1])),1)
-                TRK00030Brw(cTipoPedido)
+                TRK005Brw(cTipoPedido)
             endif
         RestInter()
 
@@ -78,7 +41,7 @@ function U_TRK00030() as logical
     FWFreeArray(@aParamRet)
     FWFreeArray(@aTiposDePedidos)
 
-return(lTRK00030)
+return()
 
 /*/{Protheus.doc} TRK00030Brw
 Carrega o Browse conforme Filtro inicial
@@ -87,7 +50,7 @@ Carrega o Browse conforme Filtro inicial
 @author Conceitho
 @since 22/07/2025
 /*/
-static procedure TRK00030Brw(cTipoPedido as character)
+static function TRK005Brw(cTipoPedido as character)
 
     local aDbStruct:=Array(0) as array
     local aCustomFields as array
@@ -135,6 +98,8 @@ static procedure TRK00030Brw(cTipoPedido as character)
         ,{"C5_NUM",TamSX3("C5_NUM"),GetSX3Cache("C5_NUM","X3_TITULO"),GetSX3Cache("C5_NUM","X3_PICTURE"),"SC5.C5_NUM"};
         ,{"C6_ITEM",TamSX3("C6_ITEM"),GetSX3Cache("C6_ITEM","X3_TITULO"),GetSX3Cache("C6_ITEM","X3_PICTURE"),"SC6.C6_ITEM"};
         ,{"C5_CLIENTE",TamSX3("C5_CLIENTE"),GetSX3Cache("C5_CLIENTE","X3_TITULO"),GetSX3Cache("C5_CLIENTE","X3_PICTURE"),"SC5.C5_CLIENTE"};
+        ,{"A1_RAZAO",TamSX3("A1_RAZAO"),GetSX3Cache("A1_RAZAO","X3_TITULO"),GetSX3Cache("A1_RAZAO","X3_PICTURE"),"SA1.A1_RAZAO"};
+        ,{"C6_PRODUT",TamSX3("C6_PRODUT"),GetSX3Cache("C6_PRODUT","X3_TITULO"),GetSX3Cache("C6_PRODUT","X3_PICTURE"),"SC6.C6_PRODUT"};
         ,{"B1_DESC",TamSX3("B1_DESC"),GetSX3Cache("B1_DESC","X3_TITULO"),GetSX3Cache("B1_DESC","X3_PICTURE"),"SB1.B1_DESC"};
         ,{"C9_DATENT",TamSX3("C9_DATENT"),GetSX3Cache("C9_DATENT","X3_TITULO"),GetSX3Cache("C9_DATENT","X3_PICTURE"),"ISNULL(SC9.C9_DATENT,SC6.C6_ENTREG) AS C9_DATENT"};
         ,{"B1_ORIGEM",TamSX3("B1_ORIGEM"),GetSX3Cache("B1_ORIGEM","X3_TITULO"),GetSX3Cache("B1_ORIGEM","X3_PICTURE"),"SB1.B1_ORIGEM"};
@@ -230,7 +195,7 @@ static procedure TRK00030Brw(cTipoPedido as character)
     cFWTmpTblIdxOrder:="00"
     bFWTmpTblIdxOrder:={|cFWTmpTblIdxOrder|cFWTmpTblIdxOrder:=__Soma1(cFWTmpTblIdxOrder)}
 
-    oFWTemporaryTable:AddIndex(Eval(bFWTmpTblIdxOrder,@cFWTmpTblIdxOrder),{"C5_CLIENTE","C5_NUM","C6_ITEM"})
+    oFWTemporaryTable:AddIndex(Eval(bFWTmpTblIdxOrder,@cFWTmpTblIdxOrder),{"C5_NUM","C6_ITEM"})
 
     nIndexes:=Len(aFWMBrowseQryIndex)
     for nIndex:=1 to nIndexes
@@ -241,14 +206,13 @@ static procedure TRK00030Brw(cTipoPedido as character)
 
     //Elabora a query dos pedidos
     beginContent var cQuerySelect
-SELECT cQueryGetFields
-FROM SC5990 SC5
-LEFT JOIN SC6990 SC6 ON (SC6.D_E_L_E_T_=SC5.D_E_L_E_T_ AND SC6.C6_FILIAL=SC5.C5_FILIAL AND SC6.C6_NUM=SC5.C5_NUM)
-LEFT JOIN SB1990 SB1 ON (SB1.D_E_L_E_T_=SC6.D_E_L_E_T_ AND SB1.B1_FILIAL=(CASE SB1.B1_FILIAL WHEN ' ' THEN ' ' ELSE LEFT(SC6.C6_FILIAL,LEN(SB1.B1_FILIAL)) END) AND SB1.B1_COD=SC6.C6_PRODUTO)
-LEFT JOIN SC9990 SC9 ON (SC9.D_E_L_E_T_=SC6.D_E_L_E_T_ AND SC9.C9_FILIAL=(CASE SC6.C6_FILIAL WHEN ' ' THEN ' ' ELSE LEFT(SC6.C6_FILIAL,LEN(SC9.C9_FILIAL)) END) AND SC9.C9_PEDIDO=SC6.C6_NUM AND SC9.C9_ITEM=SC6.C6_ITEM)
-WHERE SC5.D_E_L_E_T_<>'*'
-  AND SC5.C5_FILIAL='__C5_FILIAL__'
-  AND SC5.C5_XBLFIS IN(__XBLFIS)
+    SELECT cQueryGetFields
+      FROM SC5990 SC5
+      JOIN SC6990 SC6 ON SC6.C6_FILIAL=SC5.C5_FILIAL AND SC6.C6_NUM=SC5.C5_NUM AND SC6.D_E_L_E_T_ = = ' '
+      JOIN SB1990 SB1 ON SB1.B1_FILIAL= '__C5_FILIAL__' AND SB1.B1_COD=SC6.C6_PRODUTO AND SB1.D_E_L_E_T_=' '
+      LEFT JOIN SC9990 SC9 ON SC9.C9_FILIAL= '__C5_FILIAL__' AND SC9.C9_PEDIDO=SC6.C6_NUM AND SC9.C9_ITEM=SC6.C6_ITEM
+       AND SC9.D_E_L_E_T_ = ' '
+     WHERE SC5.C5_FILIAL='__C5_FILIAL__' AND SC5.C5_XBLFIS IN(__XBLFIS) AND SC5.D_E_L_E_T_ = ' '
     endContent
     //Efetua a Substituicao das constantes por Valores Dinamicos
     cQuerySelect:=strTran(cQuerySelect,"cQueryGetFields",cQueryGetFields)
@@ -256,6 +220,7 @@ WHERE SC5.D_E_L_E_T_<>'*'
     cQuerySelect:=strTran(cQuerySelect,"SB1990",RetSQLName("SB1"))
     cQuerySelect:=strTran(cQuerySelect,"SC9990",RetSQLName("SC9"))
     cQuerySelect:=strTran(cQuerySelect,"__C5_FILIAL__",FWXFilial("SC5"))
+    cQuerySelect:=strTran(cQuerySelect,"__B1_FILIAL__",FWXFilial("SB1"))
 
     if (cTipoPedido=="7")
         cINXBLFIS:="' ','1','2','3'"
@@ -278,7 +243,7 @@ WHERE SC5.D_E_L_E_T_<>'*'
     if (lQueryInsert)
 
         //Update de campos Fiscais
-        FWMsgRun(NIL,{||TRK00030Fis(cAlias)},"Aguarde...","Atualizando Informações Fiscais")
+        FWMsgRun(NIL,{||U_TRK05Fis(cAlias)},"Aguarde...","Atualizando Informações Fiscais")
 
         FWMsgRun(NIL,{||Sleep(300)},"Aguarde...","Elaborando a Interface de Dados")
 
@@ -361,14 +326,14 @@ WHERE SC5.D_E_L_E_T_<>'*'
 
 return
 
-/*/{Protheus.doc} TRK00030Fis
+/*/{Protheus.doc} TRK05Fis
 Atualizar informações Fiscais
 @type function
 @version 1.0
 @author Conceitho
 @since 22/07/2025
 /*/
-static procedure TRK00030Fis(cAlias)
+static function TRK05Fis(cAlias)
 
     local aRetImp as array
 
@@ -391,10 +356,10 @@ static procedure TRK00030Fis(cAlias)
                 SC6->(MsGoTo((cAlias)->SC6RECNO))
                 SC6->(;
                         MaFisAdd(;
-                         C6_PRODUTO;    //  1-Codigo do Produto ( Obrigatorio )
-                        ,C6_TES;        //  2-Codigo do TES ( Opcional )
-                        ,C6_QTDVEN;     //  3-Quantidade ( Obrigatorio ) SC6->C6_QTDVEN
-                        ,C6_VALOR;      //  4-Preco Unitario ( Obrigatorio ) SC6->C6_VALOR
+                         SC6->C6_PRODUTO;    //  1-Codigo do Produto ( Obrigatorio )
+                        ,SC6->C6_TES;        //  2-Codigo do TES ( Opcional )
+                        ,SC6->C6_QTDVEN;     //  3-Quantidade ( Obrigatorio ) SC6->C6_QTDVEN
+                        ,SC6->C6_VALOR;      //  4-Preco Unitario ( Obrigatorio ) SC6->C6_VALOR
                         ,0;             //  5-Valor do Desconto ( Opcional )
                         ,"";            //  6-Numero da NF Original ( Devolucao/Benef )
                         ,"";            //  7-Serie da NF Original ( Devolucao/Benef )
