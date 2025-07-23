@@ -504,7 +504,7 @@ static function TRK0005Lib(cTitulo,cAlias,oFWMarkBrowse)
         //Processa todos os Registros para verificar se algum não atende à condição
         while ((cAlias)->(!eof()))
             lRet:=((cAlias)->C5_XBLFIS=="1")
-            if (!lContinue)
+            if (!lRet)
                 exit
             endif
             (cAlias)->(dbSkip())
