@@ -726,8 +726,6 @@ static function TRK0005Blq(cTitulo,cAlias,oFWMarkBrowse)
     local lRet:=.F. as logical
     local lContinue as logical
 
-    cMark:=oFWMarkBrowse:cMark
-
     //Filtra o Pedido/Cliente
     cFilBRWExp:=("(C5_NUM=='"+cC5Num+"').AND.(C5_CLIENTE=='"+cC5Cliente+"')")
     (cAlias)->(FilBrowse(cAlias,@aFilBRWQry,cFilBRWExp))
