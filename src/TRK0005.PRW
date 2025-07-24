@@ -373,90 +373,83 @@ static function TRK0005Fis(cAlias)
     local nItems as numeric
     local nNextRecNo as numeric
 
-    MaFisSave()
-
     (cAlias)->(dbGoTop())
     (cAlias)->(dbSetOrder(1))
     while ((cAlias)->(!eof()))
         MaFisSave()
         MaFisEnd()
         SA1->(MsGoTo((cAlias)->SA1RECNO))
-        cCliente:=(cAlias)->C5_CLIENTE
         SC5->(MsGoTo((cAlias)->SC5RECNO))
         (cAlias)->(MaFisIni(SC5->C5_CLIENTE,SC5->C5_LOJACLI,"C","N",SC5->C5_TIPOCLI,NIL,NIL,.T.,NIL,"MATA415"))
-        while ((cAlias)->(!eof().and.(cCliente==C5_CLIENTE)))
-            cPedido:=(cAlias)->C5_NUM
-            aRecItens:=Array(0)
-            while ((cAlias)->(!eof().and.(cCliente==C5_CLIENTE).and.(cPedido==C5_NUM)))
-                SC6->(MsGoTo((cAlias)->SC6RECNO))
-                aAdd(aRecItens,(cAlias)->SC6RECNO)
-                SC6->(;
-                    MaFisAdd(;
-                         SC6->C6_PRODUTO;   //  1-Codigo do Produto ( Obrigatorio )
-                        ,SC6->C6_TES;       //  2-Codigo do TES ( Opcional )
-                        ,SC6->C6_QTDVEN;    //  3-Quantidade ( Obrigatorio ) SC6->C6_QTDVEN
-                        ,SC6->C6_PRCVEN;    //  4-Preco Unitario ( Obrigatorio ) SC6->C6_PRCVEN
-                        ,0;                 //  5-Valor do Desconto ( Opcional )
-                        ,"";                //  6-Numero da NF Original ( Devolucao/Benef )
-                        ,"";                //  7-Serie da NF Original ( Devolucao/Benef )
-                        ,0;                 //  8-RecNo da NF Original no arq SD1/SD2
-                        ,0;                 //  9-Valor do Frete do Item ( Opcional )
-                        ,0;                 // 10-Valor da Despesa do item ( Opcional )
-                        ,0;                 // 11-Valor do Seguro do item ( Opcional )
-                        ,0;                 // 12-Valor do Frete Autonomo ( Opcional )
-                        ,SC6->C6_VALOR;     // 13-Valor da Mercadoria ( Obrigatorio ) SC6->C6_VALOR
-                        ,0;                 // 14-Valor da Embalagem ( Opiconal )
-                        ,NIL;               // 15-RecNo do SB1
-                        ,NIL;               // 16-RecNo do SF4
-                    );
-                )
-                (cAlias)->(dbSkip())
-                nNextRecNo:=(cAlias)->(RecNo())
-            end while
-            //Obter as informações Fiscais
-            aMaFisNFCabRet:=MaFisNFCab()
-            //Atualizar as informações fiscais.
-            if ((!Empty(aMaFisNFCabRet)).and.(!Empty(aRecItens)))
-                nItems:=Len(aRecItens)
-                //TODO: Rever a forma de Obter as informações de Impostos em: aRecItens
-                for nItem:=1 to nItems
-                    (cAlias)->(MsGoTo(aRecItens[nItem]))
-                    if ((cAlias)->(RecLock(cAlias,.F.)))
-                        nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="ICM"})
-                        if (nAT>0)
-                            (cAlias)->FT_BASEICM:=aMaFisNFCabRet[nAT][3]
-                            (cAlias)->FT_VALICM:=aMaFisNFCabRet[nAT][5]
-                        endif
-                        nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="IPI"})
-                        if (nAT>0)
-                            (cAlias)->FT_BASEIPI:=aMaFisNFCabRet[nAT][3]
-                            (cAlias)->FT_VALIPI:=aMaFisNFCabRet[nAT][5]
-                        endif
-                        nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="PIS"})
-                        if (nAT>0)
-                            (cAlias)->FT_BASEPIS:=aMaFisNFCabRet[nAT][3]
-                            (cAlias)->FT_VALPIS:=aMaFisNFCabRet[nAT][5]
-                        endif
-                        nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="COF"})
-                        if (nAT>0)
-                            (cAlias)->FT_BASECOF:=aMaFisNFCabRet[nAT][3]
-                            (cAlias)->FT_VALCOF:=aMaFisNFCabRet[nAT][5]
-                        endif
-                        (cAlias)->(MsUnLock())
-                    endif
-                next nItem
-                (cAlias)->(MsGoTo(nNextRecNo))
-            endif
-            //Limpa os itens da NF e zera as variaveis do cabecalho.
-            MaFisClear()
-            FWFreeArray(@aMaFisNFCabRet)
-            FWFreeArray(@aRecItens)
+        cPedido:=(cAlias)->C5_NUM
+        aRecItens:=Array(0)
+        while ((cAlias)->(!eof().and.(cPedido==C5_NUM)))
+            SC6->(MsGoTo((cAlias)->SC6RECNO))
+            aAdd(aRecItens,(cAlias)->SC6RECNO)
+            SC6->(;
+                MaFisAdd(;
+                        SC6->C6_PRODUTO;   //  1-Codigo do Produto ( Obrigatorio )
+                    ,SC6->C6_TES;       //  2-Codigo do TES ( Opcional )
+                    ,SC6->C6_QTDVEN;    //  3-Quantidade ( Obrigatorio ) SC6->C6_QTDVEN
+                    ,SC6->C6_PRCVEN;    //  4-Preco Unitario ( Obrigatorio ) SC6->C6_PRCVEN
+                    ,0;                 //  5-Valor do Desconto ( Opcional )
+                    ,"";                //  6-Numero da NF Original ( Devolucao/Benef )
+                    ,"";                //  7-Serie da NF Original ( Devolucao/Benef )
+                    ,0;                 //  8-RecNo da NF Original no arq SD1/SD2
+                    ,0;                 //  9-Valor do Frete do Item ( Opcional )
+                    ,0;                 // 10-Valor da Despesa do item ( Opcional )
+                    ,0;                 // 11-Valor do Seguro do item ( Opcional )
+                    ,0;                 // 12-Valor do Frete Autonomo ( Opcional )
+                    ,SC6->C6_VALOR;     // 13-Valor da Mercadoria ( Obrigatorio ) SC6->C6_VALOR
+                    ,0;                 // 14-Valor da Embalagem ( Opiconal )
+                    ,NIL;               // 15-RecNo do SB1
+                    ,NIL;               // 16-RecNo do SF4
+                );
+            )
+            (cAlias)->(dbSkip())
+            nNextRecNo:=(cAlias)->(RecNo())
         end while
+        //Obter as informações Fiscais
+        aMaFisNFCabRet:=MaFisNFCab()
+        //Atualizar as informações fiscais.
+        if ((!Empty(aMaFisNFCabRet)).and.(!Empty(aRecItens)))
+            nItems:=Len(aRecItens)
+            //TODO: Rever a forma de Obter as informações de Impostos em: aRecItens
+            for nItem:=1 to nItems
+                (cAlias)->(MsGoTo(aRecItens[nItem]))
+                if ((cAlias)->(RecLock(cAlias,.F.)))
+                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="ICM"})
+                    if (nAT>0)
+                        (cAlias)->FT_BASEICM:=aMaFisNFCabRet[nAT][3]
+                        (cAlias)->FT_VALICM:=aMaFisNFCabRet[nAT][5]
+                    endif
+                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="IPI"})
+                    if (nAT>0)
+                        (cAlias)->FT_BASEIPI:=aMaFisNFCabRet[nAT][3]
+                        (cAlias)->FT_VALIPI:=aMaFisNFCabRet[nAT][5]
+                    endif
+                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="PIS"})
+                    if (nAT>0)
+                        (cAlias)->FT_BASEPIS:=aMaFisNFCabRet[nAT][3]
+                        (cAlias)->FT_VALPIS:=aMaFisNFCabRet[nAT][5]
+                    endif
+                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="COF"})
+                    if (nAT>0)
+                        (cAlias)->FT_BASECOF:=aMaFisNFCabRet[nAT][3]
+                        (cAlias)->FT_VALCOF:=aMaFisNFCabRet[nAT][5]
+                    endif
+                    (cAlias)->(MsUnLock())
+                endif
+            next nItem
+            (cAlias)->(MsGoTo(nNextRecNo))
+        endif
+        //Limpa os itens da NF e zera as variaveis do cabecalho.
+        MaFisClear()
+        FWFreeArray(@aMaFisNFCabRet)
+        FWFreeArray(@aRecItens)
         MaFisEnd()
         MaFisRestore()
     end while
-
-    MaFisRestore()
 
 return
 
@@ -481,63 +474,39 @@ static function TRK0005Lib(cTitulo,cAlias,oFWMarkBrowse)
     local cProcTitle:=cTitulo+" :: Liberação"
 
     local lRet:=.F. as logical
-    local lContinue as logical
 
-    //Filtra o Pedido/Cliente
-    cFilBRWExp:=("(C5_NUM=='"+cC5Num+"').AND.(C5_CLIENTE=='"+cC5Cliente+"')")
-    (cAlias)->(FilBrowse(cAlias,@aFilBRWQry,cFilBRWExp))
-    (cAlias)->(dbGoTop())
+    //Verifica se o Item Está Bloqueado
+    lRet:=((cAlias)->C5_XBLFIS=="1")
 
-    //Verifica se algum pedido foi selecionado
-    lContinue:=(cAlias)->((!eof()).and.(!bof()))
+    if (lRet)
 
-    if (lContinue)
-
-        //Verifica se o Item Está Bloqueado
-        lRet:=((cAlias)->C5_XBLFIS=="1")
-
-        if (lRet)
-
-            //Processa a Liberação
-            (cAlias)->(dbGoTop())
-            while ((cAlias)->(!eof()))
-                SC5->(MsGoTo((cAlias)->SC5RECNO))
-                if (SC5->C5_XBLFIS!="2")
-                    if (SC5->(RecLock("SC5",.F.)))
-                        SC5->C5_XBLFIS:="2" //Liberado
-                        //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
-                        if (SC5->(FieldPos("C5_MSEXP"))>0)
-                            SC5->C5_MSEXP:=DToS(dDataBase)
-                        endif
-                        SC5->(MsUnLock())
+        //Processa a Liberação
+        (cAlias)->(dbGoTop())
+        while ((cAlias)->(!eof()))
+            SC5->(MsGoTo((cAlias)->SC5RECNO))
+            if (SC5->C5_XBLFIS!="2")
+                if (SC5->(RecLock("SC5",.F.)))
+                    SC5->C5_XBLFIS:="2" //Liberado
+                    //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
+                    if (SC5->(FieldPos("C5_MSEXP"))>0)
+                        SC5->C5_MSEXP:=DToS(dDataBase)
                     endif
+                    SC5->(MsUnLock())
                 endif
-                //Atualiza, também, no alias temporário para atualização do status
-                if ((cAlias)->(RecLock(cAlias,.F.)))
-                    (cAlias)->C5_XBLFIS:=SC5->C5_XBLFIS
-                    (cAlias)->(MsUnLock())
-                endif
-                (cAlias)->(dbSkip())
-            end while
-
-        else
-
-            ApMsgInfo("O Pedido não está Bloqueado. Só é possível Liberar Pedidos Bloqueados.",cProcTitle)
-
-        endif
+            endif
+            //Atualiza, também, no alias temporário para atualização do status
+            if ((cAlias)->(RecLock(cAlias,.F.)))
+                (cAlias)->C5_XBLFIS:=SC5->C5_XBLFIS
+                (cAlias)->(MsUnLock())
+            endif
+            (cAlias)->(dbSkip())
+        end while
 
     else
 
-        ApMsgAlert("Nenhum Pedido Selecionado",cProcTitle)
+        ApMsgInfo("O Pedido não está Bloqueado. Só é possível Liberar Pedidos Bloqueados.",cProcTitle)
 
     endif
-
-    (cAlias)->(EndFilBrw(cAlias,@aFilBRWQry))
-    aSize(aFilBRWQry,0)
-
-    FWFreeArray(@aFilBRWQry)
-
-    DelClassIntF()
 
     FWRestArea(aAreaAlias)
     FWFreeArray(@aAreaAlias)
@@ -575,7 +544,6 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
     local cProcTitle:=cTitulo+" :: Rejeição"
 
     local lRet:=.F. as logical
-    local lContinue as logical
 
     local nRejSiz:=6 as numeric
 
@@ -589,84 +557,59 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
     cRejCod:=Space(Min(GetSX3Cache("X5_CHAVE","X3_TAMANHO"),nRejSiz))
     cRejObs:=Space(50)
 
-    //Filtra o Pedido/Cliente
-    cFilBRWExp:=("(C5_NUM=='"+cC5Num+"').AND.(C5_CLIENTE=='"+cC5Cliente+"')")
-    (cAlias)->(FilBrowse(cAlias,@aFilBRWQry,cFilBRWExp))
-    (cAlias)->(dbGoTop())
-
-    //Verifica se algum pedido foi selecionado
-    lContinue:=(cAlias)->((!eof()).and.(!bof()))
+    //Verifica se o Item Está Bloqueado
+    lContinue:=((cAlias)->C5_XBLFIS=="1")
 
     if (lContinue)
 
-        //Verifica se o Item Está Bloqueado
-        lContinue:=((cAlias)->C5_XBLFIS=="1")
+        DEFINE MSDIALOG oDlg FROM 0,0 TO 275,450 TITLE cProcTitle PIXEL OF GetWNDDefault()
 
-        if (lContinue)
+            @ 000,000 MSPANEL oPanel OF oDlg
+            oPanel:Align:=CONTROL_ALIGN_ALLCLIENT
 
-            DEFINE MSDIALOG oDlg FROM 0,0 TO 275,450 TITLE cProcTitle PIXEL OF GetWNDDefault()
+            @ 007,005 SAY "Código Rejeição:" SIZE 45,08 OF oPanel PIXEL
+            @ 005,048 MSGET oCodRej VAR cRejCod SIZE CalcFieldSize("C",nRejSiz,0,"@!",Replicate("W",nRejSiz)),08 OF oPanel PIXEL F3 "Z0" VALID CodRejVld(@cRejCod,nRejSiz,@oCodRej)
 
-                @ 000,000 MSPANEL oPanel OF oDlg
-                oPanel:Align:=CONTROL_ALIGN_ALLCLIENT
+            @018,005 SAY "Observação" SIZE 60,07 OF oPanel PIXEL
+            @026,005 GET oRejObs VAR cRejObs MEMO SIZE 220,087 CENTERED DESIGN OF oPanel PIXEL WHEN (.T.)
 
-                @ 007,005 SAY "Código Rejeição:" SIZE 45,08 OF oPanel PIXEL
-                @ 005,048 MSGET oCodRej VAR cRejCod SIZE CalcFieldSize("C",nRejSiz,0,"@!",Replicate("W",nRejSiz)),08 OF oPanel PIXEL F3 "Z0" VALID CodRejVld(@cRejCod,nRejSiz,@oCodRej)
+            DEFINE SBUTTON oOk     FROM 120,(220-48) TYPE 1 ENABLE OF oPanel PIXEL ACTION Eval({|lRet,oDlg|(lRet:=.T.,oDlg:End())},@lRet,oDlg)
+            DEFINE SBUTTON oCancel FROM 120,(220-20) Type 2 ENABLE OF oPanel PIXEL ACTION oDlg:End()
 
-                @018,005 SAY "Observação" SIZE 60,07 OF oPanel PIXEL
-                @026,005 GET oRejObs VAR cRejObs MEMO SIZE 220,087 CENTERED DESIGN OF oPanel PIXEL WHEN (.T.)
+            oRejObs:lReadOnly:=.F.
+            oRejObs:EnableVScroll(.T.)
+            oRejObs:EnableHScroll(.T.)
 
-                DEFINE SBUTTON oOk     FROM 120,(220-48) TYPE 1 ENABLE OF oPanel PIXEL ACTION Eval({|lRet,oDlg|(lRet:=.T.,oDlg:End())},@lRet,oDlg)
-                DEFINE SBUTTON oCancel FROM 120,(220-20) Type 2 ENABLE OF oPanel PIXEL ACTION oDlg:End()
+            oDlg:lEscClose:=.F.
 
-                oRejObs:lReadOnly:=.F.
-                oRejObs:EnableVScroll(.T.)
-                oRejObs:EnableHScroll(.T.)
+        ACTIVATE MSDIALOG oDlg CENTER ON INIT (oDlg:SetFocus())
 
-                oDlg:lEscClose:=.F.
-
-            ACTIVATE MSDIALOG oDlg CENTER ON INIT (oDlg:SetFocus())
-
-            if (lRet)
-                //Processa a Rejeição
-                (cAlias)->(dbGoTop())
-                while ((cAlias)->(!eof()))
-                    SC5->(MsGoTo((cAlias)->SC5RECNO))
-                    if (SC5->C5_XBLFIS!="3")
-                        if (SC5->(RecLock("SC5",.F.)))
-                            SC5->C5_XBLFIS:="3" //Rejeitado
-                            SC5->C5_XCMTBLF:=cRejCod
-                            SC5->C5_XOMTBLF:=cRejObs
-                            //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
-                            if (SC5->(FieldPos("C5_MSEXP"))>0)
-                                SC5->C5_MSEXP:=DToS(dDataBase)
-                            endif
-                            SC5->(MsUnLock())
-                        endif
+        if (lRet)
+            SC5->(MsGoTo((cAlias)->SC5RECNO))
+            if (SC5->C5_XBLFIS!="3")
+                if (SC5->(RecLock("SC5",.F.)))
+                    SC5->C5_XBLFIS:="3" //Rejeitado
+                    SC5->C5_XCMTBLF:=cRejCod
+                    SC5->C5_XOMTBLF:=cRejObs
+                    //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
+                    if (SC5->(FieldPos("C5_MSEXP"))>0)
+                        SC5->C5_MSEXP:=DToS(dDataBase)
                     endif
-                    //Atualiza, também, no alias temporário para atualização do status
-                    if ((cAlias)->(RecLock(cAlias,.F.)))
-                        (cAlias)->C5_XBLFIS:=SC5->C5_XBLFIS
-                        (cAlias)->(MsUnLock())
-                    endif
-                    (cAlias)->(dbSkip())
-                end while
-
+                    SC5->(MsUnLock())
+                endif
             endif
-
-        else
-
-            ApMsgInfo("O Pedido não está Bloqueado. Só é possível Rejeitar Pedidos Bloqueados.",cProcTitle)
-
+            //Atualiza, também, no alias temporário para atualização do status
+            if ((cAlias)->(RecLock(cAlias,.F.)))
+                (cAlias)->C5_XBLFIS:=SC5->C5_XBLFIS
+                (cAlias)->(MsUnLock())
+            endif
         endif
 
     else
 
-        ApMsgAlert("Nenhum Pedido Selecionado",cProcTitle)
+        ApMsgInfo("O Pedido não está Bloqueado. Só é possível Rejeitar Pedidos Bloqueados.",cProcTitle)
 
     endif
-
-    (cAlias)->(EndFilBrw(cAlias,@aFilBRWQry))
-    aSize(aFilBRWQry,0)
 
     FreeObj(@oOk)
     FreeObj(@oDlg)
@@ -674,10 +617,6 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
     FreeObj(@oCancel)
     FreeObj(@oCodRej)
     FreeObj(@oRejObs)
-
-    FWFreeArray(@aFilBRWQry)
-
-    DelClassIntF()
 
     FWRestArea(aAreaAlias)
     FWFreeArray(@aAreaAlias)
@@ -726,64 +665,36 @@ static function TRK0005Blq(cTitulo,cAlias,oFWMarkBrowse)
     local lRet:=.F. as logical
     local lContinue as logical
 
-    //Filtra o Pedido/Cliente
-    cFilBRWExp:=("(C5_NUM=='"+cC5Num+"').AND.(C5_CLIENTE=='"+cC5Cliente+"')")
-    (cAlias)->(FilBrowse(cAlias,@aFilBRWQry,cFilBRWExp))
-    (cAlias)->(dbGoTop())
+    //Verifica se o Item Está Bloqueado
+    lRet:=((cAlias)->C5_XBLFIS!="1")
 
-    //Verifica se algum pedido foi selecionado
-    lContinue:=(cAlias)->((!eof()).and.(!bof()))
+    if (lRet)
 
-    if (lContinue)
-
-        //Verifica se o Item Está Bloqueado
-        lRet:=((cAlias)->C5_XBLFIS!="1")
-
-        if (lRet)
-
-            //Processa a Liberação
-            (cAlias)->(dbGoTop())
-            while ((cAlias)->(!eof()))
-                SC5->(MsGoTo((cAlias)->SC5RECNO))
-                if (SC5->C5_XBLFIS!="1")
-                    if (SC5->(RecLock("SC5",.F.)))
-                        SC5->C5_XBLFIS:="1" //Bloqueado
-                        //Limpa os Campos de Rejeição
-                        SC5->C5_XCMTBLF:=""
-                        SC5->C5_XOMTBLF:=""
-                        //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
-                        if (SC5->(FieldPos("C5_MSEXP"))>0)
-                            SC5->C5_MSEXP:=DToS(dDataBase)
-                        endif
-                        SC5->(MsUnLock())
-                    endif
+        //Processa a Liberação
+        SC5->(MsGoTo((cAlias)->SC5RECNO))
+        if (SC5->C5_XBLFIS!="1")
+            if (SC5->(RecLock("SC5",.F.)))
+                SC5->C5_XBLFIS:="1" //Bloqueado
+                //Limpa os Campos de Rejeição
+                SC5->C5_XCMTBLF:=""
+                SC5->C5_XOMTBLF:=""
+                //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
+                if (SC5->(FieldPos("C5_MSEXP"))>0)
+                    SC5->C5_MSEXP:=DToS(dDataBase)
                 endif
-                //Atualiza, também, no alias temporário para atualização do status
-                if ((cAlias)->(RecLock(cAlias,.F.)))
-                    (cAlias)->C5_XBLFIS:=SC5->C5_XBLFIS
-                    (cAlias)->(MsUnLock())
-                endif
-                (cAlias)->(dbSkip())
-            end while
-
-        else
-
-            ApMsgInfo("O Pedido já se encontra Bloqueado. Só é possível Bloquear Pedidos não Bloqueados.",cProcTitle)
-
+                SC5->(MsUnLock())
+            endif
         endif
-
+        //Atualiza, também, no alias temporário para atualização do status
+        if ((cAlias)->(RecLock(cAlias,.F.)))
+            (cAlias)->C5_XBLFIS:=SC5->C5_XBLFIS
+            (cAlias)->(MsUnLock())
+        endif
     else
 
-        ApMsgAlert("Nenhum Pedido Selecionado",cProcTitle)
+        ApMsgInfo("O Pedido já se encontra Bloqueado. Só é possível Bloquear Pedidos não Bloqueados.",cProcTitle)
 
     endif
-
-    (cAlias)->(EndFilBrw(cAlias,@aFilBRWQry))
-    aSize(aFilBRWQry,0)
-
-    FWFreeArray(@aFilBRWQry)
-
-    DelClassIntF()
 
     FWRestArea(aAreaAlias)
     FWFreeArray(@aAreaAlias)
