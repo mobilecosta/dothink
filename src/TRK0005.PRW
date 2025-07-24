@@ -1,7 +1,5 @@
 #include"totvs.ch"
-#include"matxdef.ch"
 #include"dbstruct.ch"
-#include"fwmvcdef.ch"
 
 static __cTitulo :="Validação Fiscal"
 
