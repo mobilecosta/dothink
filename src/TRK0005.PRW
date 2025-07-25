@@ -95,7 +95,7 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
         ,{"A1_NOME",TamSX3("A1_NOME"),GetSX3Cache("A1_NOME","X3_TITULO"),GetSX3Cache("A1_NOME","X3_PICTURE"),"SA1.A1_NOME"};
         ,{"C6_PRODUTO",TamSX3("C6_PRODUTO"),GetSX3Cache("C6_PRODUTO","X3_TITULO"),GetSX3Cache("C6_PRODUTO","X3_PICTURE"),"SC6.C6_PRODUTO"};
         ,{"B1_DESC",TamSX3("B1_DESC"),GetSX3Cache("B1_DESC","X3_TITULO"),GetSX3Cache("B1_DESC","X3_PICTURE"),"SB1.B1_DESC"};
-        ,{"C9_DATENT",TamSX3("C9_DATENT"),GetSX3Cache("C9_DATENT","X3_TITULO"),GetSX3Cache("C9_DATENT","X3_PICTURE"),"ISNULL(SC9.C9_DATENT,SC6.C6_ENTREG) AS C9_DATENT"};
+        ,{"C9_DATENT",TamSX3("C9_DATENT"),GetSX3Cache("C9_DATENT","X3_TITULO"),GetSX3Cache("C9_DATENT","X3_PICTURE"),"COALESCE(SC9.C9_DATENT,SC6.C6_ENTREG, ' ') AS C9_DATENT"};
         ,{"B1_ORIGEM",TamSX3("B1_ORIGEM"),GetSX3Cache("B1_ORIGEM","X3_TITULO"),GetSX3Cache("B1_ORIGEM","X3_PICTURE"),"SB1.B1_ORIGEM"};
         ,{"FT_BASEICM",TamSX3("FT_BASEICM"),GetSX3Cache("FT_BASEICM","X3_TITULO"),GetSX3Cache("FT_BASEICM","X3_PICTURE"),"0 AS FT_BASEICM"};
         ,{"FT_VALICM",TamSX3("FT_VALICM"),GetSX3Cache("FT_VALICM","X3_TITULO"),GetSX3Cache("FT_VALICM","X3_PICTURE"),"0 AS FT_VALICM"};
@@ -111,7 +111,7 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
         ,{"F4_CSTCOF",TamSX3("F4_CSTCOF"),GetSX3Cache("F4_CSTCOF","X3_TITULO"),GetSX3Cache("F4_CSTCOF","X3_PICTURE"),"SF4.F4_CSTCOF"};
         ,{"SC5RECNO",{18,0,"N"},"RecNo SC5","@R 999999999999999999","SC5.R_E_C_N_O_ AS SC5RECNO"};
         ,{"SC6RECNO",{18,0,"N"},"RecNo SC6","@R 999999999999999999","SC6.R_E_C_N_O_ AS SC6RECNO"};
-        ,{"SC9RECNO",{18,0,"N"},"RecNo SC9","@R 999999999999999999","ISNULL(SC9.R_E_C_N_O_,0) AS SC9RECNO"};
+        ,{"SC9RECNO",{18,0,"N"},"RecNo SC9","@R 999999999999999999","SC9.R_E_C_N_O_ AS SC9RECNO"};
         ,{"SB1RECNO",{18,0,"N"},"RecNo SB1","@R 999999999999999999","SB1.R_E_C_N_O_ AS SB1RECNO"};
         ,{"SA1RECNO",{18,0,"N"},"RecNo SA1","@R 999999999999999999","SA1.R_E_C_N_O_ AS SA1RECNO"};
         ,{"SF4RECNO",{18,0,"N"},"RecNo SF4","@R 999999999999999999","SF4.R_E_C_N_O_ AS SF4RECNO"};
@@ -202,10 +202,10 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
 
     oFWTemporaryTable:AddIndex(Eval(bFWTmpTblIdxOrder,@cFWTmpTblIdxOrder),{"C5_NUM","C6_ITEM"})
 
-    nIndexes:=Len(aFWMBrowseQryIndex)
-    for nIndex:=1 to nIndexes
-        oFWTemporaryTable:AddIndex(Eval(bFWTmpTblIdxOrder,@cFWTmpTblIdxOrder),aFWMBrowseQryIndex[nIndex])
-    next nIndex
+    //nIndexes:=Len(aFWMBrowseQryIndex)
+    //for nIndex:=1 to nIndexes
+    //    oFWTemporaryTable:AddIndex(Eval(bFWTmpTblIdxOrder,@cFWTmpTblIdxOrder),aFWMBrowseQryIndex[nIndex])
+    //next nIndex
 
     oFWTemporaryTable:Create()
 
@@ -250,8 +250,8 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
     cRealTableName:=oFWTemporaryTable:getRealName()
 
     //Elabora a Query para o Insert na Tabela Temporaria
-    cQueryInsert:="INSERT INTO"+cRealTableName
-    cQueryInsert+=" ("+cQueryPutFields+")"
+    cQueryInsert:="INSERT INTO "+cRealTableName
+    cQueryInsert+=" ("+cQueryPutFields+") "
     cQueryInsert+=cQuerySelect
 
     //Executa o Insert..
@@ -293,7 +293,7 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
         oFWMarkBrowse:AddLegend("C5_XBLFIS=='3'"/*<xCondition>*/,"GRAY"/*<cColor>*/,"Rejeitados"/*[<cTitle>]*/,"ID_C5_XBLFIS"/*[<cID>]*/,.T./*[<lFilter>]*/)
 
         oFWMarkBrowse:SetColumns(aFWMBrwColumn)
-        oFWMarkBrowse:SetSeek(.T.,aFWMBrowseSeek)
+        //oFWMarkBrowse:SetSeek(.T.,aFWMBrowseSeek)
         oFWMarkBrowse:SetUseFilter(.T.)
         oFWMarkBrowse:SetFieldFilter(aFWMBrowseFilter)
         oFWMarkBrowse:SetMenuDef("")
