@@ -7,32 +7,24 @@ static __cTitulo :="Validação Fiscal"
 Parametros para Filtro do Browse
 @type function
 @version 1.0
-@author Conceitho
+@author DoThink
 @since 22/07/2025
 /*/
 function U_TRK0005() as logical
 
     local aParamBox:=Array(0) as array
     local aParamRet:=Array(0) as array
-    local aTiposDePedidos as array
-
+    local aTiposDePedidos := { "1=Bloqueados", "2=Liberados", "3=Rejeitados", "4=Todos" }
     local cTipoPedido as character
 
-    local lExecute as logical
-
     SaveInter()
-        aTiposDePedidos:={;
-             "1=Bloqueados";
-            ,"2=Liberados";
-            ,"3=Rejeitados";
-            ,"4=Todos";
-        }
+        
         aAdd(aParamBox,{2,"Listar Pedidos",0,aTiposDePedidos,100,"",.F.})
-        lExecute:=ParamBox(@aParamBox,"Selecione os Parametros",@aParamRet,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
-        if (lExecute)
+        if ParamBox(@aParamBox,"Selecione os Parametros",@aParamRet,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
             cTipoPedido:=Left(if(valtype(aParamRet[1])=="N",aTiposDePedidos[aParamRet[1]],allTrim(aParamRet[1])),1)
             TRK0005Brw(cTipoPedido,aTiposDePedidos)
         endif
+
     RestInter()
 
     FWFreeArray(@aParamBox)
@@ -45,7 +37,7 @@ return()
 Carrega o Browse conforme Filtro inicial
 @type function
 @version 1.0
-@author Conceitho
+@author DoThink
 @since 22/07/2025
 /*/
 static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
@@ -96,7 +88,7 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
         aCustomFields[n][5]=>Expressao SQL do Campo
     */
     aCustomFields:={;
-         {"C5_XBLFIS",TamSX3("C5_XBLFIS"),GetSX3Cache("C5_XBLFIS","X3_TITULO"),GetSX3Cache("C5_XBLFIS","X3_PICTURE"),"(CASE SC5.C5_XBLFIS WHEN ' ' THEN '1' ELSE SC5.C5_XBLFIS END) C5_XBLFIS"};
+         {"C5_XBLFIS",TamSX3("C5_XBLFIS"),GetSX3Cache("C5_XBLFIS","X3_TITULO"),GetSX3Cache("C5_XBLFIS","X3_PICTURE"),"C5_XBLFIS"};
         ,{"C5_NUM",TamSX3("C5_NUM"),GetSX3Cache("C5_NUM","X3_TITULO"),GetSX3Cache("C5_NUM","X3_PICTURE"),"SC5.C5_NUM"};
         ,{"C6_ITEM",TamSX3("C6_ITEM"),GetSX3Cache("C6_ITEM","X3_TITULO"),GetSX3Cache("C6_ITEM","X3_PICTURE"),"SC6.C6_ITEM"};
         ,{"C5_CLIENTE",TamSX3("C5_CLIENTE"),GetSX3Cache("C5_CLIENTE","X3_TITULO"),GetSX3Cache("C5_CLIENTE","X3_PICTURE"),"SC5.C5_CLIENTE"};
@@ -164,7 +156,7 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
         )
 
         //Define o Campo como Indice
-        aAdd(aFWMBrowseQryIndex,{aDbStruct[nField][DBS_NAME]})
+        // aAdd(aFWMBrowseQryIndex,{aDbStruct[nField][DBS_NAME]})
 
         //Define o Campo como Filtravel
         aAdd(aFWMBrowseFilter,;
@@ -355,17 +347,14 @@ return
 Atualizar informações Fiscais
 @type function
 @version 1.0
-@author Conceitho
+@author DoThink
 @since 22/07/2025
 /*/
 static function TRK0005Fis(cAlias)
 
     local aMaFisNFCabRet as array
     local aRecItens as array
-
     local cPedido as character
-    local cCliente as character
-
     local nAT as numeric
     local nItem as numeric
     local nItems as numeric
@@ -455,28 +444,17 @@ return
 Processa a Liberação
 @type function
 @version 1.0
-@author Conceitho
+@author DoThink
 @since 22/07/2025
 /*/
 static function TRK0005Lib(cTitulo,cAlias,oFWMarkBrowse)
 
     local aArea:=FWGetArea()
     local aAreaAlias:=(cAlias)->(FWGetArea())
-    local aFilBRWQry:=Array(0) as array
-
-    local cC5Num:=(cAlias)->C5_NUM as character
-    local cC5Cliente:=(cAlias)->C5_CLIENTE as character
-
-    local cFilBRWExp as character
-
     local cProcTitle:=cTitulo+" :: Liberação"
 
-    local lRet:=.F. as logical
-
     //Verifica se o Item Está Bloqueado
-    lRet:=((cAlias)->C5_XBLFIS=="1")
-
-    if (lRet)
+    if ((cAlias)->C5_XBLFIS=="1")
 
         //Processa a Liberação
         (cAlias)->(dbGoTop())
@@ -499,11 +477,8 @@ static function TRK0005Lib(cTitulo,cAlias,oFWMarkBrowse)
             endif
             (cAlias)->(dbSkip())
         end while
-
     else
-
         ApMsgInfo("O Pedido não está Bloqueado. Só é possível Liberar Pedidos Bloqueados.",cProcTitle)
-
     endif
 
     FWRestArea(aAreaAlias)
@@ -522,27 +497,18 @@ return(lRet)
 Processa a Rejeição
 @type function
 @version 1.0
-@author Conceitho
+@author DoThink
 @since 22/07/2025
 /*/
 static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
 
     local aArea:=FWGetArea()
     local aAreaAlias:=(cAlias)->(FWGetArea())
-    local aFilBRWQry:=Array(0) as array
 
     local cRejCod as character
     local cRejObs as character
-
-    local cC5Num:=(cAlias)->C5_NUM as character
-    local cC5Cliente:=(cAlias)->C5_CLIENTE as character
-
-    local cFilBRWExp as character
-
     local cProcTitle:=cTitulo+" :: Rejeição"
-
     local lRet:=.F. as logical
-
     local nRejSiz:=6 as numeric
 
     local oOk as object
@@ -551,12 +517,12 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
     local oCancel as object
     local oCodRej as object
     local oRejObs as object
+    local lContinue:=((cAlias)->C5_XBLFIS=="1")
 
     cRejCod:=Space(Min(GetSX3Cache("X5_CHAVE","X3_TAMANHO"),nRejSiz))
     cRejObs:=Space(50)
 
     //Verifica se o Item Está Bloqueado
-    lContinue:=((cAlias)->C5_XBLFIS=="1")
 
     if (lContinue)
 
@@ -602,11 +568,8 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
                 (cAlias)->(MsUnLock())
             endif
         endif
-
     else
-
         ApMsgInfo("O Pedido não está Bloqueado. Só é possível Rejeitar Pedidos Bloqueados.",cProcTitle)
-
     endif
 
     FreeObj(@oOk)
@@ -632,7 +595,7 @@ return(lRet)
 Valida e Normaliza o Codigo de Rejeição.
 @type function
 @version 1.0
-@author Conceitho
+@author DoThink
 @since 22/07/2025
 /*/
 static function CodRejVld(cRejCod as character,nRejSiz as numeric,oCodRej as object) as logical
@@ -644,29 +607,17 @@ return(ExistCpo("SX5","Z0"+cRejCod,1))
 Processa o Bloqueio
 @type function
 @version 1.0
-@author Conceitho
+@author DoThink
 @since 22/07/2025
 /*/
 static function TRK0005Blq(cTitulo,cAlias,oFWMarkBrowse)
 
     local aArea:=FWGetArea()
     local aAreaAlias:=(cAlias)->(FWGetArea())
-    local aFilBRWQry:=Array(0) as array
-
-    local cC5Num:=(cAlias)->C5_NUM as character
-    local cC5Cliente:=(cAlias)->C5_CLIENTE as character
-
-    local cFilBRWExp as character
-
     local cProcTitle:=cTitulo+" :: Bloqueio"
 
-    local lRet:=.F. as logical
-    local lContinue as logical
-
     //Verifica se o Item Está Bloqueado
-    lRet:=((cAlias)->C5_XBLFIS!="1")
-
-    if (lRet)
+    if (cAlias)->C5_XBLFIS!="1"
 
         //Processa a Liberação
         SC5->(MsGoTo((cAlias)->SC5RECNO))
@@ -689,9 +640,7 @@ static function TRK0005Blq(cTitulo,cAlias,oFWMarkBrowse)
             (cAlias)->(MsUnLock())
         endif
     else
-
         ApMsgInfo("O Pedido já se encontra Bloqueado. Só é possível Bloquear Pedidos não Bloqueados.",cProcTitle)
-
     endif
 
     FWRestArea(aAreaAlias)
@@ -710,7 +659,7 @@ return(lRet)
 Retorna informação Customizada para o Campo
 @type function
 @version 1.0
-@author Conceitho
+@author DoThink
 @since 22/07/2025
 /*/
 function u_TRK005Fld(cField as character,xValue,xAscan as variant)
