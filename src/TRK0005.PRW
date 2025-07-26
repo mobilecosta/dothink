@@ -88,18 +88,22 @@ static function TRK0005Brw(cTipoPedido as character)
         ,{"C9_DATENT",TamSX3("C9_DATENT"),GetSX3Cache("C9_DATENT","X3_TITULO"),GetSX3Cache("C9_DATENT","X3_PICTURE"),"COALESCE(SC9.C9_DATENT,SC6.C6_ENTREG, ' ') AS C9_DATENT"};
         ,{"B1_POSIPI",TamSX3("B1_POSIPI"),GetSX3Cache("B1_POSIPI","X3_TITULO"),GetSX3Cache("B1_POSIPI","X3_PICTURE"),"SB1.B1_POSIPI"};
         ,{"B1_ORIGEM",TamSX3("B1_ORIGEM"),GetSX3Cache("B1_ORIGEM","X3_TITULO"),GetSX3Cache("B1_ORIGEM","X3_PICTURE"),"SB1.B1_ORIGEM"};
-        ,{"FT_BASEICM",TamSX3("FT_BASEICM"),GetSX3Cache("FT_BASEICM","X3_TITULO"),GetSX3Cache("FT_BASEICM","X3_PICTURE"),"0 AS FT_BASEICM"};
-        ,{"FT_VALICM",TamSX3("FT_VALICM"),GetSX3Cache("FT_VALICM","X3_TITULO"),GetSX3Cache("FT_VALICM","X3_PICTURE"),"0 AS FT_VALICM"};
         ,{"F4_SITTRIB",TamSX3("F4_SITTRIB"),GetSX3Cache("F4_SITTRIB","X3_TITULO"),GetSX3Cache("F4_SITTRIB","X3_PICTURE"),"SF4.F4_SITTRIB"};
-        ,{"FT_BASEIPI",TamSX3("FT_BASEIPI"),GetSX3Cache("FT_BASEIPI","X3_TITULO"),GetSX3Cache("FT_BASEIPI","X3_PICTURE"),"0 AS FT_BASEIPI"};
-        ,{"FT_VALIPI",TamSX3("FT_VALIPI"),GetSX3Cache("FT_VALIPI","X3_TITULO"),GetSX3Cache("FT_VALIPI","X3_PICTURE"),"0 AS FT_VALIPI"};
+        ,{"FT_BASEICM",TamSX3("FT_BASEICM"),GetSX3Cache("FT_BASEICM","X3_TITULO"),GetSX3Cache("FT_BASEICM","X3_PICTURE"),"0 AS FT_BASEICM"};
+        ,{"FT_ALIQICM",TamSX3("FT_ALIQICM"),GetSX3Cache("FT_ALIQICM","X3_TITULO"),GetSX3Cache("FT_ALIQICM","X3_PICTURE"),"0 AS FT_ALIQICM"};
+        ,{"FT_VALICM",TamSX3("FT_VALICM"),GetSX3Cache("FT_VALICM","X3_TITULO"),GetSX3Cache("FT_VALICM","X3_PICTURE"),"0 AS FT_VALICM"};
         ,{"F4_CTIPI",TamSX3("F4_CTIPI"),GetSX3Cache("F4_CTIPI","X3_TITULO"),GetSX3Cache("F4_CTIPI","X3_PICTURE"),"SF4.F4_CTIPI"};
-        ,{"FT_BASEPIS",TamSX3("FT_BASEPIS"),GetSX3Cache("FT_BASEPIS","X3_TITULO"),GetSX3Cache("FT_BASEPIS","X3_PICTURE"),"0 AS FT_BASEPIS"};
-        ,{"FT_VALPIS",TamSX3("FT_VALPIS"),GetSX3Cache("FT_VALPIS","X3_TITULO"),GetSX3Cache("FT_VALPIS","X3_PICTURE"),"0 AS FT_VALPIS"};
+        ,{"FT_BASEIPI",TamSX3("FT_BASEIPI"),GetSX3Cache("FT_BASEIPI","X3_TITULO"),GetSX3Cache("FT_BASEIPI","X3_PICTURE"),"0 AS FT_BASEIPI"};
+        ,{"FT_ALIQIPI",TamSX3("FT_ALIQIPI"),GetSX3Cache("FT_ALIQIPI","X3_TITULO"),GetSX3Cache("FT_ALIQIPI","X3_PICTURE"),"0 AS FT_ALIQIPI"};
+        ,{"FT_VALIPI",TamSX3("FT_VALIPI"),GetSX3Cache("FT_VALIPI","X3_TITULO"),GetSX3Cache("FT_VALIPI","X3_PICTURE"),"0 AS FT_VALIPI"};
         ,{"F4_CSTPIS",TamSX3("F4_CSTPIS"),GetSX3Cache("F4_CSTPIS","X3_TITULO"),GetSX3Cache("F4_CSTPIS","X3_PICTURE"),"SF4.F4_CSTPIS"};
-        ,{"FT_BASECOF",TamSX3("FT_BASECOF"),GetSX3Cache("FT_BASECOF","X3_TITULO"),GetSX3Cache("FT_BASECOF","X3_PICTURE"),"0 AS FT_BASECOF"};
-        ,{"FT_VALCOF",TamSX3("FT_VALCOF"),GetSX3Cache("FT_VALCOF","X3_TITULO"),GetSX3Cache("FT_VALCOF","X3_PICTURE"),"0 AS FT_VALCOF"};
+        ,{"FT_BASEPIS",TamSX3("FT_BASEPIS"),GetSX3Cache("FT_BASEPIS","X3_TITULO"),GetSX3Cache("FT_BASEPIS","X3_PICTURE"),"0 AS FT_BASEPIS"};
+        ,{"FT_ALIQPIS",TamSX3("FT_ALIQPIS"),GetSX3Cache("FT_ALIQPIS","X3_TITULO"),GetSX3Cache("FT_ALIQPIS","X3_PICTURE"),"0 AS FT_ALIQPIS"};
+        ,{"FT_VALPIS",TamSX3("FT_VALPIS"),GetSX3Cache("FT_VALPIS","X3_TITULO"),GetSX3Cache("FT_VALPIS","X3_PICTURE"),"0 AS FT_VALPIS"};
         ,{"F4_CSTCOF",TamSX3("F4_CSTCOF"),GetSX3Cache("F4_CSTCOF","X3_TITULO"),GetSX3Cache("F4_CSTCOF","X3_PICTURE"),"SF4.F4_CSTCOF"};
+        ,{"FT_BASECOF",TamSX3("FT_BASECOF"),GetSX3Cache("FT_BASECOF","X3_TITULO"),GetSX3Cache("FT_BASECOF","X3_PICTURE"),"0 AS FT_BASECOF"};
+        ,{"FT_ALIQCOF",TamSX3("FT_ALIQCOF"),GetSX3Cache("FT_ALIQCOF","X3_TITULO"),GetSX3Cache("FT_ALIQCOF","X3_PICTURE"),"0 AS FT_ALIQCOF"};
+        ,{"FT_VALCOF",TamSX3("FT_VALCOF"),GetSX3Cache("FT_VALCOF","X3_TITULO"),GetSX3Cache("FT_VALCOF","X3_PICTURE"),"0 AS FT_VALCOF"};
         ,{"SC5RECNO",{18,0,"N"},"RecNo SC5","@R 999999999999999999","SC5.R_E_C_N_O_ AS SC5RECNO"};
         ,{"SC6RECNO",{18,0,"N"},"RecNo SC6","@R 999999999999999999","SC6.R_E_C_N_O_ AS SC6RECNO"};
         ,{"SC9RECNO",{18,0,"N"},"RecNo SC9","@R 999999999999999999","SC9.R_E_C_N_O_ AS SC9RECNO"};
@@ -216,9 +220,31 @@ static function TRK0005Brw(cTipoPedido as character)
     cQuerySelect:=StrTran(cQuerySelect,"__C9_FILIAL__",FWXFilial("SC9"))
     cQuerySelect:=StrTran(cQuerySelect,"__C5_FILIAL__",FWXFilial("SC5"))
 
+    // https://centraldeatendimento.totvs.com/hc/pt-br/articles/
+    // 360017467652-Cross-Segmentos-BackOffice-Protheus-SIGAFAT-C%C3%B3digos-de-Bloqueio-gravados-na-tabela/
+    //-SC9-dos-Pedidos-de-Venda-Liberados
+
+    // Opção 1: Bloqueados  
+    // Serão listados somente os pedidos de vendas que estiverem liberados aptos a faturar, mas que esteja com 
+    // bloqueio de “Validação Fiscal”. 
+    // Opção 2: Liberados 
+    // Serão listados somente os pedidos que já foram liberados anteriormente, independente das regras de aptos a 
+    // faturar. 
+    // Opção 3: Rejeitados 
+    // Serão listados somente os pedidos que já foram rejeitados anteriormente, independente das regras de aptos 
+    // a faturar. 
+    // Opção 4: Todos 
+    // Serão listados todos os pedidos nas seguintes condições: o Pedidos Liberados e Rejeitados serão listados, 
+    // independentemente das regras de aptos a faturar; o Pedidos Bloqueados serão listados apenas os pedidos que 
+    // estejam de acordo com as regras de aptos a faturar;
+
     if (cTipoPedido<>"4") //TODOS
-        cINXBLFIS:="AND SC5.C5_XBLFIS IN('"+cTipoPedido+"')"
+        cINXBLFIS := "AND (SC5.C5_XBLFIS IN('"+cTipoPedido+"') OR "
+    Else
+        cINXBLFIS := "AND (SC5.C5_XBLFIS IN ('2', '3') OR "
     endif
+    cINXBLFIS += "CASE WHEN SC5.C5_XBLFIS = '1' AND (NOT COALESCE(C9_BLEST, ' ') IN (' ', 'ZZ') OR " +;
+                       "NOT COALESCE(C9_BLCRED, ' ') IN (' ', 'ZZ') OR C6_NOTA <> ' ') THEN 1 = 0 ELSE 1 = 1 END)"
     cQuerySelect:=StrTran(cQuerySelect,"__XBLFIS",cINXBLFIS)
 
     cAlias:=oFWTemporaryTable:GetAlias()
@@ -247,7 +273,6 @@ static function TRK0005Brw(cTipoPedido as character)
         //https://tdn.totvs.com/display/public/framework/FwDialogModal
         oFWDialogModal:=FWDialogModal():New()
         oFWDialogModal:SetTitle("")
-        oFWDialogModal:SetEscClose(.F.)
         oFWDialogModal:SetSize(((aFWGetDialogSizeCoors[3]/(2+if(.F.,.15,0)))+25),((aFWGetDialogSizeCoors[4]/2)-5))
         oFWDialogModal:CreateDialog()
         oFWDialogModal:EnableFormBar(.T.)
@@ -382,21 +407,25 @@ static function TRK0005Fis(cAlias)
                     nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="ICM"})
                     if (nAT>0)
                         (cAlias)->FT_BASEICM:=aMaFisNFCabRet[nAT][3]
+                        (cAlias)->FT_ALIQICM:=aMaFisNFCabRet[nAT][4]
                         (cAlias)->FT_VALICM:=aMaFisNFCabRet[nAT][5]
                     endif
                     nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="IPI"})
                     if (nAT>0)
                         (cAlias)->FT_BASEIPI:=aMaFisNFCabRet[nAT][3]
+                        (cAlias)->FT_ALIQIPI:=aMaFisNFCabRet[nAT][4]
                         (cAlias)->FT_VALIPI:=aMaFisNFCabRet[nAT][5]
                     endif
-                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="PIS"})
+                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="CF2"})
                     if (nAT>0)
                         (cAlias)->FT_BASEPIS:=aMaFisNFCabRet[nAT][3]
+                        (cAlias)->FT_ALIQPIS:=aMaFisNFCabRet[nAT][4]
                         (cAlias)->FT_VALPIS:=aMaFisNFCabRet[nAT][5]
                     endif
-                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="COF"})
+                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="PS2"})
                     if (nAT>0)
                         (cAlias)->FT_BASECOF:=aMaFisNFCabRet[nAT][3]
+                        (cAlias)->FT_ALIQCOF:=aMaFisNFCabRet[nAT][4]
                         (cAlias)->FT_VALCOF:=aMaFisNFCabRet[nAT][5]
                     endif
                     (cAlias)->(MsUnLock())
