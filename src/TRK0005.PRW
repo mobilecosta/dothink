@@ -43,7 +43,6 @@ static function TRK0005Brw(cTipoPedido as character)
     local aDbStruct:=Array(0) as array
     local aCustomFields as array
     local aFWMBrwColumn:=Array(0) as array
-    local aFWMBrowseFilter:=Array(0) as array
     local aFWMBrowseQryIndex:=Array(0) as array
     local aFWGetDialogSizeCoors as array
 
@@ -61,7 +60,6 @@ static function TRK0005Brw(cTipoPedido as character)
 
     local lQueryInsert as logical
 
-    local nIndex:=0 as numeric
     local nField as numeric
     local nFields as numeric
 
@@ -130,38 +128,7 @@ static function TRK0005Brw(cTipoPedido as character)
             cQueryGetFields+=","
         endif
 
-        //Habilita o campo para Pesquisa
-        aAdd(aFWMBrowseSeek,;
-            {;
-                aCustomFields[nField][3],;//[n,1] Titulo da pesquisa
-                {;
-                    {;
-                        "",;//[n,2,n,1] LookUp (F3)
-                        aDbStruct[nField][DBS_TYPE],;//[n,2,n,2] Tipo de dados
-                        aDbStruct[nField][DBS_LEN],;//[n,2,n,3] Tamanho
-                        aDbStruct[nField][DBS_DEC],;//[n,2,n,4] Decimal
-                        aCustomFields[nField][3],;//[n,2,n,5] Titulo do campo
-                        aCustomFields[nField][4],;//[n,2,n,6] Mascara
-                        NIL;//[n,2,n,7] Nome Fisico do campo (Opcional) e ajustado no programa
-                    };
-                },;
-                nIndex++,;//[n,3] Ordem da pesquisa
-                .T.;//[n,4] Exibe na pesquisa
-            };
-        )
-
         //Define o Campo como Filtravel
-        aAdd(aFWMBrowseFilter,;
-            {;
-                aCustomFields[nField][1],;//Campo
-                aCustomFields[nField][3],;//Titulo
-                aDbStruct[nField][DBS_TYPE],;//Tipo de dado
-                aDbStruct[nField][DBS_LEN],;//Tamanho
-                aDbStruct[nField][DBS_DEC],;//Decimal
-                aCustomFields[nField][4];//Picture
-            };
-        )
-
         // Não inclui os recnos no browse
         If "RECNO" $ aCustomFields[nField][1]
             Loop
@@ -195,6 +162,9 @@ static function TRK0005Brw(cTipoPedido as character)
     oFWTemporaryTable:SetFields(aDbStruct)
     oFWTemporaryTable:AddIndex("01",{"C5_NUM","C6_ITEM"})
     oFWTemporaryTable:AddIndex("02",{"C5_CLIENTE","C5_NUM"})
+
+	Aadd( aFWMBrowseSeek, { "Pedido + Item", RetFldIdx("C5_NUM+C6_ITEM"), 1 } )
+
     oFWTemporaryTable:Create()
 
     //Elabora a query dos pedidos
@@ -292,9 +262,7 @@ static function TRK0005Brw(cTipoPedido as character)
         oBrowse:AddLegend("Empty(C5_XBLFIS)"/*<xCondition>*/,"BLUE"/*<cColor>*/,"Sem Bloqueio"/*[<cTitle>]*/,/*[<cID>]*/,.T./*[<lFilter>]*/)
 
         oBrowse:SetColumns(aFWMBrwColumn)
-        //oBrowse:SetSeek(.T.,aFWMBrowseSeek)
-        //oBrowse:SetUseFilter(.T.)
-        //oBrowse:SetFieldFilter(aFWMBrowseFilter)
+        oBrowse:SetSeek(.T.,aFWMBrowseSeek)
         oBrowse:SetMenuDef("")
 
         //oBrowse:AddButton(cTitle,xAction,uParam1,nOption,nVerify,lNeedFind)
@@ -334,13 +302,41 @@ static function TRK0005Brw(cTipoPedido as character)
     aEval(@aFWMBrwColumn,{|o|FreeObj(@o)})
     FWFreeArray(@aFWMBrwColumn)
     FWFreeArray(@aFWMBrowseSeek)
-    FWFreeArray(@aFWMBrowseFilter)
     FWFreeArray(@aFWMBrowseQryIndex)
     FWFreeArray(@aFWGetDialogSizeCoors)
 
     DelClassIntF()
 
 return
+
+Static Function RetFldIdx(cIndice)
+
+Local aIdx := {}, aArea := SX3->(GetArea())
+Local aX3Stru := {}
+Local cCpo := ""
+
+cIndice := AllTrim(cIndice)
+If Right(cIndice, 1) <> "+"
+	cIndice += "+"
+EndIf
+
+SX3->(DbSetOrder(2))
+
+While At("+", cIndice) > 0
+	SX3->(DbSeek( Left(AllTrim(Left(cIndice, At("+", cIndice) - 1)) + Space(Len(FieldGet(FieldPos("X3_CAMPO")))), Len(FieldGet(FieldPos("X3_CAMPO"))))  ))
+	cCpo:= Left(AllTrim(Left(cIndice, At("+", cIndice) - 1)) + Space(Len(    SX3->(FieldGet(FieldPos("X3_CAMPO")))    )), Len(  SX3->(FieldGet(FieldPos("X3_CAMPO")))   ))
+
+	aX3Stru:= FWSX3Util():GetFieldStruct(cCpo)
+	If Len(aX3Stru) > 0 
+		Aadd(aIdx, {"", aX3Stru[2], aX3Stru[3], aX3Stru[4], FWX3Titulo(aX3Stru[1]),,})
+	Endif 
+	cIndice := Subs(cIndice, At("+", cIndice) + 1, Len(cIndice))
+EndDo
+
+SX3->(RestArea(aArea))
+
+Return aIdx
+
 
 /*/{Protheus.doc} TRK0005Fis
 Atualizar informações Fiscais
