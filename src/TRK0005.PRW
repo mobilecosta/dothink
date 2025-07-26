@@ -15,14 +15,15 @@ function U_TRK0005() as logical
     local aParamBox:=Array(0) as array
     local aParamRet:=Array(0) as array
     local aTiposDePedidos := { "1=Bloqueados", "2=Liberados", "3=Rejeitados", "4=Todos" }
-    local cTipoPedido as character
 
     SaveInter()
         
-        aAdd(aParamBox,{2,"Listar Pedidos",0,aTiposDePedidos,100,"",.F.})
+        aAdd(aParamBox,{2,"Listar Pedidos",4,aTiposDePedidos,100,"",.T.})
         if ParamBox(@aParamBox,"Selecione os Parametros",@aParamRet,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
-            cTipoPedido:=Left(if(valtype(aParamRet[1])=="N",aTiposDePedidos[aParamRet[1]],allTrim(aParamRet[1])),1)
-            TRK0005Brw(cTipoPedido,aTiposDePedidos)
+            If ValType(mv_par01) == "N"
+                mv_par01 := Str(mv_par01 + 1, 1)
+            EndIF
+            TRK0005Brw(mv_par01)
         endif
 
     RestInter()
@@ -40,17 +41,14 @@ Carrega o Browse conforme Filtro inicial
 @author DoThink
 @since 22/07/2025
 /*/
-static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
+static function TRK0005Brw(cTipoPedido as character)
 
     local aDbStruct:=Array(0) as array
     local aCustomFields as array
     local aFWMBrwColumn:=Array(0) as array
-    local aFWMBrowseSeek:=Array(0) as array
     local aFWMBrowseFilter:=Array(0) as array
     local aFWMBrowseQryIndex:=Array(0) as array
     local aFWGetDialogSizeCoors as array
-
-    local bFWTmpTblIdxOrder as codeblock
 
     local cAlias as character
     local cTitulo:=__cTitulo as character
@@ -63,7 +61,6 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
 
     local cTCSQLError as character
     local cRealTableName as character
-    local cFWTmpTblIdxOrder as character
 
     local lQueryInsert as logical
 
@@ -74,7 +71,7 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
     local nTipoPed as numeric
 
     local oPanelMain as object
-    local oFWMarkBrowse as object
+    local oBrowse as object
     local oFWDialogModal as object
     local oFWTemporaryTable as object
 
@@ -155,9 +152,6 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
             };
         )
 
-        //Define o Campo como Indice
-        // aAdd(aFWMBrowseQryIndex,{aDbStruct[nField][DBS_NAME]})
-
         //Define o Campo como Filtravel
         aAdd(aFWMBrowseFilter,;
             {;
@@ -169,6 +163,11 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
                 aCustomFields[nField][4];//Picture
             };
         )
+
+        // Não inclui os recnos no browse
+        If "RECNO" $ aCustomFields[nField][1]
+            Loop
+        EndIF
 
         //Monta as Colunas do Browse
         aAdd(aFWMBrwColumn,FWBrwColumn():New())
@@ -196,17 +195,8 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
     //https://tdn.totvs.com/display/public/framework/FWTemporaryTable
     oFWTemporaryTable:=FWTemporaryTable():New()
     oFWTemporaryTable:SetFields(aDbStruct)
-
-    cFWTmpTblIdxOrder:="00"
-    bFWTmpTblIdxOrder:={|cFWTmpTblIdxOrder|cFWTmpTblIdxOrder:=__Soma1(cFWTmpTblIdxOrder)}
-
-    oFWTemporaryTable:AddIndex(Eval(bFWTmpTblIdxOrder,@cFWTmpTblIdxOrder),{"C5_NUM","C6_ITEM"})
-
-    //nIndexes:=Len(aFWMBrowseQryIndex)
-    //for nIndex:=1 to nIndexes
-    //    oFWTemporaryTable:AddIndex(Eval(bFWTmpTblIdxOrder,@cFWTmpTblIdxOrder),aFWMBrowseQryIndex[nIndex])
-    //next nIndex
-
+    oFWTemporaryTable:AddIndex("01",{"C5_NUM","C6_ITEM"})
+    oFWTemporaryTable:AddIndex("02",{"C5_CLIENTE","C5_NUM"})
     oFWTemporaryTable:Create()
 
     //Elabora a query dos pedidos
@@ -218,7 +208,7 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
       JOIN SB1990 SB1 ON SB1.D_E_L_E_T_=' ' AND SB1.B1_FILIAL='__B1_FILIAL__' AND SB1.B1_COD=SC6.C6_PRODUTO
       JOIN SF4990 SF4 ON SF4.D_E_L_E_T_=' ' AND SF4.F4_FILIAL='__F4_FILIAL__' AND SF4.F4_CODIGO=SC6.C6_TES
  LEFT JOIN SC9990 SC9 ON SC9.D_E_L_E_T_=' ' AND SC9.C9_FILIAL= '__C9_FILIAL__' AND SC9.C9_PEDIDO=SC6.C6_NUM AND SC9.C9_ITEM=SC6.C6_ITEM
-     WHERE SC5.D_E_L_E_T_=' ' AND SC5.C5_FILIAL='__C5_FILIAL__' AND SC5.C5_XBLFIS IN(__XBLFIS)
+     WHERE SC5.D_E_L_E_T_=' ' AND SC5.C5_FILIAL='__C5_FILIAL__' __XBLFIS
     endContent
     //Efetua a Substituicao das constantes por Valores Dinamicos
     cQuerySelect:=StrTran(cQuerySelect,"cQueryGetFields",cQueryGetFields)
@@ -232,17 +222,8 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
     cQuerySelect:=StrTran(cQuerySelect,"__C9_FILIAL__",FWXFilial("SC9"))
     cQuerySelect:=StrTran(cQuerySelect,"__C5_FILIAL__",FWXFilial("SC5"))
 
-    if (cTipoPedido=="4") //TODOS
-        cINXBLFIS:=""
-        for nTipoPed:=1 to Len(aTiposDePedidos)
-            cINXBLFIS+="'"+Left(aTiposDePedidos[nTipoPed],1)+"'"
-            if (nTipoPed<Len(aTiposDePedidos))
-                cINXBLFIS+=","
-            endif
-        next nTipoPed
-        cINXBLFIS:=StrTran(cINXBLFIS,"4"," ")
-    else //Apenas o Selecionado
-        cINXBLFIS:="'"+cTipoPedido+"'"
+    if (cTipoPedido<>"4") //TODOS
+        cINXBLFIS:="AND SC5.C5_XBLFIS IN('"+cTipoPedido+"')"
     endif
     cQuerySelect:=StrTran(cQuerySelect,"__XBLFIS",cINXBLFIS)
 
@@ -280,34 +261,33 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
 
         oPanelMain:=oFWDialogModal:GetPanelMain()
 
-        oFWMarkBrowse:=FWMarkBrowse():New()
+        oBrowse:=FWMBrowse():New()
 
-        oFWMarkBrowse:SetOwner(oPanelMain)
-        oFWMarkBrowse:SetDescription(cTitulo)
-        oFWMarkBrowse:SetDataTable()
-        oFWMarkBrowse:SetTemporary(.T.)
-        oFWMarkBrowse:SetAlias(cAlias)
+        oBrowse:SetOwner(oPanelMain)
+        oBrowse:SetDescription(cTitulo)
+        oBrowse:SetAlias(cAlias)
 
-        oFWMarkBrowse:AddLegend("C5_XBLFIS=='1'"/*<xCondition>*/,"RED"/*<cColor>*/,"Bloqueados"/*[<cTitle>]*/,"ID_C5_XBLFIS"/*[<cID>]*/,.T./*[<lFilter>]*/)
-        oFWMarkBrowse:AddLegend("C5_XBLFIS=='2'"/*<xCondition>*/,"GREEN"/*<cColor>*/,"Liberados"/*[<cTitle>]*/,"ID_C5_XBLFIS"/*[<cID>]*/,.T./*[<lFilter>]*/)
-        oFWMarkBrowse:AddLegend("C5_XBLFIS=='3'"/*<xCondition>*/,"GRAY"/*<cColor>*/,"Rejeitados"/*[<cTitle>]*/,"ID_C5_XBLFIS"/*[<cID>]*/,.T./*[<lFilter>]*/)
+        oBrowse:AddLegend("C5_XBLFIS=='1'"/*<xCondition>*/,"RED"/*<cColor>*/,"Bloqueados"/*[<cTitle>]*/,/*[<cID>]*/,.T./*[<lFilter>]*/)
+        oBrowse:AddLegend("C5_XBLFIS=='2'"/*<xCondition>*/,"GREEN"/*<cColor>*/,"Liberados"/*[<cTitle>]*/,/*[<cID>]*/,.T./*[<lFilter>]*/)
+        oBrowse:AddLegend("C5_XBLFIS=='3'"/*<xCondition>*/,"GRAY"/*<cColor>*/,"Rejeitados"/*[<cTitle>]*/,/*[<cID>]*/,.T./*[<lFilter>]*/)
+        oBrowse:AddLegend("Empty(C5_XBLFIS)"/*<xCondition>*/,"BLUE"/*<cColor>*/,"Sem Bloqueio"/*[<cTitle>]*/,/*[<cID>]*/,.T./*[<lFilter>]*/)
 
-        oFWMarkBrowse:SetColumns(aFWMBrwColumn)
-        //oFWMarkBrowse:SetSeek(.T.,aFWMBrowseSeek)
-        oFWMarkBrowse:SetUseFilter(.T.)
-        oFWMarkBrowse:SetFieldFilter(aFWMBrowseFilter)
-        oFWMarkBrowse:SetMenuDef("")
+        oBrowse:SetColumns(aFWMBrwColumn)
+        //oBrowse:SetSeek(.T.,aFWMBrowseSeek)
+        //oBrowse:SetUseFilter(.T.)
+        //oBrowse:SetFieldFilter(aFWMBrowseFilter)
+        oBrowse:SetMenuDef("")
 
-        //oFWMarkBrowse:AddButton(cTitle,xAction,uParam1,nOption,nVerify,lNeedFind)
-        oFWMarkBrowse:AddButton("&Liberar",{||TRK0005Lib(cTitulo,cAlias,oFWMarkBrowse)},NIL,2)
-        oFWMarkBrowse:AddButton("&Rejeitar",{||TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)},NIL,2)
-        oFWMarkBrowse:AddButton("&Bloquear",{||TRK0005Blq(cTitulo,cAlias,oFWMarkBrowse)},NIL,2)
-        oFWMarkBrowse:AddButton("&Sair",{||oFWDialogModal:Deactivate()},NIL,2)
+        //oBrowse:AddButton(cTitle,xAction,uParam1,nOption,nVerify,lNeedFind)
+        oBrowse:AddButton("&Liberar",{||TRK0005Lib(cTitulo,cAlias,oBrowse)},NIL,2)
+        oBrowse:AddButton("&Rejeitar",{||TRK0005Rej(cTitulo,cAlias,oBrowse)},NIL,2)
+        oBrowse:AddButton("&Bloquear",{||TRK0005Blq(cTitulo,cAlias,oBrowse)},NIL,2)
+        oBrowse:AddButton("&Sair",{||oFWDialogModal:Deactivate()},NIL,2)
 
         FWMsgRun(;
             NIL,;
             {||;
-                 oFWMarkBrowse:Activate();
+                 oBrowse:Activate();
             },;
             cTitulo,;
             "Ativando o Browse...";
@@ -316,7 +296,7 @@ static function TRK0005Brw(cTipoPedido as character,aTiposDePedidos as array)
         oFWDialogModal:Activate()
 
         FreeObj(@oPanelMain)
-        FreeObj(@oFWMarkBrowse)
+        FreeObj(@oBrowse)
         FreeObj(@oFWDialogModal)
 
     else
@@ -447,7 +427,7 @@ Processa a Liberação
 @author DoThink
 @since 22/07/2025
 /*/
-static function TRK0005Lib(cTitulo,cAlias,oFWMarkBrowse)
+static function TRK0005Lib(cTitulo,cAlias,oBrowse)
 
     local aArea:=FWGetArea()
     local aAreaAlias:=(cAlias)->(FWGetArea())
@@ -477,6 +457,7 @@ static function TRK0005Lib(cTitulo,cAlias,oFWMarkBrowse)
             endif
             (cAlias)->(dbSkip())
         end while
+        oBrowse:Refresh()
     else
         ApMsgInfo("O Pedido não está Bloqueado. Só é possível Liberar Pedidos Bloqueados.",cProcTitle)
     endif
@@ -487,11 +468,7 @@ static function TRK0005Lib(cTitulo,cAlias,oFWMarkBrowse)
     FWRestArea(aArea)
     FWFreeArray(@aArea)
 
-    if (lRet)
-        oFWMarkBrowse:Refresh()
-    endif
-
-return(lRet)
+return
 
 /*/{Protheus.doc} TRK0005Rej
 Processa a Rejeição
@@ -500,7 +477,7 @@ Processa a Rejeição
 @author DoThink
 @since 22/07/2025
 /*/
-static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
+static function TRK0005Rej(cTitulo,cAlias,oBrowse)
 
     local aArea:=FWGetArea()
     local aAreaAlias:=(cAlias)->(FWGetArea())
@@ -508,7 +485,6 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
     local cRejCod as character
     local cRejObs as character
     local cProcTitle:=cTitulo+" :: Rejeição"
-    local lRet:=.F. as logical
     local nRejSiz:=6 as numeric
 
     local oOk as object
@@ -517,14 +493,14 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
     local oCancel as object
     local oCodRej as object
     local oRejObs as object
-    local lContinue:=((cAlias)->C5_XBLFIS=="1")
+    Local lRet := .F.
 
     cRejCod:=Space(Min(GetSX3Cache("X5_CHAVE","X3_TAMANHO"),nRejSiz))
     cRejObs:=Space(50)
 
     //Verifica se o Item Está Bloqueado
 
-    if (lContinue)
+    if ((cAlias)->C5_XBLFIS=="1")
 
         DEFINE MSDIALOG oDlg FROM 0,0 TO 275,450 TITLE cProcTitle PIXEL OF GetWNDDefault()
 
@@ -568,6 +544,7 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
                 (cAlias)->(MsUnLock())
             endif
         endif
+        oBrowse:Refresh()
     else
         ApMsgInfo("O Pedido não está Bloqueado. Só é possível Rejeitar Pedidos Bloqueados.",cProcTitle)
     endif
@@ -585,11 +562,7 @@ static function TRK0005Rej(cTitulo,cAlias,oFWMarkBrowse)
     FWRestArea(aArea)
     FWFreeArray(@aArea)
 
-    if (lRet)
-        oFWMarkBrowse:Refresh()
-    endif
-
-return(lRet)
+return()
 
 /*/{Protheus.doc} CodRejVld
 Valida e Normaliza o Codigo de Rejeição.
@@ -610,7 +583,7 @@ Processa o Bloqueio
 @author DoThink
 @since 22/07/2025
 /*/
-static function TRK0005Blq(cTitulo,cAlias,oFWMarkBrowse)
+static function TRK0005Blq(cTitulo,cAlias,oBrowse)
 
     local aArea:=FWGetArea()
     local aAreaAlias:=(cAlias)->(FWGetArea())
@@ -639,6 +612,7 @@ static function TRK0005Blq(cTitulo,cAlias,oFWMarkBrowse)
             (cAlias)->C5_XBLFIS:=SC5->C5_XBLFIS
             (cAlias)->(MsUnLock())
         endif
+        oBrowse:Refresh()
     else
         ApMsgInfo("O Pedido já se encontra Bloqueado. Só é possível Bloquear Pedidos não Bloqueados.",cProcTitle)
     endif
@@ -649,11 +623,7 @@ static function TRK0005Blq(cTitulo,cAlias,oFWMarkBrowse)
     FWRestArea(aArea)
     FWFreeArray(@aArea)
 
-    if (lRet)
-        oFWMarkBrowse:Refresh()
-    endif
-
-return(lRet)
+return()
 
 /*/{Protheus.doc} u_TRK005Fld
 Retorna informação Customizada para o Campo
