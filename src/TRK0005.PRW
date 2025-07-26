@@ -2,6 +2,7 @@
 #include"dbstruct.ch"
 
 static __cTitulo :="Validação Fiscal"
+Static aTiposDePedidos := { "1=Bloqueados", "2=Liberados", "3=Rejeitados", "4=Todos" }
 
 /*/{Protheus.doc} U_TRK0005
 Parametros para Filtro do Browse
@@ -13,13 +14,11 @@ Parametros para Filtro do Browse
 function U_TRK0005() as logical
 
     local aParamBox:=Array(0) as array
-    local aParamRet:=Array(0) as array
-    local aTiposDePedidos := { "1=Bloqueados", "2=Liberados", "3=Rejeitados", "4=Todos" }
 
     SaveInter()
         
         aAdd(aParamBox,{2,"Listar Pedidos",4,aTiposDePedidos,100,"",.T.})
-        if ParamBox(@aParamBox,"Selecione os Parametros",@aParamRet,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
+        if ParamBox(@aParamBox,"Selecione os Parametros",,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
             If ValType(mv_par01) == "N"
                 mv_par01 := Str(mv_par01 + 1, 1)
             EndIF
@@ -29,8 +28,6 @@ function U_TRK0005() as logical
     RestInter()
 
     FWFreeArray(@aParamBox)
-    FWFreeArray(@aParamRet)
-    FWFreeArray(@aTiposDePedidos)
 
 return()
 
@@ -68,14 +65,10 @@ static function TRK0005Brw(cTipoPedido as character)
     local nField as numeric
     local nFields as numeric
 
-    local nTipoPed as numeric
-
     local oPanelMain as object
     local oBrowse as object
     local oFWDialogModal as object
     local oFWTemporaryTable as object
-
-    private __aTiposDePedidos:=aTiposDePedidos
 
     /* Define os Campos que irao aparecer no Browse
         aCustomFields[n][1]=>Nome do Campo
@@ -173,7 +166,7 @@ static function TRK0005Brw(cTipoPedido as character)
         aAdd(aFWMBrwColumn,FWBrwColumn():New())
 
         if (aCustomFields[nField][1]=="C5_XBLFIS")
-            aFWMBrwColumn[nField]:SetData(&("{|oSelf|u_TRK005Fld('"+aCustomFields[nField][1]+"',"+aCustomFields[nField][1]+",__aTiposDePedidos)}"))
+            aFWMBrwColumn[nField]:SetData(&("{|oSelf|u_TRK005Fld('"+aCustomFields[nField][1]+"',"+aCustomFields[nField][1]+")}"))
         else
             aFWMBrwColumn[nField]:SetData(&("{|oSelf|"+aCustomFields[nField][1]+"}"))
         endif
@@ -632,13 +625,13 @@ Retorna informação Customizada para o Campo
 @author DoThink
 @since 22/07/2025
 /*/
-function u_TRK005Fld(cField as character,xValue,xAscan as variant)
+function u_TRK005Fld(cField as character,xValue)
     local xRet as variable
     local nAT as numeric
     if (cField=="C5_XBLFIS")
-        nAT:=aScan(xAscan,{|x|Left(x,1)==xValue})
+        nAT:=aScan(aTiposDePedidos,{|x|Left(x,1)==xValue})
         if (nAT>0)
-            xRet:=xAscan[nAT]
+            xRet:=aTiposDePedidos[nAT]
         endif
     endif
 return(xRet)
