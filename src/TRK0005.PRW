@@ -20,7 +20,7 @@ function U_TRK0005() as logical
         aAdd(aParamBox,{2,"Listar Pedidos",4,aTiposDePedidos,100,"",.T.})
         if ParamBox(@aParamBox,"Selecione os Parametros",,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
             If ValType(mv_par01) == "N"
-                mv_par01 := Str(mv_par01 + 1, 1)
+                mv_par01 := Str(mv_par01, 1)
             EndIF
             TRK0005Brw(mv_par01)
         endif
@@ -86,6 +86,7 @@ static function TRK0005Brw(cTipoPedido as character)
         ,{"C6_PRODUTO",TamSX3("C6_PRODUTO"),GetSX3Cache("C6_PRODUTO","X3_TITULO"),GetSX3Cache("C6_PRODUTO","X3_PICTURE"),"SC6.C6_PRODUTO"};
         ,{"B1_DESC",TamSX3("B1_DESC"),GetSX3Cache("B1_DESC","X3_TITULO"),GetSX3Cache("B1_DESC","X3_PICTURE"),"SB1.B1_DESC"};
         ,{"C9_DATENT",TamSX3("C9_DATENT"),GetSX3Cache("C9_DATENT","X3_TITULO"),GetSX3Cache("C9_DATENT","X3_PICTURE"),"COALESCE(SC9.C9_DATENT,SC6.C6_ENTREG, ' ') AS C9_DATENT"};
+        ,{"B1_POSIPI",TamSX3("B1_POSIPI"),GetSX3Cache("B1_POSIPI","X3_TITULO"),GetSX3Cache("B1_POSIPI","X3_PICTURE"),"SB1.B1_POSIPI"};
         ,{"B1_ORIGEM",TamSX3("B1_ORIGEM"),GetSX3Cache("B1_ORIGEM","X3_TITULO"),GetSX3Cache("B1_ORIGEM","X3_PICTURE"),"SB1.B1_ORIGEM"};
         ,{"FT_BASEICM",TamSX3("FT_BASEICM"),GetSX3Cache("FT_BASEICM","X3_TITULO"),GetSX3Cache("FT_BASEICM","X3_PICTURE"),"0 AS FT_BASEICM"};
         ,{"FT_VALICM",TamSX3("FT_VALICM"),GetSX3Cache("FT_VALICM","X3_TITULO"),GetSX3Cache("FT_VALICM","X3_PICTURE"),"0 AS FT_VALICM"};
@@ -428,28 +429,23 @@ static function TRK0005Lib(cTitulo,cAlias,oBrowse)
 
     //Verifica se o Item Está Bloqueado
     if ((cAlias)->C5_XBLFIS=="1")
-
         //Processa a Liberação
-        (cAlias)->(dbGoTop())
-        while ((cAlias)->(!eof()))
-            SC5->(MsGoTo((cAlias)->SC5RECNO))
-            if (SC5->C5_XBLFIS!="2")
-                if (SC5->(RecLock("SC5",.F.)))
-                    SC5->C5_XBLFIS:="2" //Liberado
-                    //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
-                    if (SC5->(FieldPos("C5_MSEXP"))>0)
-                        SC5->C5_MSEXP:=DToS(dDataBase)
-                    endif
-                    SC5->(MsUnLock())
+        SC5->(MsGoTo((cAlias)->SC5RECNO))
+        if (SC5->C5_XBLFIS!="2")
+            if (SC5->(RecLock("SC5",.F.)))
+                SC5->C5_XBLFIS:="2" //Liberado
+                //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
+                if (SC5->(FieldPos("C5_MSEXP"))>0)
+                    SC5->C5_MSEXP:=DToS(dDataBase)
                 endif
+                SC5->(MsUnLock())
             endif
-            //Atualiza, também, no alias temporário para atualização do status
-            if ((cAlias)->(RecLock(cAlias,.F.)))
-                (cAlias)->C5_XBLFIS:=SC5->C5_XBLFIS
-                (cAlias)->(MsUnLock())
-            endif
-            (cAlias)->(dbSkip())
-        end while
+        endif
+        //Atualiza, também, no alias temporário para atualização do status
+        if ((cAlias)->(RecLock(cAlias,.F.)))
+            (cAlias)->C5_XBLFIS:=SC5->C5_XBLFIS
+            (cAlias)->(MsUnLock())
+        endif
         oBrowse:Refresh()
     else
         ApMsgInfo("O Pedido não está Bloqueado. Só é possível Liberar Pedidos Bloqueados.",cProcTitle)
