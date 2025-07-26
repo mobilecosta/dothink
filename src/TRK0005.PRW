@@ -15,6 +15,12 @@ function U_TRK0005() as logical
 
     local aParamBox:=Array(0) as array
 
+    if SC5->(FieldPos("C5_MSEXP")) == 0 .Or. SC5->(FieldPos("C5_XBLFIS")) == 0
+        ApMsgInfo("Os campos C5_MSEXP e C5_XBLFIS são obrigatórios para funcionamento dessa rotina !")
+
+        Return
+    EndIf
+
     SaveInter()
         
         aAdd(aParamBox,{2,"Listar Pedidos",4,aTiposDePedidos,100,"",.T.})
@@ -164,6 +170,7 @@ static function TRK0005Brw(cTipoPedido as character)
     oFWTemporaryTable:AddIndex("02",{"C5_CLIENTE","C5_NUM"})
 
 	Aadd( aFWMBrowseSeek, { "Pedido + Item", RetFldIdx("C5_NUM+C6_ITEM"), 1 } )
+	Aadd( aFWMBrowseSeek, { "Cliente + Pedido", RetFldIdx("C5_CLIENTE+C5_NUM"), 1 } )
 
     oFWTemporaryTable:Create()
 
@@ -460,9 +467,7 @@ static function TRK0005Lib(cTitulo,cAlias,oBrowse)
             if (SC5->(RecLock("SC5",.F.)))
                 SC5->C5_XBLFIS:="2" //Liberado
                 //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
-                if (SC5->(FieldPos("C5_MSEXP"))>0)
-                    SC5->C5_MSEXP:=DToS(dDataBase)
-                endif
+                SC5->C5_MSEXP:=DToS(dDataBase)
                 SC5->(MsUnLock())
             endif
         endif
@@ -546,9 +551,7 @@ static function TRK0005Rej(cTitulo,cAlias,oBrowse)
                     SC5->C5_XCMTBLF:=cRejCod
                     SC5->C5_XOMTBLF:=cRejObs
                     //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
-                    if (SC5->(FieldPos("C5_MSEXP"))>0)
-                        SC5->C5_MSEXP:=DToS(dDataBase)
-                    endif
+                    SC5->C5_MSEXP:=DToS(dDataBase)
                     SC5->(MsUnLock())
                 endif
             endif
@@ -614,10 +617,7 @@ static function TRK0005Blq(cTitulo,cAlias,oBrowse)
                 //Limpa os Campos de Rejeição
                 SC5->C5_XCMTBLF:=""
                 SC5->C5_XOMTBLF:=""
-                //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
-                if (SC5->(FieldPos("C5_MSEXP"))>0)
-                    SC5->C5_MSEXP:=DToS(dDataBase)
-                endif
+                SC5->C5_MSEXP:=DToS(dDataBase)
                 SC5->(MsUnLock())
             endif
         endif
