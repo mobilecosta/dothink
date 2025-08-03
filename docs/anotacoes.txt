@@ -1,3 +1,6 @@
 22/07 - 09:00 a 09:15
 1) Finalização da tabela "Z0" e envio de pacote
 2) Criação da issue: https://github.com/mobilecosta/dothink/issues/1
+
+03/08 - 12:15 a 12:30
+1) Leitura e entendimento da PLs (https://github.com/mobilecosta/dothink/issues/7)
