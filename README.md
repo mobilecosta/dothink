@@ -4,6 +4,7 @@ Dev 1 - Reuniões: https://drive.google.com/drive/folders/1mmStHw8QAQ-YA8eJ4Vgxz
 
 Dev 2 - Reuniões https://drive.google.com/drive/folders/1Hy3JUD_6rxyej2y1rJQjBsfMsYBgvhiQ
 
+TSS - http://85.209.92.195:61680/
 
 dbmonitor - 61021 - admin - projeto
 
@@ -18,4 +19,5 @@ Ambientes: DHDEV01COMP0201 / DHDEV01COMP0202 / DHDEV01COMP0203 / DHDEV01COMP0204
 http://85.209.92.195:61303/ - TCP: 61013 - Telnet: 61093 - DHDEV01COMP0301
 
 Ambientes: DHDEV01COMP0301 / DHDEV01COMP0302 / DHDEV01COMP0303 / DHDEV01COMP0304
+
 
