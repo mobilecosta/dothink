@@ -4,3 +4,11 @@
 
 03/08 - 12:15 a 12:30
 1) Leitura e entendimento da PLs (https://github.com/mobilecosta/dothink/issues/7)
+
+15:15 a 15:30
+1) Alinhamento de entendimento sobre a necessidade das demandas. Criação das issues
+   a) https://github.com/mobilecosta/dothink/issues/8
+   b) https://github.com/mobilecosta/dothink/issues/9
+   d) https://github.com/mobilecosta/dothink/issues/10
+
+Query Z09 X SF2
