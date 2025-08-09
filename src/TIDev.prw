@@ -1640,7 +1640,7 @@ Static Function MyNextAlias()
 
     __cSeqTmp := Soma1(__cSeqTmp)
 
-Return  "TI" + Strzero(ThreadId(), 6) + __cSeqTmp
+Return  "TI001" + __cSeqTmp     // Erro causado por ThreadId() - Strzero(ThreadId(), 6) 
 
 Static Function Query2Tmp(cSource, cTarget, n)
     Local nX
@@ -2567,7 +2567,8 @@ Static Function DicBrowse(cAliasDic, oP2, np, oIndice, oMsg, lBut, lReorg)
     aStruct  := (cAliasTst)->(dbStruct())
 
     __aDicBrw[np] := MsBrGetDBase():New(1, 1, __DlgWidth(oP2)-1, __DlgHeight(oP2) - 1,,,, oP2,,,,,,,,,,,, .F., cAliasTst, .T.,, .F.,,,)
-    //__aDicBrw[np] := BrGetDDB():New(1, 1, __DlgWidth(oP2)-1, __DlgHeight(oP2) - 1,,,, oP2,,,,,,,,,,,, .F., cAliasTst, .T.,, .F.,,,)
+
+    // __aDicBrw[np] := BrGetDDB():New(1, 1, __DlgWidth(oP2)-1, __DlgHeight(oP2) - 1,,,, oP2,,,,,,,,,,,, .F., cAliasTst, .T.,, .F.,,,)
 
     For nX:=1 To (cAliasTst)->(FCount())
         cTipo  := aStruct[nx, 2]
