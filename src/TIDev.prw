@@ -9105,6 +9105,8 @@ Static Function IncLog(cTipo, cTabela, cLog)
     Local cUserLocal:= ""
     Local cMaqLocal := ""
     
+    Return .T.
+
     TmpOpen("TIDEVLOG")
 
     RetUser(@cUserLocal, @cMaqLocal)
