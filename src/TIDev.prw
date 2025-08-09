@@ -5521,7 +5521,11 @@ Static Function SincSX3(cAliasDic,  np)
     EndIf
 
 
-    cMsg := StartJob("u_TIDEVX31",GetEnvServer(),.T., SM0->M0_CODIGO, Alltrim(SM0->M0_CODFIL), cAliasDic)
+    If .T.
+        cMsg := U_TIDEVX31(SM0->M0_CODIGO, Alltrim(SM0->M0_CODFIL), cAliasDic)
+    Else
+        cMsg := StartJob("u_TIDEVX31",GetEnvServer(),.T., SM0->M0_CODIGO, Alltrim(SM0->M0_CODFIL), cAliasDic)
+    EndIf
 
     AutoGrLog("")
     FErase(NomeAutoLog())
@@ -5540,8 +5544,10 @@ Return
 User Function TIDEVX31(cEmp, cFil, cAlias)
     Local cMsg:= ""
 
-    RpcSetType(3)
-    RpcSetEnv(cEmp, cFil,,,,,)
+    If .F.
+        RpcSetType(3)
+        RpcSetEnv(cEmp, cFil,,,,,)
+    EndIf
 
    TIDesMon( "Atualizando tabela:" + cAlias +  " Empresa:" + cEmp)
 
