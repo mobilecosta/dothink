@@ -1521,7 +1521,7 @@ Static Function PQryRun(cQuery, oPSR, np, oMsg)
             __aQryBrw[np]:lJustific	 := .T.
             __aQryBrw[np]:nColPos	 := 1
             __aQryBrw[np]:Cargo		 := {|| __NullEditcoll()}
-            __aQryBrw[np]:bSkip		 := &("{|N| Query2Tmp('"+cAliasTst+"', '"+cAliasExqr+"', N), "+cAliasExqr+"->(_DBSKIPPER(N))}")
+            //__aQryBrw[np]:bSkip		 := &("{|N| Query2Tmp('"+cAliasTst+"', '"+cAliasExqr+"', N), "+cAliasExqr+"->(_DBSKIPPER(N))}")
             __aQryBrw[np]:Align      := CONTROL_ALIGN_ALLCLIENT
             __aQryBrw[np]:bLDblClick := {|| AltReg(__aQryBrw[np], cAliasExqr, .t.) }
             __aQryBrw[np]:bChange    := {|| AtuQry(__aQryBrw[np]) }
