@@ -1640,7 +1640,7 @@ Static Function MyNextAlias()
 
     __cSeqTmp := Soma1(__cSeqTmp)
 
-Return  "TI001" + __cSeqTmp     // Erro causado por ThreadId() - Strzero(ThreadId(), 6) 
+Return  "TI" + cValToChar(ThreadId()) + __cSeqTmp     // Erro causado por ThreadId() - Strzero(ThreadId(), 6) 
 
 Static Function Query2Tmp(cSource, cTarget, n)
     Local nX
@@ -5525,6 +5525,10 @@ Static Function SincSX3(cAliasDic,  np)
 
     AutoGrLog("")
     FErase(NomeAutoLog())
+    If cMsg == Nil
+        cMsg := ""
+    EndIF
+
     AutoGrLog(cMsg)
     IncLog("TABELA", cTabela, cMsg)
     MostraLog()
