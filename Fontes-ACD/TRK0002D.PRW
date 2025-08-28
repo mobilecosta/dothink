@@ -1,8 +1,8 @@
 #include "totvs.ch"
 #include 'FwMVCDef.ch'
 
-static cTitulo := "Registrar Atraso"
-Static aFields := { "Z09_MOTIVO", "Z09_DCMOTV", "Z09_DSMOTV", "Z09_DTATRS", "Z09_HRATRS", "Z09_IDTRAC" }
+static cTitulo := "Ação CS (Customer Services)"
+Static aFields := { "Z09_ACAOCS", "Z09_OBSCS", "Z09_NUMPV", "Z09_ITEMPV", "Z09_IDTRAC", "Z09_RESTR" }
 
 Static Function ViewDef()
     Local oModel  := Nil
@@ -15,14 +15,10 @@ Static Function ViewDef()
     cFields := ""
     For nFields := 1 To Len(aFields)
         cFields += aFields[nFields] + "|"
-        If aFields[nFields] == "Z09_MOTIVO" .Or. aFields[nFields] == "Z09_DCMOTV" .Or. aFields[nFields] == "Z09_DSMOTV"
-            Aadd(aPos, 1)
-        Else
-            Aadd(aPos, -1)
-        EndIf
     Next
+    aPos := { Z09->(FieldPos("Z09_ACAOCS")), Z09->(FieldPos("Z09_OBSCS")), 0, 0, 0, 0 }
 
-    U_TRK02FL(AClone(aFields), AClone(aPos), 'TRK0002A', cTitulo)
+    U_TRK02FL(AClone(aFields), AClone(aPos), 'TRK0002D', cTitulo)
 
     oModel := FWLoadModel("TRK0002")
     oStZ09 := FWFormStruct(2, "Z09", { |cCampo| AllTrim(cCampo) $ cFields})
@@ -32,8 +28,8 @@ Static Function ViewDef()
     oView:SetModel(oModel)
 
 	oStZ09:SetProperty("Z09_IDTRAC",MODEL_FIELD_NOUPD,FwBuildFeature(STRUCT_FEATURE_WHEN,".F."))
-	//oStZ09:SetProperty("Z09_DTATRS",MODEL_FIELD_NOUPD,FwBuildFeature(STRUCT_FEATURE_WHEN,".F."))
-    //oStZ09:SetProperty("Z09_HRATRS",MODEL_FIELD_NOUPD,FwBuildFeature(STRUCT_FEATURE_WHEN,".F."))
+	oStZ09:SetProperty("Z09_NUMPV",MODEL_FIELD_NOUPD,FwBuildFeature(STRUCT_FEATURE_WHEN,".F."))
+    oStZ09:SetProperty("Z09_ITEMPV",MODEL_FIELD_NOUPD,FwBuildFeature(STRUCT_FEATURE_WHEN,".F."))
 
     //Atribuindo formulários para interface
     oView:AddField("VIEW_Z09", oStZ09, "FORMZ09")

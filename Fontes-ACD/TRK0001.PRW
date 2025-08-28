@@ -148,9 +148,9 @@ Static Function MotaCockpit(nOpc as numeric)
 
     If nOpc == 0 .Or. nOpc == 1
         //-- Validacao Fisica
-        aadd(aButton, {AddBotao("PENDENTE", "Vld.Física"  , {|| u_TRK0009A()}, oMenu, cClrMenu, cClrText)})
+        aadd(aButton, {AddBotao("PENDENTE", "Vld.Física"  , {||EndFilBrw("Z09"), u_TRK0009A()}, oMenu, cClrMenu, cClrText)})
         //-- Ordem de Separação
-        aadd(aButton, {AddBotao("EMPILHADEIRA", "Ord.Separação"  , {|| u_TRK0009B()}, oMenu, cClrMenu, cClrText)})        
+        aadd(aButton, {AddBotao("EMPILHADEIRA", "Ord.Separação"  , {|| EndFilBrw("Z09"), u_TRK0009B()}, oMenu, cClrMenu, cClrText)})        
 
     EndIf
 
@@ -248,14 +248,19 @@ Static Function MotaCockpit(nOpc as numeric)
         oBrowseUp:SetCacheView (.F.)
         //oBrowseUp:SetOnlyFields({'Z09_IDTRAC', 'Z09_BU'})
         If cAliasTrk == "Z09"
-            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '1'", "BR_PRETO"         , "Em Liberação"            )
-            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '2'", "br_branco.bmp"    , "Em Validação Fiscal"     )
-            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '3'", "br_amarelo.bmp"   , "Em Validação Física"     )
-            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '4'", "br_laranja.bmp"   , "Em Agendamento"          )
-            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '5'", "br_marron.bmp"    , "Em Separação"            )
-            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '6'", "br_azul.bmp"      , "Em Faturamento"          )
-            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '7'", "br_verde.bmp"     , "Em Embarque"             )
-            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '8'", "GREEN"            , "Pedido Entregue"         ) 
+            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '1' "                      , "BR_PRETO"            , "Em Liberação"            , "1")
+            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '2' "                      , "br_branco.bmp"       , "Em Validação Fiscal"     , "1")
+            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '3' "                      , "br_amarelo.bmp"      , "Em Validação Física"     , "1")
+            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '4' "                      , "br_laranja.bmp"      , "Em Agendamento"          , "1")
+            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '5' "                      , "br_marron.bmp"       , "Em Separação"            , "1")
+            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '6' "                      , "br_azul.bmp"         , "Em Faturamento"          , "1")
+            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '7' "                      , "br_verde.bmp"        , "Em Embarque"             , "1")
+            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '8' "                      , "GREEN"               , "Pedido Entregue"         , "1") 
+            oBrowseUp:AddLegend( "Z09->Z09_ACAOCS == '2' "                      , "CLIENTE"             , "Pendencia CS"            , "2")
+            oBrowseUp:AddLegend( "Z09->Z09_SLA == ' ' .or. Z09->Z09_SLA == '1' ", "sps_updated"         , "Dentro do Prazo"         , "2")
+            oBrowseUp:AddLegend( "Z09->Z09_SLA == '2' "                         , "sps_outdated"        , "Próximo Vencimento"      , "2")
+            oBrowseUp:AddLegend( "Z09->Z09_SLA == '3' "                         , "sps_not_installed"   , "Fora do Prazo"           , "2")
+            oBrowseUp:AddLegend( "Z09->Z09_SLA == '4' "                         , "sps_not_compatible"  , "SLA Pausado"             , "2")
         EndIf
 
         oBrowseUp:Activate()
@@ -328,10 +333,10 @@ Static Function GetDbCards(nOpc)
 
     If nOpc == 0 .or. nOpc == 2 .or. nOpc == 3
         //--- Recebimento
-        Aadd(aRet, {"RECEBIMENTO"   , "trk-receb-32x32" , {"Em pré-nota", "Em Check List", "Em Conferência"}, {0, 0, 0}, {"_nPRE", "_nCHK", "_nCONF"}})
+        //Aadd(aRet, {"RECEBIMENTO"   , "trk-receb-32x32" , {"Em pré-nota", "Em Check List", "Em Conferência"}, {0, 0, 0}, {"_nPRE", "_nCHK", "_nCONF"}})
         
         //--- Qualidade
-        Aadd(aRet, {"QUALIDADE"     , "trk-qa-32x32"    , {"Em Análise"}, {0}, {"_nCQ"}})        
+        //Aadd(aRet, {"QUALIDADE"     , "trk-qa-32x32"    , {"Em Análise"}, {0}, {"_nCQ"}})        
     EndIf
 
     If nOpc == 0 .or. nOpc == 1 .or. nOpc == 4 .or. nOpc == 5
@@ -349,6 +354,12 @@ Static Function GetDbCards(nOpc)
         Aadd(aRet, {"CS"            , "trk-cs-32x32"    , {"Validação CS"}, {0}, {"_nCS"}})
     EndIf
 
+    If nOpc == 0 .or. nOpc == 1 .or. nOpc == 4 .or. nOpc == 5
+        //--- SLA EXPEDICÃO
+        Aadd(aRet, {"SLA EXPEDIÇÃO" , "trk-exped-32x32" , {"Dentro do Prazo", "Próximo Vencimento","Fora do Prazo", "SLA Pausado"}, {0, 0, 0, 0}, {"_nSLA_1", "_nSLA_2","_nSLA_3","_nSLA_4"}})
+    EndIf
+
+
 return aRet
 
 
@@ -356,10 +367,10 @@ return aRet
 Static Function SetVldCards()
     local nI, nJ
     local cVar  := ""
+    local cItem := ""
     local nCount:= 0
     local aArea := GetArea()
     local cQryZ09 := "SELECT COUNT(1) AS OK FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.D_E_L_E_T_= ' ' "
-
 
     For nI:=1 To Len(aCards)
         For nJ:=1 To Len(aCards[nI, 4])
@@ -380,7 +391,14 @@ Static Function SetVldCards()
                 CASE cVar == "_nEMBARQ"
                     nCount := MpSysExecScalar(cQryZ09 + " AND Z09.Z09_STATUS = '7' ", "OK")
                 CASE cVar == "_nCS"
-                    nCount := 0 //-- TEM QUE IMPLEMENTAR
+                    nCount := MpSysExecScalar(cQryZ09 + " AND Z09.Z09_ACAOCS = '2' ", "OK")
+                CASE "_nSLA_" $ cVar
+                    cItem := Right(cVar,1)
+                    If cItem == "1"
+                        nCount := MpSysExecScalar(cQryZ09 + " AND Z09.Z09_SLA IN(' ', '1') ", "OK")
+                    Else
+                        nCount := MpSysExecScalar(cQryZ09 + " AND Z09.Z09_SLA = '"+cItem+"' ", "OK")
+                    EndIf
             END CASE
 
             aCards[nI,5,nJ]:cCaption := cValtoChar(nCount)
@@ -399,24 +417,29 @@ Static Function TrataStatus()
     local cStZ09    := ""       as character
     local cSt4Sales := ""       as character
     local aParamBox := Array(0) as array
+    local aStaZ09   := Array(0) as array
+    local aStaSC5   := Array(0) as array
     local aArea     := {}       as array
     local aAZ09     := {}       as array
     local lContinua := .T.      as logical
-    local nOpc      := 0        as numeric
 
-    nOpc := Aviso( "Atualização de Status", 'Deseja realizar qual atualização Manual?', { "Status 4Sales", "Expedição", "Ambos", "Não - Todos" }, ;
-                    3, "Atualização Manual",, 'ROTINAAUTO', .F., 5000 )
-    
-    If nOpc == 0 .Or. nOpc == 4
+    If !MsgYesNo("Confirma a alteração do Status?") 
         Return
     EndIf
 
     aArea   := GetArea()
     aAZ09   := Z09->( GetArea() )
 
+    If Z09->( Eof() )
+        FWAlertInfo("Não existem registros selecionados!", "Registro Não Selecionado")
+        Return
+    EndIf
+
     cPedido := Z09->Z09_NUMPV
     cNota   := Z09->Z09_NF
     cStZ09  := Z09->Z09_STATUS
+    aStaZ09 := X3CboxToArray("Z09_STATUS")[1]
+    aStaSC5 := X3CboxToArray("C5_X4SSTAT")[1]
 
     If Empty( cPedido )
       lContinua := .F.  
@@ -428,27 +451,31 @@ Static Function TrataStatus()
             FWAlertInfo("O pedido [" + cPedido + "] não foi localizado. Favor verificar!", "Pedido NÃO Localizado")
             lContinua := .F.
         Else
-            cSt4Sales := SX5->C5_X4SSTAT
+            cSt4Sales := SC5->C5_X4SSTAT
         EndIf
 
     EndIf
-    
-    If lContinua
-    
-
-    EndIf
 
     If lContinua
-
 
         SaveInter()
             
-            aAdd(aParamBox,{2,"Satus",4,aTiposDePedidos,100,"",.T.})
-            if ParamBox(@aParamBox,"Selecione os Parametros",,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
-                If ValType(mv_par01) == "N"
-                    mv_par01 := Str(mv_par01, 1)
-                EndIF
-            endif
+        aAdd(aParamBox,{2, "Status Tracking"        , cStZ09    , aStaZ09, 100, "", .T.})
+        aAdd(aParamBox,{2, "Status Pedido Vendas"   , cSt4Sales , aStaSC5, 100, ".F.", .F.})
+        If ParamBox(@aParamBox,"Manutenção Status",,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
+            If ValType(mv_par01) == "N"
+                mv_par01 := Str(mv_par01, 1)
+            Endif
+
+            If ValType(mv_par02) == "N"
+                mv_par02 := Str(mv_par02, 1)
+            Endif
+            
+            mv_par01 := Substr(mv_par01, 1,1)
+            mv_par02 := Substr(mv_par02, 1,1)
+
+            GrvStatus(mv_par01, mv_par02, cPedido)
+        Endif
 
         RestInter()
 
@@ -461,4 +488,53 @@ Static Function TrataStatus()
     FWFreeArray(@aAZ09)
     FWFreeArray(@aArea)
 
+Return
+
+Static Function GrvStatus(cStaZ09, cStaSC5, cPedido)
+    local cChave  := Z09->(Z09_FILIAL + Z09_NUMPV)
+    local aTrackS := {}
+    local nZ09Rec := Z09->( Recno() )
+
+    DO CASE
+        CASE cStaZ09 == "1" //1=Em Liberação;
+            cStaSC5 := " "
+        CASE cStaZ09 == "2" //2=Em Validação Fiscal;
+            cStaSC5 := "9"  //9=Em Validação Fiscal;
+        CASE cStaZ09 == "3" //3=Em Validação Física;
+            cStaSC5 := "A"  //A=Validação Física;
+        CASE cStaZ09 == "4" //4=Em Agendamento;
+            cStaSC5 := "8"  //8=Em Agendamento;
+        CASE cStaZ09 == "5" //5=Em Separação;
+            cStaSC5 := "1"  //1=Em Separação;
+        CASE cStaZ09 == "6" //6=Em Faturamento;
+            cStaSC5 := "2"  //2=Em Faturamento;
+        CASE cStaZ09 == "7" //7=Em Embarque;
+            cStaSC5 := "B"  //B=Em Embarque;
+        CASE cStaZ09 == "8" //8=Pedido Entregue;
+            cStaSC5 := "5"  //5=Pedido Entregue;
+    END CASE
+
+
+    RecLock("SC5", .F.)
+    SC5->C5_X4SSTAT := cStaSC5
+    SC5->C5_MSEXP   :=   ""
+    SC5->( MsUnLock() )
+
+    DbSelectAre("Z09")
+    Z09->( DbSetOrder(3) )
+    Z09->( DbSeek(Z09_FILIAL + Z09_NUMPV) )
+    While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
+   
+        aTrackS := Array( Len( Z09->( DbStruct() ) ) )
+
+        aTrackS[FieldPos("Z09_FILIAL")]  :=    Z09->Z09_FILIAL
+        aTrackS[FieldPos("Z09_NUMPV") ]  :=    Z09->Z09_NUMPV
+        aTrackS[FieldPos("Z09_STATUS")]  :=    cStaZ09
+
+        u_TRK006S(aTrackS,"Ajuste Manual de Status")
+
+        Z09->( DbSkip() )
+    End
+
+    Z09->( DbGoto(nZ09Rec) )
 Return

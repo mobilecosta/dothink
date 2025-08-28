@@ -1,8 +1,8 @@
 #include"totvs.ch"
 #include"dbstruct.ch"
 
-static __cTitulo :="Validação Fiscal"
-Static aTiposDePedidos := { "1=Bloqueados", "2=Liberados", "3=Rejeitados", "4=Todos" }
+static __cTitulo       := "Validação Fiscal"
+Static aTiposDePedidos := {"1=Bloqueados", "2=Liberados", "3=Rejeitados", "4=Todos"}
 
 /*/{Protheus.doc} TRK0005
 Parametros para Filtro do Browse
@@ -19,15 +19,15 @@ user function TRK0005() as logical
         ApMsgInfo("Os campos C5_MSEXP e C5_XBLFIS são obrigatórios para funcionamento dessa rotina !")
 
         Return
-    EndIf
+    endif
 
     SaveInter()
         
         aAdd(aParamBox,{2,"Listar Pedidos",4,aTiposDePedidos,100,"",.T.})
         if ParamBox(@aParamBox,"Selecione os Parametros",,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
-            If ValType(mv_par01) == "N"
+            if ValType(mv_par01) == "N"
                 mv_par01 := Str(mv_par01, 1)
-            EndIF
+            endif
             TRK0005Brw(mv_par01)
         endif
 
@@ -46,34 +46,34 @@ Carrega o Browse conforme Filtro inicial
 /*/
 static function TRK0005Brw(cTipoPedido as character)
 
-    local aDbStruct:=Array(0) as array
-    local aCustomFields as array
-    local aFWMBrwColumn:=Array(0) as array
-    local aFWMBrowseQryIndex:=Array(0) as array
-    local aFWGetDialogSizeCoors as array
+    local aDbStruct          := Array(0)  as array
+    local aCustomFields                   as array
+    local aFWMBrwColumn      := Array(0)  as array
+    local aFWMBrowseQryIndex := Array(0)  as array
+    local aFWGetDialogSizeCoors           as array
 
-    local cAlias as character
-    local cTitulo:=__cTitulo as character
-    local cINXBLFIS as character
+    local cAlias                          as character
+    local cTitulo            := __cTitulo as character
+    local cINXBLFIS                       as character
 
-    local cQuerySelect as character
-    local cQueryInsert as character
-    local cQueryPutFields:="" as character
-    local cQueryGetFields:="" as character
-    local cQueryApto    := "" as character
+    local cQuerySelect                    as character
+    local cQueryInsert                    as character
+    local cQueryPutFields    := ""        as character
+    local cQueryGetFields    := ""        as character
+    local cQueryApto         := ""        as character
 
-    local cTCSQLError as character
-    local cRealTableName as character
+    local cTCSQLError                     as character
+    local cRealTableName                  as character
 
-    local lQueryInsert as logical
+    local lQueryInsert                    as logical
 
-    local nField as numeric
-    local nFields as numeric
+    local nField                          as numeric
+    local nFields                         as numeric
 
-    local oPanelMain as object
-    local oBrowse as object
-    local oFWDialogModal as object
-    local oFWTemporaryTable as object
+    local oPanelMain                      as object
+    local oBrowse                         as object
+    local oFWDialogModal                  as object
+    local oFWTemporaryTable               as object
 
     /* Define os Campos que irao aparecer no Browse
         aCustomFields[n][1]=>Nome do Campo
@@ -83,39 +83,46 @@ static function TRK0005Brw(cTipoPedido as character)
         aCustomFields[n][5]=>Expressao SQL do Campo
     */
     aCustomFields:={;
-         {"C5_XBLFIS",TamSX3("C5_XBLFIS"),GetSX3Cache("C5_XBLFIS","X3_TITULO"),GetSX3Cache("C5_XBLFIS","X3_PICTURE"),"C5_XBLFIS"};
-        ,{"C5_NUM",TamSX3("C5_NUM"),GetSX3Cache("C5_NUM","X3_TITULO"),GetSX3Cache("C5_NUM","X3_PICTURE"),"SC5.C5_NUM"};
-        ,{"C6_ITEM",TamSX3("C6_ITEM"),GetSX3Cache("C6_ITEM","X3_TITULO"),GetSX3Cache("C6_ITEM","X3_PICTURE"),"SC6.C6_ITEM"};
-        ,{"C5_CLIENTE",TamSX3("C5_CLIENTE"),GetSX3Cache("C5_CLIENTE","X3_TITULO"),GetSX3Cache("C5_CLIENTE","X3_PICTURE"),"SC5.C5_CLIENTE"};
-        ,{"C5_LOJACLI",TamSX3("C5_LOJACLI"),GetSX3Cache("C5_LOJACLI","X3_TITULO"),GetSX3Cache("C5_LOJACLI","X3_PICTURE"),"SC5.C5_LOJACLI"};
-        ,{"A1_NOME",TamSX3("A1_NOME"),GetSX3Cache("A1_NOME","X3_TITULO"),GetSX3Cache("A1_NOME","X3_PICTURE"),"SA1.A1_NOME"};
-        ,{"C6_PRODUTO",TamSX3("C6_PRODUTO"),GetSX3Cache("C6_PRODUTO","X3_TITULO"),GetSX3Cache("C6_PRODUTO","X3_PICTURE"),"SC6.C6_PRODUTO"};
-        ,{"B1_DESC",TamSX3("B1_DESC"),GetSX3Cache("B1_DESC","X3_TITULO"),GetSX3Cache("B1_DESC","X3_PICTURE"),"SB1.B1_DESC"};
-        ,{"B1_POSIPI",TamSX3("B1_POSIPI"),GetSX3Cache("B1_POSIPI","X3_TITULO"),GetSX3Cache("B1_POSIPI","X3_PICTURE"),"SB1.B1_POSIPI"};
-        ,{"B1_ORIGEM",TamSX3("B1_ORIGEM"),GetSX3Cache("B1_ORIGEM","X3_TITULO"),GetSX3Cache("B1_ORIGEM","X3_PICTURE"),"SB1.B1_ORIGEM"};
-        ,{"F4_SITTRIB",TamSX3("F4_SITTRIB"),GetSX3Cache("F4_SITTRIB","X3_TITULO"),GetSX3Cache("F4_SITTRIB","X3_PICTURE"),"SF4.F4_SITTRIB"};
-        ,{"FT_BASEICM",TamSX3("FT_BASEICM"),GetSX3Cache("FT_BASEICM","X3_TITULO"),GetSX3Cache("FT_BASEICM","X3_PICTURE"),"0 AS FT_BASEICM"};
-        ,{"FT_ALIQICM",TamSX3("FT_ALIQICM"),GetSX3Cache("FT_ALIQICM","X3_TITULO"),GetSX3Cache("FT_ALIQICM","X3_PICTURE"),"0 AS FT_ALIQICM"};
-        ,{"FT_VALICM",TamSX3("FT_VALICM"),GetSX3Cache("FT_VALICM","X3_TITULO"),GetSX3Cache("FT_VALICM","X3_PICTURE"),"0 AS FT_VALICM"};
-        ,{"F4_CTIPI",TamSX3("F4_CTIPI"),GetSX3Cache("F4_CTIPI","X3_TITULO"),GetSX3Cache("F4_CTIPI","X3_PICTURE"),"SF4.F4_CTIPI"};
-        ,{"FT_BASEIPI",TamSX3("FT_BASEIPI"),GetSX3Cache("FT_BASEIPI","X3_TITULO"),GetSX3Cache("FT_BASEIPI","X3_PICTURE"),"0 AS FT_BASEIPI"};
-        ,{"FT_ALIQIPI",TamSX3("FT_ALIQIPI"),GetSX3Cache("FT_ALIQIPI","X3_TITULO"),GetSX3Cache("FT_ALIQIPI","X3_PICTURE"),"0 AS FT_ALIQIPI"};
-        ,{"FT_VALIPI",TamSX3("FT_VALIPI"),GetSX3Cache("FT_VALIPI","X3_TITULO"),GetSX3Cache("FT_VALIPI","X3_PICTURE"),"0 AS FT_VALIPI"};
-        ,{"F4_CSTPIS",TamSX3("F4_CSTPIS"),GetSX3Cache("F4_CSTPIS","X3_TITULO"),GetSX3Cache("F4_CSTPIS","X3_PICTURE"),"SF4.F4_CSTPIS"};
-        ,{"FT_BASEPIS",TamSX3("FT_BASEPIS"),GetSX3Cache("FT_BASEPIS","X3_TITULO"),GetSX3Cache("FT_BASEPIS","X3_PICTURE"),"0 AS FT_BASEPIS"};
-        ,{"FT_ALIQPIS",TamSX3("FT_ALIQPIS"),GetSX3Cache("FT_ALIQPIS","X3_TITULO"),GetSX3Cache("FT_ALIQPIS","X3_PICTURE"),"0 AS FT_ALIQPIS"};
-        ,{"FT_VALPIS",TamSX3("FT_VALPIS"),GetSX3Cache("FT_VALPIS","X3_TITULO"),GetSX3Cache("FT_VALPIS","X3_PICTURE"),"0 AS FT_VALPIS"};
-        ,{"F4_CSTCOF",TamSX3("F4_CSTCOF"),GetSX3Cache("F4_CSTCOF","X3_TITULO"),GetSX3Cache("F4_CSTCOF","X3_PICTURE"),"SF4.F4_CSTCOF"};
-        ,{"FT_BASECOF",TamSX3("FT_BASECOF"),GetSX3Cache("FT_BASECOF","X3_TITULO"),GetSX3Cache("FT_BASECOF","X3_PICTURE"),"0 AS FT_BASECOF"};
-        ,{"FT_ALIQCOF",TamSX3("FT_ALIQCOF"),GetSX3Cache("FT_ALIQCOF","X3_TITULO"),GetSX3Cache("FT_ALIQCOF","X3_PICTURE"),"0 AS FT_ALIQCOF"};
-        ,{"FT_VALCOF",TamSX3("FT_VALCOF"),GetSX3Cache("FT_VALCOF","X3_TITULO"),GetSX3Cache("FT_VALCOF","X3_PICTURE"),"0 AS FT_VALCOF"};
-        ,{"C5_XOBSVEN",TamSX3("C5_XOBSVEN"),GetSX3Cache("C5_XOBSVEN","X3_TITULO"),GetSX3Cache("C5_XOBSVEN","X3_PICTURE"),"SC5.C5_XOBSVEN"};        
-        ,{"C5_XTOTAL",TamSX3("C5_XTOTAL"),GetSX3Cache("C5_XTOTAL","X3_TITULO"),GetSX3Cache("C5_XTOTAL","X3_PICTURE"),"SC5.C5_XTOTAL"};
-        ,{"SC5RECNO",{18,0,"N"},"RecNo SC5","@R 999999999999999999","SC5.R_E_C_N_O_ AS SC5RECNO"};
-        ,{"SC6RECNO",{18,0,"N"},"RecNo SC6","@R 999999999999999999","SC6.R_E_C_N_O_ AS SC6RECNO"};
-        ,{"SB1RECNO",{18,0,"N"},"RecNo SB1","@R 999999999999999999","SB1.R_E_C_N_O_ AS SB1RECNO"};
-        ,{"SA1RECNO",{18,0,"N"},"RecNo SA1","@R 999999999999999999","SA1.R_E_C_N_O_ AS SA1RECNO"};
-        ,{"SF4RECNO",{18,0,"N"},"RecNo SF4","@R 999999999999999999","SF4.R_E_C_N_O_ AS SF4RECNO"};
+         {"C5_XBLFIS"   , TamSX3("C5_XBLFIS")   , GetSX3Cache("C5_XBLFIS"   ,"X3_TITULO"), GetSX3Cache("C5_XBLFIS"  ,"X3_PICTURE"),"C5_XBLFIS"      };
+        ,{"C5_NUM"      , TamSX3("C5_NUM")      , GetSX3Cache("C5_NUM"      ,"X3_TITULO"), GetSX3Cache("C5_NUM"     ,"X3_PICTURE"),"SC5.C5_NUM"     };
+        ,{"C6_ITEM"     , TamSX3("C6_ITEM")     , GetSX3Cache("C6_ITEM"     ,"X3_TITULO"), GetSX3Cache("C6_ITEM"    ,"X3_PICTURE"),"SC6.C6_ITEM"    };
+        ,{"C5_CLIENTE"  , TamSX3("C5_CLIENTE")  , GetSX3Cache("C5_CLIENTE"  ,"X3_TITULO"), GetSX3Cache("C5_CLIENTE" ,"X3_PICTURE"),"SC5.C5_CLIENTE" };
+        ,{"C5_LOJACLI"  , TamSX3("C5_LOJACLI")  , GetSX3Cache("C5_LOJACLI"  ,"X3_TITULO"), GetSX3Cache("C5_LOJACLI" ,"X3_PICTURE"),"SC5.C5_LOJACLI" };
+        ,{"A1_NOME"     , TamSX3("A1_NOME")     , GetSX3Cache("A1_NOME"     ,"X3_TITULO"), GetSX3Cache("A1_NOME"    ,"X3_PICTURE"),"SA1.A1_NOME"    };
+        ,{"C6_PRODUTO"  , TamSX3("C6_PRODUTO")  , GetSX3Cache("C6_PRODUTO"  ,"X3_TITULO"), GetSX3Cache("C6_PRODUTO" ,"X3_PICTURE"),"SC6.C6_PRODUTO" };
+        ,{"B1_DESC"     , TamSX3("B1_DESC")     , GetSX3Cache("B1_DESC"     ,"X3_TITULO"), GetSX3Cache("B1_DESC"    ,"X3_PICTURE"),"SB1.B1_DESC"    };
+        ,{"B1_POSIPI"   , TamSX3("B1_POSIPI")   , GetSX3Cache("B1_POSIPI"   ,"X3_TITULO"), GetSX3Cache("B1_POSIPI"  ,"X3_PICTURE"),"SB1.B1_POSIPI"  };
+        ,{"B1_ORIGEM"   , TamSX3("B1_ORIGEM")   , GetSX3Cache("B1_ORIGEM"   ,"X3_TITULO"), GetSX3Cache("B1_ORIGEM"  ,"X3_PICTURE"),"SB1.B1_ORIGEM"  };
+        ,{"F4_SITTRIB"  , TamSX3("F4_SITTRIB")  , GetSX3Cache("F4_SITTRIB"  ,"X3_TITULO"), GetSX3Cache("F4_SITTRIB" ,"X3_PICTURE"),"SF4.F4_SITTRIB" };
+        ,{"FT_BASEICM"  , TamSX3("FT_BASEICM")  , GetSX3Cache("FT_BASEICM"  ,"X3_TITULO"), GetSX3Cache("FT_BASEICM" ,"X3_PICTURE"),"0 AS FT_BASEICM"};
+        ,{"FT_ALIQICM"  , TamSX3("FT_ALIQICM")  , GetSX3Cache("FT_ALIQICM"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQICM" ,"X3_PICTURE"),"0 AS FT_ALIQICM"};
+        ,{"FT_VALICM"   , TamSX3("FT_VALICM")   , GetSX3Cache("FT_VALICM"   ,"X3_TITULO"), GetSX3Cache("FT_VALICM"  ,"X3_PICTURE"),"0 AS FT_VALICM" };
+        ,{"F4_CTIPI"    , TamSX3("F4_CTIPI")    , GetSX3Cache("F4_CTIPI"    ,"X3_TITULO"), GetSX3Cache("F4_CTIPI"   ,"X3_PICTURE"),"SF4.F4_CTIPI"   };
+        ,{"FT_BASEIPI"  , TamSX3("FT_BASEIPI")  , GetSX3Cache("FT_BASEIPI"  ,"X3_TITULO"), GetSX3Cache("FT_BASEIPI" ,"X3_PICTURE"),"0 AS FT_BASEIPI"};
+        ,{"FT_ALIQIPI"  , TamSX3("FT_ALIQIPI")  , GetSX3Cache("FT_ALIQIPI"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQIPI" ,"X3_PICTURE"),"0 AS FT_ALIQIPI"};
+        ,{"FT_VALIPI"   , TamSX3("FT_VALIPI")   , GetSX3Cache("FT_VALIPI"   ,"X3_TITULO"), GetSX3Cache("FT_VALIPI"  ,"X3_PICTURE"),"0 AS FT_VALIPI" };
+        ,{"F4_CSTPIS"   , TamSX3("F4_CSTPIS")   , GetSX3Cache("F4_CSTPIS"   ,"X3_TITULO"), GetSX3Cache("F4_CSTPIS"  ,"X3_PICTURE"),"SF4.F4_CSTPIS"  };
+        ,{"FT_BASEPIS"  , TamSX3("FT_BASEPIS")  , GetSX3Cache("FT_BASEPIS"  ,"X3_TITULO"), GetSX3Cache("FT_BASEPIS" ,"X3_PICTURE"),"0 AS FT_BASEPIS"};
+        ,{"FT_ALIQPIS"  , TamSX3("FT_ALIQPIS")  , GetSX3Cache("FT_ALIQPIS"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQPIS" ,"X3_PICTURE"),"0 AS FT_ALIQPIS"};
+        ,{"FT_VALPIS"   , TamSX3("FT_VALPIS")   , GetSX3Cache("FT_VALPIS"   ,"X3_TITULO"), GetSX3Cache("FT_VALPIS"  ,"X3_PICTURE"),"0 AS FT_VALPIS" };
+        ,{"F4_CSTCOF"   , TamSX3("F4_CSTCOF")   , GetSX3Cache("F4_CSTCOF"   ,"X3_TITULO"), GetSX3Cache("F4_CSTCOF"  ,"X3_PICTURE"),"SF4.F4_CSTCOF"  };
+        ,{"FT_BASECOF"  , TamSX3("FT_BASECOF")  , GetSX3Cache("FT_BASECOF"  ,"X3_TITULO"), GetSX3Cache("FT_BASECOF" ,"X3_PICTURE"),"0 AS FT_BASECOF"};
+        ,{"FT_ALIQCOF"  , TamSX3("FT_ALIQCOF")  , GetSX3Cache("FT_ALIQCOF"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQCOF" ,"X3_PICTURE"),"0 AS FT_ALIQCOF"};
+        ,{"FT_VALCOF"   , TamSX3("FT_VALCOF")   , GetSX3Cache("FT_VALCOF"   ,"X3_TITULO"), GetSX3Cache("FT_VALCOF"  ,"X3_PICTURE"),"0 AS FT_VALCOF" };
+        ,{"C5_XOBSVEN"  , TamSX3("C5_XOBSVEN")  , GetSX3Cache("C5_XOBSVEN"  ,"X3_TITULO"), GetSX3Cache("C5_XOBSVEN" ,"X3_PICTURE"),"SC5.C5_XOBSVEN" };
+        ,{"C5_XTOTAL"   , TamSX3("C5_XTOTAL")   , GetSX3Cache("C5_XTOTAL"   ,"X3_TITULO"), GetSX3Cache("C5_XTOTAL"  ,"X3_PICTURE"),"SC5.C5_XTOTAL"  }; 
+        ,{"C6_TES"      , TamSX3("C6_TES")      , GetSX3Cache("C6_TES"      ,"X3_TITULO"), GetSX3Cache("C6_TES"     ,"X3_PICTURE"),"SC6.C6_TES"     };       
+        ,{"C6_ENTREG"   , TamSX3("C6_ENTREG")   , GetSX3Cache("C6_ENTREG"   ,"X3_TITULO"), GetSX3Cache("C6_ENTREG"  ,"X3_PICTURE"),"SC6.C6_ENTREG"  };
+        ,{"C6_DATFAT"   , TamSX3("C6_DATFAT")   , "Faturamento"                          , GetSX3Cache("C6_DATFAT"  ,"X3_PICTURE"),"SC6.C6_DATFAT"  };  
+        ,{"Z09_BLFDI"   , TamSX3("Z09_BLFDI")   , GetSX3Cache("Z09_BLFDI"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFDI"  ,"X3_PICTURE"),"Z09.Z09_BLFDI"  };
+        ,{"Z09_BLFHI"   , TamSX3("Z09_BLFHI")   , GetSX3Cache("Z09_BLFHI"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFHI"  ,"X3_PICTURE"),"Z09.Z09_BLFHI"  };
+        ,{"Z09_BLFDF"   , TamSX3("Z09_BLFDF")   , GetSX3Cache("Z09_BLFDF"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFDF"  ,"X3_PICTURE"),"Z09.Z09_BLFDF"  };
+        ,{"Z09_BLFHF"   , TamSX3("Z09_BLFHF")   , GetSX3Cache("Z09_BLFHF"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFHF"  ,"X3_PICTURE"),"Z09.Z09_BLFHF"  };         
+        ,{"SC5RECNO"    , {18,0,"N"} , "RecNo SC5","@R 999999999999999999","SC5.R_E_C_N_O_ AS SC5RECNO"};
+        ,{"SC6RECNO"    , {18,0,"N"} , "RecNo SC6","@R 999999999999999999","SC6.R_E_C_N_O_ AS SC6RECNO"};
+        ,{"SB1RECNO"    , {18,0,"N"} , "RecNo SB1","@R 999999999999999999","SB1.R_E_C_N_O_ AS SB1RECNO"};
+        ,{"SA1RECNO"    , {18,0,"N"} , "RecNo SA1","@R 999999999999999999","SA1.R_E_C_N_O_ AS SA1RECNO"};
+        ,{"SF4RECNO"    , {18,0,"N"} , "RecNo SF4","@R 999999999999999999","SF4.R_E_C_N_O_ AS SF4RECNO"};
     }
 
     nFields:=Len(aCustomFields)
@@ -123,17 +130,17 @@ static function TRK0005Brw(cTipoPedido as character)
 
         //Carrega a Estrutura da Tabela Temporaria
         aAdd(aDbStruct,Array(DBS_ALEN))
-        aDbStruct[nField][DBS_NAME]:=aCustomFields[nField][1]
-        aDbStruct[nField][DBS_TYPE]:=aCustomFields[nField][2][3]
-        aDbStruct[nField][DBS_LEN]:=aCustomFields[nField][2][1]
-        aDbStruct[nField][DBS_DEC]:=aCustomFields[nField][2][2]
+        aDbStruct[nField][DBS_NAME] := aCustomFields[nField][1]
+        aDbStruct[nField][DBS_TYPE] := aCustomFields[nField][2][3]
+        aDbStruct[nField][DBS_LEN]  := aCustomFields[nField][2][1]
+        aDbStruct[nField][DBS_DEC]  := aCustomFields[nField][2][2]
 
         //Obtem os Campos para a Query
-        cQueryPutFields+=aCustomFields[nField][1]
-        cQueryGetFields+=aCustomFields[nField][5]
+        cQueryPutFields += aCustomFields[nField][1]
+        cQueryGetFields += aCustomFields[nField][5]
         if (nField<nFields)
-            cQueryPutFields+=","
-            cQueryGetFields+=","
+            cQueryPutFields += ","
+            cQueryGetFields += ","
         endif
 
         //Define o Campo como Filtravel
@@ -143,12 +150,12 @@ static function TRK0005Brw(cTipoPedido as character)
         EndIF
 
         //Monta as Colunas do Browse
-        aAdd(aFWMBrwColumn,FWBrwColumn():New())
+        aAdd(aFWMBrwColumn, FWBrwColumn():New())
 
         if (aCustomFields[nField][1]=="C5_XBLFIS")
-            aFWMBrwColumn[nField]:SetData(&("{|oSelf|u_TRK005Fld('"+aCustomFields[nField][1]+"',"+aCustomFields[nField][1]+")}"))
+            aFWMBrwColumn[nField]:SetData(&("{|oSelf|u_TRK005Fld('" + aCustomFields[nField][1] + "'," + aCustomFields[nField][1] + ")}"))
         else
-            aFWMBrwColumn[nField]:SetData(&("{|oSelf|"+aCustomFields[nField][1]+"}"))
+            aFWMBrwColumn[nField]:SetData(&("{|oSelf|" + aCustomFields[nField][1] + "}"))
         endif
 
         aFWMBrwColumn[nField]:SetTitle(aCustomFields[nField][3])
@@ -168,11 +175,13 @@ static function TRK0005Brw(cTipoPedido as character)
     //https://tdn.totvs.com/display/public/framework/FWTemporaryTable
     oFWTemporaryTable:=FWTemporaryTable():New()
     oFWTemporaryTable:SetFields(aDbStruct)
-    oFWTemporaryTable:AddIndex("01",{"C5_NUM","C6_ITEM"})
-    oFWTemporaryTable:AddIndex("02",{"C5_CLIENTE","C5_NUM"})
+    oFWTemporaryTable:AddIndex("01",{"C5_NUM"       , "C6_ITEM" })
+    oFWTemporaryTable:AddIndex("02",{"C5_CLIENTE"   , "C5_NUM"  })
+    oFWTemporaryTable:AddIndex("03",{"C6_DATFAT"    , "C5_NUM"  , "C6_ITEM"})
 
-	Aadd( aFWMBrowseSeek, { "Pedido + Item", RetFldIdx("C5_NUM+C6_ITEM"), 1 } )
-	Aadd( aFWMBrowseSeek, { "Cliente + Pedido", RetFldIdx("C5_CLIENTE+C5_NUM"), 1 } )
+	Aadd( aFWMBrowseSeek, { "Pedido + Item"                 , RetFldIdx("C5_NUM+C6_ITEM")           , 1 } )
+	Aadd( aFWMBrowseSeek, { "Cliente + Pedido"              , RetFldIdx("C5_CLIENTE+C5_NUM")        , 1 } )
+    Aadd( aFWMBrowseSeek, { "Faturamento + Pedido + Item"   , RetFldIdx("C6_DATFAT+C5_NUM+C6_ITEM") , 1 } )
 
     oFWTemporaryTable:Create()
 
@@ -195,25 +204,31 @@ static function TRK0005Brw(cTipoPedido as character)
         JOIN SF4990 SF4 ON SF4.D_E_L_E_T_ = ' '
         AND SF4.F4_FILIAL = '__F4_FILIAL__'
         AND SF4.F4_CODIGO = SC6.C6_TES
+        LEFT JOIN Z09990 Z09 ON Z09.D_E_L_E_T_ = ' '
+        AND Z09.Z09_FILIAL = SC5.C5_FILIAL
+        AND Z09.Z09_NUMPV = SC5.C5_NUM
+        AND Z09.Z09_ITEMPV = SC6.C6_ITEM
     WHERE
         SC5.D_E_L_E_T_ = ' '
         AND SC5.C5_FILIAL = '__C5_FILIAL__'
         AND SC5.C5_XBLQINI <> 'S'
-        AND SC5.C5_XBLRENT = '2' 
+        AND SC5.C5_XBLRENT IN ('2', ' ')  
         AND SC5.C5_BLQ = ' ' __XBLFIS
     endContent
+
     //Efetua a Substituicao das constantes por Valores Dinamicos
-    cQuerySelect:=StrTran(cQuerySelect,"cQueryGetFields",cQueryGetFields)
-    cQuerySelect:=StrTran(cQuerySelect,"SC5990",RetSQLName("SC5"))
-    cQuerySelect:=StrTran(cQuerySelect,"SC6990",RetSQLName("SC6"))
-    cQuerySelect:=StrTran(cQuerySelect,"SA1990",RetSQLName("SA1"))
-    cQuerySelect:=StrTran(cQuerySelect,"SB1990",RetSQLName("SB1"))
-    cQuerySelect:=StrTran(cQuerySelect,"SF4990",RetSQLName("SF4"))
-    cQuerySelect:=StrTran(cQuerySelect,"__A1_FILIAL__"  , FWXFilial("SA1"))
-    cQuerySelect:=StrTran(cQuerySelect,"__B1_FILIAL__"  , FWXFilial("SB1"))
-    cQuerySelect:=StrTran(cQuerySelect,"__F4_FILIAL__"  , FWXFilial("SF4"))
-    cQuerySelect:=StrTran(cQuerySelect,"__C5_FILIAL__"  , FWXFilial("SC5"))
-    cQuerySelect:=StrTran(cQuerySelect,"__C6_FILIAL__"  , FWXFilial("SC6"))
+    cQuerySelect := StrTran(cQuerySelect, "cQueryGetFields"   , cQueryGetFields   )
+    cQuerySelect := StrTran(cQuerySelect, "SC5990"            , RetSQLName("SC5") )
+    cQuerySelect := StrTran(cQuerySelect, "SC6990"            , RetSQLName("SC6") )
+    cQuerySelect := StrTran(cQuerySelect, "SA1990"            , RetSQLName("SA1") )
+    cQuerySelect := StrTran(cQuerySelect, "SB1990"            , RetSQLName("SB1") )
+    cQuerySelect := StrTran(cQuerySelect, "SF4990"            , RetSQLName("SF4") )
+    cQuerySelect := StrTran(cQuerySelect, "Z09990"            , RetSQLName("Z09") )
+    cQuerySelect := StrTran(cQuerySelect, "__A1_FILIAL__"     , FWXFilial("SA1")  )
+    cQuerySelect := StrTran(cQuerySelect, "__B1_FILIAL__"     , FWXFilial("SB1")  )
+    cQuerySelect := StrTran(cQuerySelect, "__F4_FILIAL__"     , FWXFilial("SF4")  )
+    cQuerySelect := StrTran(cQuerySelect, "__C5_FILIAL__"     , FWXFilial("SC5")  )
+    cQuerySelect := StrTran(cQuerySelect, "__C6_FILIAL__"     , FWXFilial("SC6")  )
 
     // https://centraldeatendimento.totvs.com/hc/pt-br/articles/
     // 360017467652-Cross-Segmentos-BackOffice-Protheus-SIGAFAT-C%C3%B3digos-de-Bloqueio-gravados-na-tabela/
@@ -266,57 +281,52 @@ static function TRK0005Brw(cTipoPedido as character)
             cINXBLFIS += ")"
     END CASE
 
-    
-    //cINXBLFIS += "(CASE WHEN SC5.C5_XBLFIS = '1' AND (NOT COALESCE(C9_BLEST, ' ') IN (' ', 'ZZ') OR " +;
-    //                   "NOT COALESCE(C9_BLCRED, ' ') IN (' ', 'ZZ') OR C6_NOTA <> ' ') THEN '0' ELSE '1' END) = '1')"
-    cQuerySelect:=StrTran(cQuerySelect,"__XBLFIS",cINXBLFIS)
+    cQuerySelect := StrTran(cQuerySelect, "__XBLFIS", cINXBLFIS)
 
-    cAlias:=oFWTemporaryTable:GetAlias()
-    cRealTableName:=oFWTemporaryTable:getRealName()
+    cAlias          := oFWTemporaryTable:GetAlias()
+    cRealTableName  := oFWTemporaryTable:getRealName()
 
     //Elabora a Query para o Insert na Tabela Temporaria
-    cQueryInsert:="INSERT INTO "+cRealTableName
-    cQueryInsert+=" ("+cQueryPutFields+") "
-    cQueryInsert+=cQuerySelect
+    cQueryInsert := "INSERT INTO " + cRealTableName
+    cQueryInsert += " (" + cQueryPutFields + ") "
+    cQueryInsert += cQuerySelect
 
     //Executa o Insert..
-    FWMsgRun(NIL,{||lQueryInsert:=(TCSQLExec(cQueryInsert)>=0)},"Aguarde...","Obtendo dados no SGBD")
+    FWMsgRun(NIL, {|| lQueryInsert := (TCSQLExec(cQueryInsert)>=0) }, "Aguarde...", "Obtendo dados no SGBD")
 
     if (lQueryInsert)
 
-
         //Update de campos Fiscais
-        FWMsgRun(NIL,{||TRK0005Fis(cAlias)},"Aguarde...","Atualizando Informações Fiscais")
+        FWMsgRun(NIL, {|| TRK0005Fis(cAlias)    }, "Aguarde...", "Atualizando Informações Fiscais"  )
 
-        FWMsgRun(NIL,{||AtuTracking(cAlias) },"Aguarde...","Atualizando Tracking de Expedição")
+        FWMsgRun(NIL, {|| AtuTracking(cAlias)   }, "Aguarde...", "Atualizando Tracking de Expedição")
 
-        FWMsgRun(NIL,{||Sleep(100)},"Aguarde...","Elaborando a Interface de Dados")
+        FWMsgRun(NIL, {|| Sleep(100)            }, "Aguarde...", "Elaborando a Interface de Dados"  )
 
-        aFWGetDialogSizeCoors:=FWGetDialogSize()
+        aFWGetDialogSizeCoors := FWGetDialogSize()
 
         (cAlias)->(dbSetOrder(1))
 
         //Define o Dialog
         //https://tdn.totvs.com/display/public/framework/FwDialogModal
-        oFWDialogModal:=FWDialogModal():New()
+        oFWDialogModal := FWDialogModal():New()
         oFWDialogModal:SetTitle("")
-        oFWDialogModal:SetSize(((aFWGetDialogSizeCoors[3]/(2+if(.F.,.15,0)))+25),((aFWGetDialogSizeCoors[4]/2)-5))
+        oFWDialogModal:SetSize( ((aFWGetDialogSizeCoors[3]/(2+if(.F.,.15,0)))+25), ((aFWGetDialogSizeCoors[4]/2)-5) )
         oFWDialogModal:CreateDialog()
         oFWDialogModal:EnableFormBar(.T.)
         oFWDialogModal:CreateFormBar()
 
-        oPanelMain:=oFWDialogModal:GetPanelMain()
+        oPanelMain  := oFWDialogModal:GetPanelMain()
 
-        oBrowse:=FWMBrowse():New()
-
+        oBrowse     := FWMBrowse():New()
         oBrowse:SetOwner(oPanelMain)
         oBrowse:SetDescription(cTitulo)
         oBrowse:SetAlias(cAlias)
 
-        oBrowse:AddLegend("C5_XBLFIS=='1'"/*<xCondition>*/,"RED"/*<cColor>*/,"Bloqueados"/*[<cTitle>]*/,/*[<cID>]*/,.T./*[<lFilter>]*/)
-        oBrowse:AddLegend("C5_XBLFIS=='2'"/*<xCondition>*/,"GREEN"/*<cColor>*/,"Liberados"/*[<cTitle>]*/,/*[<cID>]*/,.T./*[<lFilter>]*/)
-        oBrowse:AddLegend("C5_XBLFIS=='3'"/*<xCondition>*/,"GRAY"/*<cColor>*/,"Rejeitados"/*[<cTitle>]*/,/*[<cID>]*/,.T./*[<lFilter>]*/)
-        oBrowse:AddLegend("Empty(C5_XBLFIS)"/*<xCondition>*/,"BLUE"/*<cColor>*/,"Sem Bloqueio"/*[<cTitle>]*/,/*[<cID>]*/,.T./*[<lFilter>]*/)
+        oBrowse:AddLegend("C5_XBLFIS=='1'"  , "RED"     , "Bloqueados"  ,/*[<cID>]*/,.T./*[<lFilter>]*/)
+        oBrowse:AddLegend("C5_XBLFIS=='2'"  , "GREEN"   , "Liberados"   ,/*[<cID>]*/,.T./*[<lFilter>]*/)
+        oBrowse:AddLegend("C5_XBLFIS=='3'"  , "GRAY"    , "Rejeitados"  ,/*[<cID>]*/,.T./*[<lFilter>]*/)
+        oBrowse:AddLegend("Empty(C5_XBLFIS)", "BLUE"    , "Sem Bloqueio",/*[<cID>]*/,.T./*[<lFilter>]*/)
 
         oBrowse:SetColumns(aFWMBrwColumn)
         oBrowse:SetSeek(.T.,aFWMBrowseSeek)
@@ -370,10 +380,10 @@ return
 
 Static Function TRK0005Leg
 
-Local aCores := {	{"BR_VERMELHO","Bloqueados"},;
-			        {"BR_VERDE","Liberados"},;
-			        {"BR_CINZA","Rejeitados"},;
-			        {"BR_AZUL","Sem Bloqueio"}}
+Local aCores := {	{"BR_VERMELHO"  , "Bloqueados"  },;
+			        {"BR_VERDE"     , "Liberados"   },;
+			        {"BR_CINZA"     , "Rejeitados"  },;
+			        {"BR_AZUL"      , "Sem Bloqueio"}}
 
 BrwLegenda("Validaçao Fiscal","Legenda",aCores)
 
@@ -381,11 +391,13 @@ Return
 
 Static Function RetFldIdx(cIndice)
 
-Local aIdx := {}, aArea := SX3->(GetArea())
+Local aIdx    := {}
+Local aArea   := SX3->(GetArea())
 Local aX3Stru := {}
-Local cCpo := ""
+Local cCpo    := ""
 
 cIndice := AllTrim(cIndice)
+
 If Right(cIndice, 1) <> "+"
 	cIndice += "+"
 EndIf
@@ -418,12 +430,12 @@ Atualizar informações Fiscais
 static function TRK0005Fis(cAlias)
 
     local aMaFisNFCabRet as array
-    local aRecItens as array
-    local cPedido as character
-    local nAT as numeric
-    local nItem as numeric
-    local nItems as numeric
-    local nNextRecNo as numeric
+    local aRecItens      as array
+    local cPedido        as character
+    local nAT            as numeric
+    local nItem          as numeric
+    local nItems         as numeric
+    local nNextRecNo     as numeric
 
     (cAlias)->(dbGoTop())
     (cAlias)->(dbSetOrder(1))
@@ -441,7 +453,7 @@ static function TRK0005Fis(cAlias)
             aAdd(aRecItens,(cAlias)->( Recno() ))
             SC6->(;
                 MaFisAdd(;
-                        SC6->C6_PRODUTO;   //  1-Codigo do Produto ( Obrigatorio )
+                     SC6->C6_PRODUTO;   //  1-Codigo do Produto ( Obrigatorio )
                     ,SC6->C6_TES;       //  2-Codigo do TES ( Opcional )
                     ,SC6->C6_QTDVEN;    //  3-Quantidade ( Obrigatorio ) SC6->C6_QTDVEN
                     ,SC6->C6_PRCVEN;    //  4-Preco Unitario ( Obrigatorio ) SC6->C6_PRCVEN
@@ -462,6 +474,7 @@ static function TRK0005Fis(cAlias)
             (cAlias)->(dbSkip())
             nNextRecNo:=(cAlias)->(RecNo())
         end while
+
         //Obter as informações Fiscais
         aMaFisNFCabRet:=MaFisNFCab()
         //Atualizar as informações fiscais.
@@ -524,15 +537,65 @@ static function TRK0005Lib(cTitulo,cAlias,oBrowse)
     local cProcTitle := cTitulo+" :: Liberação"
     local cMsgOs     := ""
     local cPedido    := ""
+    local cTriangular:= ""
+    local cRemessa   := ""
+    local lErro      := .F.
 
 
     //Verifica se o Item Está Bloqueado
     if ((cAlias)->C5_XBLFIS=="1")
         cPedido := (cAlias)->C5_NUM
+        SC5->(MsGoTo((cAlias)->SC5RECNO))
+        
+        If !Empty(SC5->C5_XPEDORI)
+            cTriangular := SC5->C5_NUM 
+            cRemessa    := MpSysExecScalar("SELECT C5_NUM AS PEDIDO FROM " + RetSQLName("SC5") + " SC5 WHERE SC5.C5_FILIAL = '" + xFilial("SC5") + "' AND SC5.D_E_L_E_T_= ' ' AND C5_XPEDWEB = '"+SC5->C5_XPEDORI+"'", "PEDIDO")
+            If !Empty(cRemessa)
+                FWAlertInfo("O pedido ["+cTriangular+"] é um pedido triangular com a remessa ["+cRemessa+"]", "Pedido Triangular")
+                cPedido := cRemessa
 
-        SetTraking(cAlias, "2", "", "", "")
-        GeraOS(cPedido, @cMsgOs)
-        Conout(cMsgOs)
+                (cAlias)->( DbSetOrder(1) )
+                If !(cAlias)->( DbSeek(xFilial()+cRemessa) )
+                    FWAlertWarning("Pedido de remessa ["+cRemessa+"], não localizado. Verifique se o mesmo não esta com algum bloqueio.", "Pedido de Remessa")
+                
+                    FWRestArea(aAreaAlias)
+                    FWFreeArray(@aAreaAlias)
+
+                    FWRestArea(aArea)
+                    FWFreeArray(@aArea)                    
+                    Return
+                EndIf
+
+            EndIf
+        EndIf
+
+        
+        Begintran() 
+            SetTraking(cAlias, "2", "", "", "")
+            
+            GeraOS(cPedido, @cMsgOs)
+            
+            If At("Ordem de Separacao: N A O  G E R A D A", cMsgOs) > 0
+                lErro := .T.
+                DisarmTransaction() 
+            ElseIf !Empty(cTriangular)
+                dbSelectArea("CB7")
+                CB7->(dbSetOrder(2)) //-- CB7_FILIAL+CB7_PEDIDO+CB7_LOCAL+CB7_STATUS+CB7_CLIENT+CB7_LOJA+CB7_COND+CB7_LOJENT+CB7_AGREG
+                If CB7->(dbSeek(xFilial("CB7") + cPedido))  
+                    RecLock("CB7", .F.)
+                    CB7->CB7_XPVTRI := cTriangular
+                    CB7->( MsUnLock() )
+                EndIf  
+
+            EndIf
+        Endtran()
+
+        If lErro   
+            MostraTexto(cMsgOs)
+            RecLock(cAlias, .F.)
+            (cAlias)->C5_XBLFIS := "1"
+            (cAlias)->( MsUnLock() )
+        EndIf
 
         oBrowse:Refresh()
     else
@@ -751,6 +814,7 @@ Return
 static function AtuTracking(cAliasVldFis) 
     local cRespon   := ""
     local cNTransp  := ""
+    local cNTRedesp := ""
     local aArea     := GetArea()    
     local aTrackS   := {}
     local aX5T3     := {}
@@ -779,6 +843,10 @@ static function AtuTracking(cAliasVldFis)
             cRespon := Trim(Posicione("SA3", 1, xFilial("SA3") + SC5->C5_VEND1  , "A3_NOME"))
             cNTransp:= Trim(Posicione("SA4", 1, xFilial("SA4") + SC5->C5_TRANSP , "A4_NOME"))
 
+            If !Empty(SC5->C5_REDESP)
+                cNTRedesp := Trim(Posicione("SA4", 1, xFilial("SA4") + SC5->C5_REDESP , "A4_NOME"))
+            EndIf
+
         	//-- Define o BU
 	        aX5T3 := FWGetSX5 ( "T3", SC5->C5_XATIVI1)
             
@@ -803,8 +871,15 @@ static function AtuTracking(cAliasVldFis)
             aTrackS[FieldPos("Z09_ICOTER")] := SC5->C5_TPFRETE              // Icoterm  
             aTrackS[FieldPos("Z09_TRANSP")] := SC5->C5_TRANSP               // Transportadora
             aTrackS[FieldPos("Z09_NTRANS")] := cNTransp                     // Nome da Transportadora
+            aTrackS[FieldPos("Z09_REDICO")] := SC5->C5_TFRDP1               // Icoterm Redespacho 
+            aTrackS[FieldPos("Z09_REDESP")] := SC5->C5_REDESP               // Transportadora Redespacho
+            aTrackS[FieldPos("Z09_NREDES")] := cNTRedesp                    // Nome da Transportadora            
             aTrackS[FieldPos("Z09_DPEMPV")] := SC6->C6_ENTREG               // Previsao de Entrega PV
-            aTrackS[FieldPos("Z09_DPFAPV")] := SC6->C6_DATFAT               // Previsao Faturamento PV  
+            aTrackS[FieldPos("Z09_DPFAPV")] := SC6->C6_DATFAT               // Previsao Faturamento PV 
+            aTrackS[FieldPos("Z09_RESTR")]  := SC5->C5_XRESTR               // Restricao do Cliente 
+            aTrackS[FieldPos("Z09_BLFDI")]  := Date()                       // Dt.Inicio Bloq.Fiscal    
+            aTrackS[FieldPos("Z09_BLFHI")]  := Time()                       // Hr.Inicio Bloq.Fiscal 
+             
 
             u_TRK006S(aTrackS,"Em Validacao Fiscal")
 
@@ -821,6 +896,7 @@ Static Function SetTraking(cAlias, cOpc, cMotivo, cDescMotivo, cObsMotivo)
     local aTrackS := {}
     local nRecPos := (cAlias)->( Recno() )
     local cChave  := (cAlias)->C5_NUM
+    local cAcao   := If(cOpc=="2","Liberacao", If(cOpc=="3","Rejeicao", "Bloqueio"))
 
     SC5->(MsGoTo((cAlias)->SC5RECNO))
 
@@ -849,6 +925,8 @@ Static Function SetTraking(cAlias, cOpc, cMotivo, cDescMotivo, cObsMotivo)
     While (cAlias)->( !Eof() .And. C5_NUM == cChave)
         if ((cAlias)->( RecLock(cAlias,.F.) ))
             (cAlias)->C5_XBLFIS := SC5->C5_XBLFIS
+            (cAlias)->Z09_BLFDF := If(cOpc=="1", CtoD("")   , Date() )
+            (cAlias)->Z09_BLFHF := If(cOpc=="1", ""         , Time() )
             (cAlias)->(MsUnLock())
         endif
 
@@ -861,8 +939,10 @@ Static Function SetTraking(cAlias, cOpc, cMotivo, cDescMotivo, cObsMotivo)
         aTrackS[Z09->(FieldPos("Z09_DMTBLF"))]  := cDescMotivo                          // Descricao da Rejeicao
         aTrackS[Z09->(FieldPos("Z09_OMTBLF"))]  := cObsMotivo                           // Observacao da Rejeicao
         aTrackS[Z09->(FieldPos("Z09_UBLFIS"))]  := cUserName                            // Usuario da Validacao
+        aTrackS[Z09->(FieldPos("Z09_BLFDF")) ]  := (cAlias)->Z09_BLFDF                  // Dt.Finalizacao Bloq.Fiscal    
+        aTrackS[Z09->(FieldPos("Z09_BLFHF")) ]  := (cAlias)->Z09_BLFHF                  // Hr.Finalizacao Bloq.Fiscal         
         
-        u_TRK006S(aTrackS, "Em Validacao Fiscal")
+        u_TRK006S(aTrackS, "Em Validacao Fiscal (" + cAcao + ")")
 
         (cAlias)->( DbSkip() )
     End
@@ -949,3 +1029,67 @@ Static Function EstornaOS(cPedido, cMsg)
 
     RestArea(aArea)
 Return lRet
+
+
+
+
+
+/*/{Protheus.doc} MostraTexto
+Visualizador de erro
+@type function
+@version 20250726 
+@author erike
+@since 8/26/2025
+@param cTextoLog, character, Log que sera exibido
+/*/
+Static Function MostraTexto(cTextoLog)
+    local oDlgMTexto
+    Local cMemo    := ""
+    Local oFont
+
+    If !Empty(cTextoLog)
+        cMemo := cTextoLog
+    EndIf
+
+	DEFINE FONT oFont NAME "Courier New" SIZE 5,0   //6,15
+
+	DEFINE MSDIALOG oDlgMTexto TITLE "Erro na Criação da Validação Física" From 3,0 to 340,417 PIXEL
+
+	@ 5,5 GET oMemo  VAR cMemo MEMO SIZE 200,145 OF oDlgMTexto PIXEL
+	oMemo:bRClicked := {||AllwaysTrue()}
+	oMemo:oFont:=oFont
+
+	DEFINE SBUTTON  FROM 153,175 TYPE 1 ACTION oDlgMTexto:End() ENABLE OF oDlgMTexto PIXEL //Apaga
+	DEFINE SBUTTON  FROM 153,145 TYPE 13 ACTION (fSalvar(cMemo),oDlgMTexto:End()) ENABLE OF oDlgMTexto PIXEL 
+	
+	ACTIVATE MSDIALOG oDlgMTexto CENTER
+Return 
+ 
+Static Function fSalvar(cTexto)
+    Local cTipArq := "Arquivos texto (*.txt) | Arquivos de log (*.log)"
+    Local cTitulo := "Gravação de arquivo"
+    Local cDirIni := GetTempPath()
+    Local lSalvar := .T.
+    Local cArqSel := ""
+ 
+    //Aciona a tela para gravar o arquivo
+    cArqSel := tFileDialog(;
+        cTipArq,;  // Filtragem de tipos de arquivos que serão selecionados
+        cTitulo,;  // Título da Janela para seleção dos arquivos
+        ,;         // Compatibilidade
+        cDirIni,;  // Diretório inicial da busca de arquivos
+        lSalvar,;  // Se for .T., será uma Save Dialog, senão será Open Dialog
+        ;          // Se não passar parâmetro, irá pegar apenas 1 arquivo; Se for informado GETF_MULTISELECT será possível pegar mais de 1 arquivo; Se for informado GETF_RETDIRECTORY será possível selecionar o diretório
+    )
+ 
+    //Efetua a gravação do arquivo
+    If ! Empty(cArqSel)
+        MemoWrite(cArqSel, cTexto)
+    EndIf
+Return
+ 
+Static Function fCopiar(cTexto)
+    //Copia o texto para a área de transferência em memória (similar a selecionar tudo e apertar Ctrl+C)
+    CopyToClipBoard(cTexto)
+    FWAlertSuccess("Texto copiado para área de transferência, agora basta você usar o atalho Ctrl+V para colar onde você deseja.", "Sucesso")
+Return

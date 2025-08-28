@@ -190,17 +190,23 @@ Static Function ACDV166X(nOpc)
 
 		If CB7->CB7_XSTATU >= "2" .And. Separou(cOrdSep)
 			VTAlert("Processo de validacao finalizado","Aviso",.t.,4000,3) //"Processo de separacao finalizado"###"Aviso"
-			If VTYesNo("Deseja estornar a validacao ?","Atencao",.T.) //"Deseja estornar a separacao ?"###"Atencao"
+			/*If VTYesNo("Deseja estornar a validacao ?","Atencao",.T.) //"Deseja estornar a separacao ?"###"Atencao"
 				VTSetKey(09,{|| Informa()},"Informacoes") //"Informacoes"
 				Estorna()
 				vtsetkey(09,bKey09,cKey09)
 				MSCBASem()
 				Return FimProcess(,cOrdSep)
-			EndIf
+			EndIf*/
 		EndIf
 	Else
 		If CBUltExp(CB7->CB7_TIPEXP) $ "99*" .And. CB7->CB7_XSTATU < "2" .And. !Separou(cOrdSep)
 			VTAlert("Processo de validacao fisica nao finalizado","Aviso",.t.,4000,3)
+			Return
+		EndIf
+
+		//-- Verifica se algum item tem acao pendendo com o CS
+		If MpSysExecScalar("SELECT COUNT(1) AS OK FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.Z09_ACAOCS = '2' AND Z09.Z09_NUMPV = '" + CB7->CB7_PEDIDO + "' AND Z09.D_E_L_E_T_= ' ' ", "OK") > 0
+			VTAlert("Processo aguardando acao do CS!","Aviso",.t.,4000,3)
 			Return
 		EndIf
 
@@ -379,7 +385,7 @@ Static Function ACDV166X(nOpc)
 			Else  // somente para codigo natural ou EAN
 				If (lSai := !EtiProduto())
 					Exit
-				ElseIf CB8->CB8_SALDOS == 0 .Or. CB8->CB8_XSALDO == 0
+				ElseIf (nOSOpc == 1 .And. CB8->CB8_XSALDO == 0) .Or. (nOSOpc == 2 .And. CB8->CB8_SALDOS == 0)
 					IF	ACDCB8PESQUISA()
 						// Verifica se existe outra item na ordem de separação em aberto
 						(cAliasCB8)->(DbSkip())
@@ -480,6 +486,9 @@ Static Function IniProcesso()
 		// AJUSTE DO STATUS
 		If CB7->CB7_XSTATU == "0" .or. Empty(CB7->CB7_XSTATU)
 			CB7->CB7_XSTATU := "1"  // em validacao fisica
+			If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
+				SetTraking("1", "Em Validação Fisica (Inicio)")
+			EndIf
 		EndIf
 		CB7->CB7_XSTATP := " "
 	Else
@@ -488,9 +497,14 @@ Static Function IniProcesso()
 			CB7->CB7_STATUS := "1"  // em separacao
 			CB7->CB7_DTINIS := dDataBase
 			CB7->CB7_HRINIS := LEFT(TIME(),5)
+
+			If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
+				SetTraking("3", "Em Separação")
+			EndIf
 		EndIf
 		CB7->CB7_STATPA := " "  // se estiver pausado tira o STATUS  de pausa
 	EndIf
+
 	CB7->CB7_CODOPE := cCodOpe
 	CB7->(MsUnlock())
 	CB7->(SimpleLock())
@@ -611,14 +625,27 @@ Static Function FimProcess(lApp,cOrdSep,cAppLog)
 				CB7->CB7_XSTATU := cStatus   //  "2" -- validacao finalizada
 				CB7->CB7_XSTATP := " "
 
+				If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
+					SetTraking("2", "Em Validação Fisica (Fim)")
+				EndIf
+
 				If CB7->CB7_ORIGEM == "2" .And. CB7->CB7_XDIVER == "1"
 					CB7->CB7_XDIVER := " "
 				EndIf
+
+				If CB7->CB7_XSTATU $ "29"
+					CB7->CB7_XSTATU 
+				EndIf
+
 			Else
-				CB7->CB7_STATUS := cStatus   //  "2" -- separacao finalizada
+				CB7->CB7_STATUS := "9"//cStatus   //  "2" -- separacao finalizada
 				CB7->CB7_STATPA := " "
 				CB7->CB7_DTFIMS := dDataBase
 				CB7->CB7_HRFIMS := LEFT(TIME(),5)
+
+				If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
+					SetTraking("4", "Em Faturamento")
+				EndIf
 
 				If CB7->CB7_ORIGEM == "2" .And. CB7->CB7_DIVERG == "1"
 					CB7->CB7_DIVERG := " "
@@ -661,7 +688,7 @@ Static Function FimProcess(lApp,cOrdSep,cAppLog)
 		Else
 			Reclock("CB7",.f.)
 			If nOSOpc == 1
-				CB7->CB7_XSTATU := "1"  // separando
+				CB7->CB7_XSTATU := "1"  // validando
 				CB7->CB7_XSTATP := "1"  // Em pausa
 				nSai := 10
 			Else
@@ -883,6 +910,7 @@ Static Function Tela()
 	Local nQtdSep := 0
 	Local nQtdCX  := 0
 	Local nQtdPE  := 0
+	Local nQtdQE  := 0
 	Local aInfo   :={}
 	static ccodant:=""
 
@@ -894,6 +922,7 @@ Static Function Tela()
 		// isto nao deve acontecer
 		Return .f.
 	EndIf
+	nQtdQE	  := SB1->B1_QE
 	nSaldoCB8 := CB8->(AglutCB8(CB8_ORDSEP,CB8_LOCAL,CB8_LCALIZ,CB8_PROD,CB8_LOTECT,CB8_NUMLOT,CB8_NUMSER))
 	If GetNewPar("MV_OSEP2UN","0") $ "0 " // verifica se separa utilizando a 1 unidade de media
 		nQtdSep := nSaldoCB8
@@ -944,15 +973,15 @@ Static Function Tela()
 		VTClear
 	ElseIf VtModelo()=="RF"
 		@ 0,0 VTSay Padr(IIF(nOSOpc==1, "Valide ", "Separe ")+Alltrim(Str(nQtdSep,aTam[1],aTam[2]))+" "+cUnidade,20) // //"Separe "
-		@ 1,0 VTSay "Qtd.Emb.:" + cValToChar(nQtdCX) + SB1->B1_UM
+		@ 1,0 VTSay "Qtd.Emb.:" + cValToChar(nQtdQE) + SB1->B1_UM
 		@ 2,0 VTSay CB8->CB8_PROD
 		@ 3,0 VTSay Left(SB1->B1_DESC,20)
 		If Rastro(CB8->CB8_PROD,"L")
 			If Len(AllTrim(CB8->CB8_LOTECT)) < 12
-				@ 4,0 VTSay "Lote: "+CB8->CB8_LOTECT //"Lote: "
+				@ 4,0 VTSay "Lote:"+CB8->CB8_LOTECT //"Lote: "
 			Else
-				@ 4,0 VTSay "Lote: " //"Lote: "
-				@ 5,0 VTSay CB8->CB8_LOTECT
+				@ 4,0 VTSay "L:" + RTrim(CB8->CB8_LOTECT) //"Lote: "
+				//@ 5,0 VTSay CB8->CB8_LOTECT
 			EndIf
 		ElseIf Rastro(CB8->CB8_PROD,"S")
 			@ 4,0 VTSay CB8->CB8_LOTECT+"-"+CB8->CB8_NUMLOT
@@ -5844,3 +5873,103 @@ Static Function GrvEstZ12(nQtde)
 
 Return
 
+
+/*/{Protheus.doc} SetTraking
+Atualiza atualiza a tabela de tra
+@type function
+@version 1.0  
+@author erike
+@since 8/19/2025
+@param cOpc, character, Indica opcao
+@param cTitLog, character, Titulo que sera gravado no log
+/*/
+Static Function SetTraking(cOpc, cTitLog)
+    local aArea   := GetArea()
+	local aASC5   := SC5->( GetArea() )
+    local aTrackS := {}
+    local nRecPos := CB7->( Recno() )
+    local cChave  := CB7->( CB7_FILIAL + CB7_PEDIDO )
+	local cTransp := ""
+	local cEmail  := ""
+
+	DbSelectArea("SC5")
+	SC5->( DbSetOrder(1) )
+    If SC5->( DbSeek( cChave ) )
+		RecLock("SC5", .f.)
+		If cOpc == "1"
+			SC5->C5_X4SSTAT := "A" // Em Validacao Fisica
+		ElseIf cOpc == "2"
+			SC5->C5_X4SSTAT := "8" // Em Agendamento
+		ElseIf cOpc == "3"
+			SC5->C5_X4SSTAT := "1" // Em Separacao
+		ElseIf cOpc == "4"
+			SC5->C5_X4SSTAT := "2" // Em Faturamento
+		EndIf
+
+		//Grava o campo C5_MSEXP para sinalizaro ao Scheduler
+		SC5->C5_MSEXP:=   ""  //DToS(dDataBase)
+		SC5->( MsUnLock() )
+
+		DbSelectAre("Z09")
+		Z09->( DbSetOrder(3) )
+
+		If Z09->( DbSeek(cChave) )
+			aTrackS := Array( Len( Z09->( DbStruct() ) ) )
+
+			//Atualiza, também, no alias temporário para atualização do status
+			While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
+
+				aTrackS[Z09->(FieldPos("Z09_FILIAL"))]  := xFilial("SC5")
+				aTrackS[Z09->(FieldPos("Z09_NUMPV")) ]  := Z09->Z09_NUMPV                   // Pedido Venda
+				aTrackS[Z09->(FieldPos("Z09_ITEMPV"))]  := Z09->Z09_ITEMPV                  // Item PV
+				If cOpc == "1"
+					aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "3"							// Status "Em Validacao Fisica"
+					aTrackS[Z09->(FieldPos("Z09_DVIFIS"))]  := dDataBase	
+					aTrackS[Z09->(FieldPos("Z09_HVIFIS"))]  := Time()
+					aTrackS[Z09->(FieldPos("Z09_UVIFIS"))]  := cUserName
+
+					aTrackS[Z09->(FieldPos("Z09_DVFISI"))]  := CTOD("")	
+					aTrackS[Z09->(FieldPos("Z09_HVFISI"))]  := Space(5)
+					aTrackS[Z09->(FieldPos("Z09_UVFISI"))]  := Space(15)
+				ElseIf cOpc == "2"
+					aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "4"							// Status "Em Agendamento"
+					aTrackS[Z09->(FieldPos("Z09_DVFISI"))]  := dDataBase
+					aTrackS[Z09->(FieldPos("Z09_HVFISI"))]  := Time()
+					aTrackS[Z09->(FieldPos("Z09_UVFISI"))]  := cUserName
+					//-- Agendamento
+					aTrackS[Z09->(FieldPos("Z09_DT1COL"))]  := Z09->Z09_DPFAPV
+					aTrackS[Z09->(FieldPos("Z09_HR1COL"))]  := Time()
+					aTrackS[Z09->(FieldPos("Z09_US1COL"))]  := "AUTOMATICO"
+					cTransp := Z09->Z09_TRANSP
+				ElseIf cOpc == "3"
+					aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "5"							// Status "Em Separacao"
+					aTrackS[Z09->(FieldPos("Z09_DTEXPE"))]  := dDataBase
+					aTrackS[Z09->(FieldPos("Z09_HREXPE"))]  := Time()
+				ElseIf cOpc == "4"
+					aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "6"							// Status "Em Faturamento"
+				EndIf
+				
+				u_TRK006S(aTrackS, cTitLog)
+
+				Z09->( DbSkip() )
+			End
+		EndIf
+		
+		CB7->( DbGoto(nRecPos) )
+	EndIf
+
+	If !Empty(cTransp)
+		DbSelectAre("Z09")
+		Z09->( DbSetOrder(3) )
+
+		If Z09->( DbSeek(cChave) )
+			cEmail := Posicione("SA4", 1, FWxFilial('SA4') + cTransp, "A4_EMAIL")
+			cEmail := "erike.yuri@dothink.com.br;janine.duarte@barentz.com;"
+			u_TRK0012(cEmail, "Agendamento")
+		EndIf
+	EndIf
+
+	RestArea(aASC5)
+    RestArea(aArea)
+
+Return

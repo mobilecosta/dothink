@@ -1,8 +1,8 @@
 #include "totvs.ch"
 #include 'FwMVCDef.ch'
 
-static cTitulo := "Troca de transportadora"
-Static aFields := { "Z09_IDTRAC", "Z09_TRANSP", "Z09_NTRANS" }
+static cTitulo := "Troca de Transportadora"
+Static aFields := { "Z09_TRANSP", "Z09_NTRANS","Z09_REDESP", "Z09_NREDES", "Z09_REDICO","Z09_IDTRAC" }
 
 
 /*/{Protheus.doc} TRK0014
@@ -31,8 +31,10 @@ Static Function ViewDef()
     cFields := ""
     For nFields := 1 To Len(aFields)
         cFields += aFields[nFields] + "|"
-        Aadd(aPos, -1)
     Next
+    
+    aFields := { "Z09_TRANSP", "Z09_NTRANS","Z09_REDESP", "Z09_NREDES", "Z09_REDICO","Z09_IDTRAC"   } 
+    aPos    := { 0           ,            0,           0,            0,            0,           0   } //, 0, 0, Z09->(FieldPos("Z09_ORDCOL")), Z09->(FieldPos("Z09_DC1COL")), Z09->(FieldPos("Z09_HC1COL")), Z09->(FieldPos("Z09_UC1COL")) }
 
     U_TRK02FL(AClone(aFields), AClone(aPos), 'TRK0014', cTitulo)
 
@@ -51,10 +53,10 @@ Static Function ViewDef()
     oView:AddField("VIEW_Z09", oStZ09, "FORMZ09")
      
     //Criando um container com nome tela com 100%
-    oView:CreateHorizontalBox("TELA",100)
+    oView:CreateHorizontalBox("TELA", 100)
      
     //Colocando título do formulário
-    oView:EnableTitleView('VIEW_Z09', 'Registro do atraso' )  
+    //oView:EnableTitleView('VIEW_Z09', cTitulo )  
      
     //Força o fechamento da janela na confirmação
     oView:SetCloseOnOk({||.T.})

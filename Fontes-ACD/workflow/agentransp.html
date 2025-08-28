@@ -1,29 +1,67 @@
-<table style="width: 862px;" border="0" cellspacing="0" cellpadding="0">
-<tbody>
-<tr>
-<p>Prezada transportadora [!A4_NOME!], <br />
-A nota fiscal [!Z09_NF!] - está disponivel para coleta.
-<br/ >
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Agendamento de Coleta</title>
+</head>
+<body style="margin:0; padding:0; background-color:#ffffff; font-family:Arial, sans-serif; color:#000000;">
 
-<p>Valor da mercadoria com IPI [!F2_VALOR!] <br />
+  <!-- Container principal -->
+  <table width="600" align="center" cellpadding="0" cellspacing="0" border="0" 
+         style="border:1px solid #000000; background-color:#ffffff;">
 
-<p>Quantidade [!C6_QUANT!] <br />
+    <!-- Logo no topo -->
+    <tr>
+      <td align="left" style="padding:20px 15px;">
+        <img src="https://brasil.barentz.com/wp-content/uploads/2024/01/logo-barentz.png" alt="Logo Barentz" width="178" height="36" style="display:block;">
+      </td>
+    </tr>
 
-<p>Requisito de cliente [!REQUISITO!] <br />
+    <!-- Cabeçalho -->
+    <tr>
+      <td style="background-color:#D11040; padding:10px 15px;">
+        <h2 style="margin:0; color:#ffffff; font-size:18px;">Agendamento de Coleta (!INFO_PEDIDO!)</h2>
+      </td>
+    </tr>
 
-<p>Onu, Classe Packing Group [!B5_ONU!] <br />
+    <!-- Saudação e informação do documento -->
+    <tr>
+      <td style="padding:15px;">
+        <p>Prezada transportadora <strong>!A4_NOME!</strong>,</p>
+        <p>!MSG_INI!</p>
+        <p>Tipo de Frete: <strong>!C5_TPFRETE!</strong></p>
+        <p>Endere&ccedil;o de entrega (cliente): <strong>!END_ENTREGA!</strong></p>
+      </td>
+    </tr>
 
-<p>Item Controlado [!CONTROLADO!] <br />
+    <!-- Lista de itens -->
+    <tr>
+      <td style="padding:0 15px 15px 15px;">
+        <h3 style="font-size:16px; margin-bottom:10px;">Itens do Pedido</h3>
+		!ITENS!
+      </td>
+    </tr>
 
-<p>Peso Bruto [!C5_PBRUTO!] <br />
+    <!-- Resumo e valor total -->
+    <tr>
+      <td style="padding:0 15px 15px 15px;">
+        <p>Valor aproximado total da mercadoria c/ IPI: <strong>R$ !VLR_TOTAL!</strong></p>
+        <p>Peso Bruto: <strong>!C5_PBRUTO!</strong> Kg</p>
+        <p>Requisito do cliente:</p>
+        <p>[!REQUISITO!]</p>
+      </td>
+    </tr>
 
-<p>Peso Bruto [!C5_PESOL!] <br />
+    <!-- Mensagem final e rodapé -->
+    <tr>
+      <td style="padding:15px; background-color:#f2f2f2;">
+        <p>!MSG_FIM!</p>
+        <p style="margin-top:20px; font-size:12px; color:#555555;">
+          Este &eacute; um e-mail autom&aacute;tico. Por favor, n&atilde;o responda diretamente a ele.
+        </p>
+      </td>
+    </tr>
+  </table>
 
-<p>Tipo de Frete [!C5_TPFRETE!] <br />
-
-
-<p>!MSG_FIM!</p>
-
-</tr>
-</tbody>
-</table>
+</body>
+</html>

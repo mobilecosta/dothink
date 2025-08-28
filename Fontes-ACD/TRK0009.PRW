@@ -324,6 +324,8 @@ Local nQtdSep   := 0
 Local cItemAnt  := ''
 Local aEmpPrtBkp:= {}	
 Local aDadosSD4 := {}
+Local aGRLog    := {}
+Local cGRLog    := ""
 
 Private oGet
 Private Altera  := .T.
@@ -445,6 +447,7 @@ If lContinua
 				//Estorna as informacoes sobre a Ordem de Separacao nas tabelas do sistema caso itens deletados:
 				LimpaInfoOS()
 	
+				lAutoErrNoFile := .T.
 				//--------------------------------------------
 				//Estorna os empenhos de todos os itens da OS:
 				AutoGrLog("    MANUTENÇÃO AUTOMÁTICA DOS EMPENHOS" ) // "    MANUTENÇÃO AUTOMÁTICA DOS EMPENHOS" 
@@ -466,7 +469,7 @@ If lContinua
 				CB8->(DbSetOrder(1))
 				CB8->(MsSeek(xFilial("CB8")+CB7->CB7_ORDSEP))
 				While !CB8->(Eof()) .And. CB8->CB8_ORDSEP == CB7->CB7_ORDSEP
-					nPos := aScan (aItensTrc,{|x| x[1]+x[2]+x[3]+x[5] == CB8->CB8_PEDIDO+CB8->CB8_ITEM+CB8->CB8_SEQUEN+CB8->CB8_LOTECT})
+					nPos := aScan(aItensTrc,{|x| x[1]+x[2]+x[3]+x[5] == CB8->CB8_PEDIDO+CB8->CB8_ITEM+CB8->CB8_SEQUEN+CB8->CB8_LOTECT})
 				 	If nPos == 0
 				 		aAdd(aItensTrc, {CB8->CB8_PEDIDO, CB8->CB8_ITEM, CB8->CB8_SEQUEN, CB8->CB8_QTDORI, CB8->CB8_LOTECT, CB8->CB8_NUMLOT,CB8->CB8_PROD, CB8->CB8_LOCAL,{}})
 				 		nPos:=len(aItensTrc)
@@ -527,8 +530,23 @@ If lContinua
 	
 				AutoGrLog(" ")
 				AutoGrLog("Manutenção dos Lotes Finalizada.") //"Manutenção dos Lotes Finalizada."
-				MostraErro()
-	
+				//MostraErro()
+				aGRLog := GetAutoGRLog()
+
+				//-- Percorre todas as linhas do log
+				For nX := 1 To Len(aGRLog)
+					cGRLog += aGRLog[nX] + CRLF
+				Next nX
+
+				cItemAnt := ""
+				For nX := 1 to Len(aItensTrc)
+					If SC6->(MsSeek(xFilial("SC6")+aItensTrc[nX][1]+aItensTrc[nX][2]))
+						If cItemAnt != aItensTrc[nX][1]+aItensTrc[nX][2]
+							SetTraking("2", SC6->C6_NUM, SC6->C6_ITEM, Nil, cGRLog, "Altualização de Empenho")
+						EndIf
+					EndIf
+					cItemAnt := aItensTrc[nX][1]+aItensTrc[nX][2]
+				Next nX
 			Endif
 			
 			//----------------------------
@@ -683,6 +701,7 @@ Local nPosPed    := 0
 Local nPosItPed  := 0
 Local nPosSeqPed := 0
 Local cMsgAlert  := "" 
+Local cItemAnt   := ""
 
 Private Altera  := .F.
 Private Inclui  := .F.
@@ -733,7 +752,7 @@ Else
 		EndIf
         Return
     ElseIf CB7->CB7_STATUS # "0" .and. Empty(CB7->CB7_STATPA)
-		cMsgAlert := "Esta Ordem de separacao nao pode ser estornada pois a mesma esta sendo executada neste momento"
+		cMsgAlert := "Esta Ordem de separação não pode ser estornada pois a mesma esta sendo executada neste momento"
 		If l100Auto
 			aAdd(aFileLog, cMsgAlert)
 		Else
@@ -741,13 +760,37 @@ Else
 		EndIf
 		Return
     ElseIf CB7->CB7_STATUS # "0" .and. CB9->(DbSeek(xFilial("CB9")+CB7->CB7_ORDSEP))
-		cMsgAlert := "A Ordem de Separacao nao pode ter nenhuma movimentacao para ser estornada."
+		cMsgAlert := "A Ordem de separação não pode ter nenhuma movimentação para ser estornada."
 		If l100Auto
 			aAdd(aFileLog, cMsgAlert)
 		Else
 			MsgAlert(cMsgAlert, "Aviso" ) //"A Ordem de Separacao nao pode ter nenhuma movimentacao para ser estornada."###"Aviso"
 		EndIf
         Return
+	ElseIf CB7->CB7_XSTATU == "9"
+		cMsgAlert := "Esta Ordem de separação não pode ser estornada, pois a validação fisica já está Finalizada."
+		If l100Auto
+			aAdd(aFileLog, cMsgAlert)
+		Else
+			MsgAlert(cMsgAlert,"Aviso")
+		EndIf
+        Return
+    ElseIf CB7->CB7_XSTATU # "0" .and. Empty(CB7->CB7_XSTATP)
+		cMsgAlert := "Esta Ordem de separação não pode ser estornada, pois a validação fisica esta sendo executada neste momento"
+		If l100Auto
+			aAdd(aFileLog, cMsgAlert)
+		Else
+			MsgAlert(cMsgAlert,"Aviso")
+		EndIf
+		Return
+    ElseIf CB7->CB7_XSTATU # "0" .and. Z12->(DbSeek(xFilial("Z12")+CB7->CB7_ORDSEP))
+		cMsgAlert := "A Ordem de separação não pode ter nenhuma movimentação de validação fisica para ser estornada."
+		If l100Auto
+			aAdd(aFileLog, cMsgAlert)
+		Else
+			MsgAlert(cMsgAlert,"Aviso")
+		EndIf
+		Return
     EndIf
 EndIf
 
@@ -898,6 +941,13 @@ If nOpca == 1 .Or. l100Auto
 	CB7->(dbDelete())
 	CB7->(MsUnlock())
 
+	For nI := 1 to Len(aCols)
+		If cItemAnt != aCols[nI,nPosPed]+aCols[nI,nPosItPed]
+			SetTraking("5", aCols[nI,nPosPed], aCols[nI,nPosItPed], Nil, "Estorno total PV-Item: " + AllTrim(aCols[nI,nPosPed]) + "-" + AllTrim(aCols[nI,nPosItPed]), "Estorno " + If(nOSOpc == 1, "Vld.Fisica", "OS"))
+		EndIf
+		cItemAnt := aCols[nI,nPosPed]+aCols[nI,nPosItPed]
+	Next nI
+
 	End Transaction
 
 EndIf
@@ -1002,7 +1052,32 @@ Else
 	PRIVATE nPreSep
 
 	Pergunte("AIA101", .F.)
+	MV_PAR01 := 1 //Pedido
+	SetMVValue("AIA101", "MV_PAR01", 1    , .T.)
+
 	nOrigExp := MV_PAR01
+
+	Pergunte("AIA106", .F.)
+	MV_PAR01 := 1
+	MV_PAR02 := 2
+	MV_PAR03 := 2
+	MV_PAR04 := 2
+	MV_PAR05 := 2
+	MV_PAR07 := 1
+	MV_PAR08 := 2
+	MV_PAR09 := 2
+	MV_PAR10 := 1
+	SetMVValue("AIA106", "MV_PAR01", MV_PAR01, .T.)
+	SetMVValue("AIA106", "MV_PAR02", MV_PAR02, .T.)
+	SetMVValue("AIA106", "MV_PAR03", MV_PAR03, .T.)
+	SetMVValue("AIA106", "MV_PAR04", MV_PAR04, .T.)
+	SetMVValue("AIA106", "MV_PAR05", MV_PAR05, .T.)
+	SetMVValue("AIA106", "MV_PAR06", MV_PAR06, .T.)
+	SetMVValue("AIA106", "MV_PAR07", MV_PAR07, .T.)
+	SetMVValue("AIA106", "MV_PAR08", MV_PAR08, .T.)
+	SetMVValue("AIA106", "MV_PAR09", MV_PAR09, .T.)
+	SetMVValue("AIA106", "MV_PAR10", MV_PAR10, .T.)
+
 	AtivaF12(nOrigExp) // carrega os valores das perguntes relacionados a configuracoes
 EndIf
 
@@ -1023,6 +1098,7 @@ If nOrigExp == 1 .And. l100Auto
 			ELSE
 				aSav102[nZ] := aParams[nPos,2] //ExecAuto
 			ENDIF
+			SetMVValue("AIA102", "MV_PAR"+StrZero(nZ,2), aSav102[nZ], .T.)
 		ENDIF
 	Next nZ
 
@@ -3561,8 +3637,23 @@ Private cLocSug    := Space(TamSx3("CB8_LOCAL")[1])
 Private cEndSug    := Space(TamSx3("CB8_LOCAL")[1])
 Private cNumSerSug := Space(TamSx3("CB8_NUMSER")[1])
 Private oQtdSldInf
-Private nQtdSldInf := GDFGet2("CB8_SALDOS")
+Private nQtdSldInf := IIF(nOSOpc==1, GDFGet2("CB8_XSALDO"), GDFGet2("CB8_SALDOS"))
 Private nQtdSep
+
+dbSelectArea("SC6")
+SC6->(dbSetOrder(1)) //-- C6_FILIAL+C6_NUM+C6_ITEM+C6_PRODUTO
+If SC6->(dbSeek(xFilial("SC6") + GDFGet2("CB8_PEDIDO") + GDFGet2("CB8_ITEM") + GDFGet2("CB8_PROD"))) .And. !Empty(SC6->C6_LOTECTL)
+	FWAlertHelp("<font color='red'>Atenção não será permitido a alteração do lote para esse item do pedido.</font>" + Chr(10) + Chr(10) +;
+				"<font color='red'>Lote <strong>" + AllTrim(SC6->C6_LOTECTL) + "</strong> preenchido no pedido de venda pelo vendedor</font>", "Entre em contato com o Vendedor/Cliente para alteração de Lote.")
+	
+	If FWAlertNoYes("Deseja informar o CS que este lote [" + AllTrim(SC6->C6_LOTECTL) + "] não foi localizado?", "Informar CS")
+		SetTraking("1", SC6->C6_NUM, SC6->C6_ITEM, "Lote", "Lote não localizado: " + AllTrim(SC6->C6_LOTECTL), "Validação Fisica (Lote não localizado)")
+	EndIf
+	
+	aHeader := aClone(aHeaderAtu)
+	aCols   := aClone(aColsAtu)
+	Return
+Endif
 
 cProdAtu   := GDFGet2("CB8_PROD")
 cArmOri    := GDFGet2("CB8_LOCAL")
@@ -3570,8 +3661,8 @@ cEndOri    := GDFGet2("CB8_LCALIZ")
 cLoteOri   := GDFGet2("CB8_LOTECT")
 cSLoteOri  := GDFGet2("CB8_NUMLOT")
 cNumSerOri := GDFGet2("CB8_NUMSER")
-nQtdOri    := GDFGet2("CB8_QTDORI")
-nQtdSep    := GDFGet2("CB8_QTDORI")-GDFGet2("CB8_SALDOS")
+nQtdOri    := IIF(nOSOpc==1, GDFGet2("CB8_XQTDOR"), GDFGet2("CB8_QTDORI"))
+nQtdSep    := IIF(nOSOpc==1, GDFGet2("CB8_XQTDOR")-GDFGet2("CB8_XSALDO"), GDFGet2("CB8_QTDORI")-GDFGet2("CB8_SALDOS"))
 lJaSeparou := nQtdSep > 0
 
 If GdDeleted(nAtaCols,aHeaderEmp,aColsEmp)
@@ -3618,7 +3709,7 @@ DEFINE MSDIALOG oDlgEmp TITLE "Substituicao de Empenhos - <F4 - Consulta Empenho
 	@ 34,292 SAY "Num.Serie:" SIZE 40,8 OF oDlgEmp PIXEL //"Num.Serie:"
 	
 	@ 52,010 SAY "Quantidade Original:" SIZE 150,8 OF oDlgEmp PIXEL //"Quantidade Original:"
-	@ 52,160 SAY "Saldo Separado:" SIZE 150,8 OF oDlgEmp PIXEL //"Saldo Separado:"
+	@ 52,160 SAY IIF(nOSOpc==1, "Saldo Validado:", "Saldo Separado:") SIZE 150,8 OF oDlgEmp PIXEL //"Saldo Separado:"
 	@ 52,300 SAY "Saldo a Informar:" SIZE 150,8 OF oDlgEmp PIXEL //"Saldo a Informar:"
 	
 	@ 21,032 MSGET oDescPrd VAR cDescPrd PICTURE "@!" SIZE 222,06 WHEN .F. OF oDlgEmp PIXEL
@@ -3690,7 +3781,7 @@ Local cEndOri   := GDFGet2("CB8_LCALIZ")
 Local cLoteOri  := GDFGet2("CB8_LOTECT")
 Local cSLoteOri := GDFGet2("CB8_NUMLOT")
 Local cNumSerOri:= GDFGet2("CB8_NUMSER")
-Local nQtdSep   := GDFGet2("CB8_QTDORI")-GDFGet2("CB8_SALDOS")
+Local nQtdSep   := IIF(nOSOpc==1, GDFGet2("CB8_XQTDOR")-GDFGet2("CB8_XSALDO"), GDFGet2("CB8_QTDORI")-GDFGet2("CB8_SALDOS"))
 
 Local aColsTMP := {}
 Local lJaSeparou := nQtdSep > 0
@@ -3728,8 +3819,8 @@ Local cEndOri   := GDFGet2("CB8_LCALIZ")
 Local cLoteOri  := GDFGet2("CB8_LOTECT")
 Local cSLoteOri := GDFGet2("CB8_NUMLOT")
 Local cNumSerOri:= GDFGet2("CB8_NUMSER")
-Local nQtdSep   := GDFGet2("CB8_QTDORI")-GDFGet2("CB8_SALDOS")
-Local nQtdOri   := GDFGet2("CB8_QTDORI")
+Local nQtdSep   := IIF(nOSOpc==1, GDFGet2("CB8_XQTDOR")-GDFGet2("CB8_XSALDO"), GDFGet2("CB8_QTDORI")-GDFGet2("CB8_SALDOS"))
+Local nQtdOri   := IIF(nOSOpc==1, GDFGet2("CB8_XQTDOR"), GDFGet2("CB8_QTDORI"))
 
 Local aRetSld   := {}
 Local nSldTMP   := 0
@@ -3853,22 +3944,26 @@ Local lJaSeparou := nQtdSep > 0
 
 If !aTail(aCols[nPosAtu])
 	If lJaSeparou .AND. (nPosAtu == 1)
-		MsgAlert("A linha nao pode ser excluida pois a quantidade ja foi separada!!!") //"A linha nao pode ser excluida pois a quantidade ja foi separada!!!"
+		MsgAlert("A linha nao pode ser excluida pois a quantidade ja foi <strong>"+IIF(nOSOpc==1, "validado", "separada")+"</strong>!!!" ) //"A linha nao pode ser excluida pois a quantidade ja foi separada!!!"
 		Return .f.
 	Endif
 	//Nao estava deletado antes...
-	aTail(aCols[nPosAtu])     := .t.
-	aTail(aColsForm[nPosAtu]) := .t.
+	aTail(aCols[nPosAtu]) := .t.
+	If Len(aCols) == Len(aColsForm)
+		aTail(aColsForm[nPosAtu]) := .t.
+	EndIf
 	AtuSldInf(.t.,nQtdOri)  //Atualiza o saldo a ser informado
 Else
 	//Estava deletado antes...
 	//Verifica se ainda existe saldo a ser informado:
-	If aCols[nPosAtu,GDFieldPos("CB8_QTDORI")] > nQtdSldInf
+	If aCols[nPosAtu, 3] > nQtdSldInf
 		MsgAlert("A quantidade definida para este lote e superior ao saldo a ser informado!!!") //"A quantidade definida para este lote e superior ao saldo a ser informado!!!"
 		Return .f.
 	Endif
-	aTail(aCols[nPosAtu])     := .f.
-	aTail(aColsForm[nPosAtu]) := .f.
+	aTail(aCols[nPosAtu]) := .f.
+	If Len(aCols) == Len(aColsForm)
+		aTail(aColsForm[nPosAtu]) := .f.
+	EndIf
 	AtuSldInf(.t.,nQtdOri)  //Atualiza o saldo a ser informado
 Endif
 oGetDados:Refresh()
@@ -3964,7 +4059,7 @@ Local cEndOri   := GDFGet2("CB8_LCALIZ")
 Local cLoteOri  := GDFGet2("CB8_LOTECT")
 Local cSLoteOri := GDFGet2("CB8_NUMLOT")
 Local cNumSerOri:= GDFGet2("CB8_NUMSER")
-Local nQtdSep   := GDFGet2("CB8_QTDORI")-GDFGet2("CB8_SALDOS")
+Local nQtdSep   := IIF(nOSOpc==1, GDFGet2("CB8_XQTDOR")-GDFGet2("CB8_XSALDO"), GDFGet2("CB8_QTDORI")-GDFGet2("CB8_SALDOS"))
 
 Local cCampo   := AllTrim(Upper(ReadVar()))
 Local oDlgEnd
@@ -4037,8 +4132,10 @@ Local nPosSALDOE := Ascan(aHeaderEmp,{|x| UPPER(AllTrim(x[2]))=="CB8_SALDOE" })
 Local nPosLOTECT := Ascan(aHeaderEmp,{|x| UPPER(AllTrim(x[2]))=="CB8_LOTECT" })
 Local nPosNUMLOT := Ascan(aHeaderEmp,{|x| UPPER(AllTrim(x[2]))=="CB8_NUMLOT" })
 Local nPosNUMSER := Ascan(aHeaderEmp,{|x| UPPER(AllTrim(x[2]))=="CB8_NUMSER" })
+Local nPosQTDORV := Ascan(aHeaderEmp,{|x| UPPER(AllTrim(x[2]))=="CB8_XQTDOR" })
+Local nPosSALDOV := Ascan(aHeaderEmp,{|x| UPPER(AllTrim(x[2]))=="CB8_XSALDO" })
 
-Local nQtdSep    := aColsEmp[nAtaCols,nPosQTDORI]-aColsEmp[nAtaCols,nPosSALDOS]
+Local nQtdSep    := IIF(nOSOpc==1, aColsEmp[nAtaCols,nPosQTDORV]-aColsEmp[nAtaCols,nPosSALDOV], aColsEmp[nAtaCols,nPosQTDORI]-aColsEmp[nAtaCols,nPosSALDOS])
 Local lJaSeparou := nQtdSep > 0
 
 Local cTipExp    := CB7->CB7_TIPEXP
@@ -4052,9 +4149,18 @@ aCols      := {}
 aColsLinha := aClone(aColsEmp[nAtaCols])
 
 If lJaSeparou
-	aColsEmp[nAtaCols,nPosQTDORI] := nQtdSep
-	aColsEmp[nAtaCols,nPosSALDOS] := 0
-	aColsEmp[nAtaCols,nPosSALDOE] := 0
+	If nOSOpc == 1
+		aColsEmp[nAtaCols,nPosQTDORV] := nQtdSep
+		aColsEmp[nAtaCols,nPosSALDOV] := 0
+
+		aColsEmp[nAtaCols,nPosQTDORI] := nQtdSep
+		aColsEmp[nAtaCols,nPosSALDOS] := nQtdSep
+		aColsEmp[nAtaCols,nPosSALDOE] := 0
+	Else
+		aColsEmp[nAtaCols,nPosQTDORI] := nQtdSep
+		aColsEmp[nAtaCols,nPosSALDOS] := 0
+		aColsEmp[nAtaCols,nPosSALDOE] := 0
+	EndIf
 Else
 	aDel(aColsEmp,nAtaCols)
 	aSize(aColsEmp,Len(aColsEmp)-1)	
@@ -4069,6 +4175,10 @@ For nX:=1 to Len(aColsForm)
 	nLen:= len(aColsEmp)
 	aColsEmp[nLen,nPosLOCAL]  := aColsForm[nX,01]
 	aColsEmp[nLen,nPosLCALIZ] := aColsForm[nX,02]
+	If nOSOpc == 1
+		aColsEmp[nLen,nPosQTDORV] := aColsForm[nX,03]
+		aColsEmp[nLen,nPosSALDOV] := aColsForm[nX,03]
+	EndIf
 	aColsEmp[nLen,nPosQTDORI] := aColsForm[nX,03]
 	aColsEmp[nLen,nPosSALDOS] := aColsForm[nX,03]
 	If !("09*" $ cTipExp) .AND. ("02*" $ cTipExp)
@@ -4943,17 +5053,17 @@ Private aRotina := { }
 aAdd(aRotina, {"Pesquisar" , "AxPesqui"   , 0, 1})
 aAdd(aRotina, {"Visualizar", "U_VSACDA100", 0, 2})
 aAdd(aRotina, {"Alterar"   , "U_ALACDA100", 0, 3})
-aAdd(aRotina, {cTxtEstorna , "U_ETACDA100", 0, 5})
+If nOSOpc == 1 //-- Solicitado pelo Denis Lobo no dia 25/08/2025, pois segundo ele apenas pode haver estorno atraves da validacao fisica e nao na separacao
+	aAdd(aRotina, {cTxtEstorna , "U_ETACDA100", 0, 5})
+EndIf
 aAdd(aRotina, {"Gerar"     , "U_GRACDA100", 0, 3})
 aAdd(aRotina, {"Impressao" , "U_REACDA100", 0, 4})
 aAdd(aRotina, {"Legenda"   , "U_LGACDA100", 0, 3})
 
 If nOSOpc == 1
-	AADD(aRotina,{"Desfaz Validação","U_DVACDA100",0,5})
+	AADD(aRotina,{"Desfaz Validação","U_DVACDA100",0,5})  //-- Desfaz Validacao Fisica
 Else
-	If FindFunction("ACDERP176")
-		AADD(aRotina,{"Desfaz Separação","ACDERP176",0,5})  //"Desfaz Separação"
-	Endif
+	AADD(aRotina,{"Desfaz Separação","U_DSACDA100",0,5})  //-- Desfaz Separacao
 EndIf
 
 If ExistBlock("ACD100M")
@@ -5246,7 +5356,7 @@ Next nInd
 Return aItens
 
 
-///Monta a tela de seleção de itens separados para desfazer
+//-- Monta a tela de selecao de itens validados para desfazer
 User Function DVACDA100()
 	Local aArea      := GetArea()
 	Local nOpca		 := 0
@@ -5266,7 +5376,16 @@ User Function DVACDA100()
 	Local aCpoZ12    := FWSX3Util():GetAllFields( "Z12" , .F. )
 	Local lAltMark	 := .T.
 	Local lRetDesf	 := .F.
- 
+
+	CB9->(DbSetOrder(1))
+	If CB7->CB7_STATUS == "9"
+		MsgAlert("Esta validação fisica não pode ser defeita, pois a ordem de separação já está Finalizada.", "Aviso")
+		Return
+	ElseIf CB7->CB7_STATUS # "0" .and. Empty(CB7->CB7_STATPA)
+		MsgAlert("Esta validação fisica não pode ser defeita pois a ordem de separação esta sendo executada neste momento", "Aviso")
+		Return
+	EndIf
+
 	// retira o campo filial e numero do array
 	aDel(aCpoZ12,ASCAN(aCpoZ12,"Z12_FILIAL"))
 	aDel(aCpoZ12,ASCAN(aCpoZ12,"Z12_ORDSEP"))
@@ -5310,7 +5429,7 @@ User Function DVACDA100()
 	// monta tela
 	oModal	:= FWDialogModal():New()
 	oModal:SetEscClose(.T.)
-	oModal:SetTitle(OemToAnsi(FwSX2Util():GetX2Name("Z12")))
+	oModal:SetTitle(OemToAnsi(Capital(FwSX2Util():GetX2Name("Z12"))))
 	oModal:EnableAllClient()
 	oModal:CreateDialog()
 	oModal:addButtons({ { 1,"Confirmar", bConfirma, "",0,.T.,.F.} , { 1,"Cancelar", bFechar, "",0,.T.,.F.}})
@@ -5328,8 +5447,8 @@ User Function DVACDA100()
 	oBrowse:SetFieldFilter(aFiltro)
 	oBrowse:SetUseFilter()
 	If lAltMark
-		oBrowse:aColumns[1]:bHeaderClick := {|| A176MkAll( oBrowse ) }
-		oBrowse:SetDoubleClick( {|| A176MkOne( oBrowse ) } )
+		oBrowse:aColumns[1]:bHeaderClick := {|| Z12MkAll( oBrowse ) }
+		oBrowse:SetDoubleClick( {|| Z12MkOne( oBrowse ) } )
 	EndIf
 	oBrowse:Activate()
 	oModal:Activate()
@@ -5376,7 +5495,137 @@ User Function DVACDA100()
 Return lRetDesf
 
 
-///Insere os registros dos itens da ordem de separação na tabela temporaria
+//-- Monta a tela de selecao de itens separados para desfazer
+User Function DSACDA100()
+	Local aArea      := GetArea()
+	Local nOpca		 := 0
+	Local bConfirma  := {|| nOpcA := 1, oModal:DeActivate() }
+	Local bFechar 	 := {|| nOpcA := 0, oModal:DeActivate() }
+	Local bGetData	 := {}
+	Local aColunas	 := {}
+	Local nX		 := 0
+	Local oModal	 := Nil
+	Local oBrowse	 := Nil
+	Local oTabTemp   := Nil
+	Local cAliasQry  := GetNextAlias()
+	Local aCampoTmp  := {}
+	Local aFiltro    := {}
+	Local aIndex     := {}
+	Local aSeek      := {}
+	Local aCpoCB9    := FWSX3Util():GetAllFields( "CB9" , .F. )
+	Local lAltMark	 := .T.
+	Local lRetDesf	 := .F.
+ 
+	// retira o campo filial e numero do array
+	aDel(aCpoCB9,ASCAN(aCpoCB9,"CB9_FILIAL"))
+	aDel(aCpoCB9,ASCAN(aCpoCB9,"CB9_ORDSEP"))
+	aSize(aCpoCB9, Len(aCpoCB9)-2)
+
+	// busca campos do SX3 da tabela CB9
+	For nX := 1 To Len(aCpoCB9)
+		cCampoX3  := aCpoCB9[nX]
+		cTitulo	:= GetSx3Cache( cCampoX3, "X3_TITULO")
+		nTamCpo	:= GetSx3Cache( cCampoX3, "X3_TAMANHO")
+		cTipoCpo:= GetSx3Cache( cCampoX3, "X3_TIPO")
+		nDecCpo	:= GetSx3Cache( cCampoX3, "X3_DECIMAL")
+		aAdd(aCampoTmp	,{cCampoX3,cTipoCpo,nTamCpo,nDecCpo})
+		aAdd(aFiltro	,{cCampoX3,cTitulo,cTipoCpo,nTamCpo,nDecCpo, GetSx3Cache(cCampoX3,"X3_PICTURE")})//Adiciona o título dos campos na pesquisa por filtro
+		If cTipoCpo == "C"
+			aAdd(aIndex	, cCampoX3)			
+			aAdd(aSeek	,{cTitulo, { {cTitulo, cTipoCpo, nTamCpo, 0, cTitulo, GetSx3Cache(cCampoX3,"X3_PICTURE"), cCampoX3} } , Len(aIndex), .T. })
+		EndIf
+		bGetData := &("{ ||(oBrowse:Alias())-> " + cCampoX3 + " }")
+		aAdd( aColunas, FWBrwColumn():New())
+		aColunas[nX]:SetData(bGetData)
+    	aColunas[nX]:SetTitle(cTitulo)
+    	aColunas[nX]:SetSize(nTamCpo)
+    	aColunas[nX]:SetID(cCampoX3)
+	Next
+
+	// cria campo para selecionar os registros
+	aAdd(aCampoTmp	,{"MARK" ,"N", 1,0})
+	aAdd(aCampoTmp	,{"RECNO","N",99,0})
+
+	oTabTemp:= FWTemporaryTable():New(cAliasQry) // seta tabela temporária
+	oTabTemp:SetFields(aCampoTmp) // seta os campos da tabela temporária
+	For nX := 1 to Len(aIndex)		
+		oTabTemp:AddIndex( StrZero(nX,2), {aIndex[nX]} )//Adiciona os Indices da tabela temporária
+	Next nX	
+	oTabTemp:Create() //Cria a tabela temporaria	
+
+	// monta tabela temporaria
+	CB9SqlToTrb( aCampoTmp, cAliasQry, @lAltMark)//Adiciona os dados da query na tabela temporária
+
+	// monta tela
+	oModal	:= FWDialogModal():New()
+	oModal:SetEscClose(.T.)
+	oModal:SetTitle(OemToAnsi(Capital(FwSX2Util():GetX2Name("CB9"))))
+	oModal:EnableAllClient()
+	oModal:CreateDialog()
+	oModal:addButtons({ { 1,"Confirmar", bConfirma, "",0,.T.,.F.} , { 1,"Cancelar", bFechar, "",0,.T.,.F.}})
+	oBrowse := FWFormBrowse():New()
+	oBrowse:AddMarkColumns( { || IIf( (cAliasQry)->MARK == 1, "LBOK", "LBNO" ) }, { || IIf( (cAliasQry)->MARK == 0 .Or. !lAltMark, (cAliasQry)->MARK := 1, (cAliasQry)->MARK := 0 ) } )
+	oBrowse:DisableDetails()
+	oBrowse:DisableReport()	
+	oBrowse:SetDescription(OemToAnsi("Desfaz Separação: " + CB7->CB7_ORDSEP))
+	oBrowse:SetDataTable()
+	oBrowse:SetAlias(oTabTemp:GetAlias())
+	oBrowse:SetColumns(aColunas)
+	oBrowse:SetSeek(,aSeek)
+	oBrowse:SetDoubleClick(bConfirma)
+	oBrowse:SetOwner(oModal:getPanelMain())
+	oBrowse:SetFieldFilter(aFiltro)
+	oBrowse:SetUseFilter()
+	If lAltMark
+		oBrowse:aColumns[1]:bHeaderClick := {|| CB9MkAll( oBrowse ) }
+		oBrowse:SetDoubleClick( {|| CB9MkOne( oBrowse ) } )
+	EndIf
+	oBrowse:Activate()
+	oModal:Activate()
+	
+	// confirmação da tela
+	If nOpcA == 1
+		lRetDesf := .T.
+		// processa tabela temporaria e desfaz separação dos registros marcados
+		DbSelectArea(cAliasQry)
+		DbGoTop()
+		While !(cAliasQry)->(EOF())
+			If (cAliasQry)->MARK == 1
+				CB9->(DbGoTo((cAliasQry)->RECNO))
+
+				//Tratamento caso o lote da CB8 não seja o lote que está sendo estornado na CB9
+				If !lAltMark
+					If CB8->(DbSeek(xFilial("CB8")+CB9->(CB9_ORDSEP+CB9_ITESEP+CB9_PROD+CB9_LOCAL+CB9_LCALIZ))) .And. CB9->CB9_LOTECT <> CB8->CB8_LOTECT
+						RecLock("CB8")
+						CB8->CB8_LOTECT := CB9->CB9_LOTECT
+						CB8->(MsUnlock())
+					EndIf
+				EndIf
+
+				GrvEstCB9((cAliasQry)->CB9_QTESEP,(cAliasQry)->CB9_QTESEP)
+			Endif
+			(cAliasQry)->(DbSkip())
+		EndDo
+	EndIf
+
+	RestArea( aArea )
+
+	oTabTemp:Delete() //Deletando a tabela temporária e liberando a memória utilizada
+	FreeObj( oModal )
+	FreeObj( oBrowse )
+	FreeObj( oTabTemp )
+
+	FwFreeArray( aIndex )
+	FwFreeArray( aSeek )
+	FwFreeArray( aCampoTmp )
+	FwFreeArray( aFiltro )
+	FwFreeArray( aCpoCB9 )
+	FwFreeArray( aArea )
+
+Return lRetDesf
+
+
+//-- Insere os registros dos itens da ordem de separação na tabela temporaria
 Static Function Z12SqlToTrb( aStruTmp, cAliasTmp, lAltMark )
 
 	Local aArea := GetArea()
@@ -5416,8 +5665,48 @@ Static Function Z12SqlToTrb( aStruTmp, cAliasTmp, lAltMark )
 Return Nil
 
 
-///Funcao Responsavel para marcar/desmarcar o registros selecionado
-Static Function A176MkOne( oObjMark )
+//-- Insere os registros dos itens da ordem de separação na tabela temporaria
+Static Function CB9SqlToTrb( aStruTmp, cAliasTmp, lAltMark )
+
+	Local aArea := GetArea()
+	Local nI	:= 0
+	
+	// busca dados da separação
+	CB9->( DbSetOrder(1) ) // CB9_FILIAL+CB9_ORDSEP+CB9_CODETI
+	CB9->( DbSeek( CB7->CB7_FILIAL+CB7->CB7_ORDSEP ) )
+	While !CB9->( EOF() ) .And. CB9->CB9_FILIAL+CB9->CB9_ORDSEP == CB7->CB7_FILIAL+CB7->CB7_ORDSEP
+		( cAliasTmp )->( DbAppend() )
+		For nI := 1 To Len(aStruTmp)
+			If aStruTmp[nI,1] <> "MARK" 
+				If aStruTmp[nI,1] == "RECNO" 
+					( cAliasTmp )->RECNO := CB9->( RECNO() )
+				Else
+					( cAliasTmp )->( FieldPut( nI, CB9->( FieldGet( FieldPos( aStruTmp[ nI, 1 ] ) ) ) ) )				
+				Endif
+			Endif
+		Next 
+		CB9->( DbSkip() )
+	End
+
+	If !lAltMark
+		( cAliasTmp )->(dbGoTop())
+		While !( cAliasTmp )->(Eof())
+			//Atualiza item(s) separados
+			RecLock(cAliasTmp, .F.)
+			( cAliasTmp )->MARK := 1
+			( cAliasTmp )->(MsUnlock())
+			( cAliasTmp )->(dbSkip())
+		EndDo
+	EndIf
+
+	RestArea( aArea )
+	FWFreeArray( aArea )
+	
+Return Nil
+
+
+//-- Funcao Responsavel para marcar/desmarcar o registros selecionado
+Static Function Z12MkOne( oObjMark )
 
 	Local nMark 
 	Local cMarkZ12 := ''
@@ -5433,8 +5722,25 @@ Static Function A176MkOne( oObjMark )
 Return
 
 
-///Funcao Responsavel para marcar/desmarcar todos os registros no markbrowse
-Static Function A176MkAll( oObjMark )
+//-- Funcao Responsavel para marcar/desmarcar o registros selecionado
+Static Function CB9MkOne( oObjMark )
+
+	Local nMark 
+	Local cMarkCB9 := ''
+
+	Default oObjMark := Nil
+	If oObjMark <> Nil
+		cMarkCB9 := oObjMark:cAlias
+		nMark := IIF( ( cMarkCB9 )->MARK == 1, 0, 1 )
+		( cMarkCB9 )->MARK := nMark
+		oObjMark:Refresh( , .T. )
+	EndIf
+
+Return
+
+
+//-- Funcao Responsavel para marcar/desmarcar todos os registros no markbrowse
+Static Function Z12MkAll( oObjMark )
 
 	Local nMark 
 	Local cMarkZ12 := ''
@@ -5455,155 +5761,404 @@ Static Function A176MkAll( oObjMark )
 Return
 
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    GrvEstZ12 ³ Autor ³ ACD                   ³ Data ³ 28/01/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Estorna Z12                                                ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
-Static Function GrvEstZ12(nQtde,nSldQtdDev)
-Local nDevQtd := 0
-Local cOrdSep := Z12->Z12_ORDSEP
-Local cProd	  := Z12->Z12_PROD
-Local cArm 	  := Z12->Z12_LOCAL
-Local cEnd 	  := Z12->Z12_LCALIZ
-Local cLote   := Z12->Z12_LOTECT
-Local cSLote  := Z12->Z12_NUMLOT
-Local cNumSer := Z12->Z12_NUMSER
-Local cLoteOri:= Nil
-Local cStatus := "1"
+//-- Funcao Responsavel para marcar/desmarcar todos os registros no markbrowse
+Static Function CB9MkAll( oObjMark )
 
-If nQtde <= Z12->Z12_QTESEP
-	//Devolve item(s) ja separados para o CB8
-	DevItemCB8(nQtde,cLoteOri)
-	
-	//Atualiza item(s) separados
-	RecLock("Z12",.F.)
-	Z12->Z12_QTESEP -= nQtde
-	If Empty(Z12->Z12_QTESEP)
-		Z12->(DbDelete())
+	Local nMark 
+	Local cMarkCB9 := ''
+	Default oObjMark := Nil
+
+	If oObjMark <> Nil
+		cMarkCB9 := oObjMark:cAlias
+		( cMarkCB9 )->( DbGoTop() )
+		nMark := IIF( ( cMarkCB9 )->MARK == 1, 0, 1 )
+		While ( cMarkCB9 )->( !EOF() ) 
+			( cMarkCB9 )->MARK := nMark
+			( cMarkCB9 )->( DbSkip() )
+		End
+		( cMarkCB9 )->( DbGoTop() )
+		oObjMark:Refresh( , .T. )
 	EndIf
-	Z12->(MsUnlock())
-Else
-	Z12->(DbSetOrder(9))
-	Z12->(DbSeek(xFilial("Z12")+cOrdSep+cProd+cArm+cEnd+cLote+cSLote+cNumSer))
-	While !Z12->(Eof()) .and. ;
-		Z12->(Z12_FILIAL+Z12_ORDSEP+Z12_PROD+Z12_LOCAL+Z12_LCALIZ+Z12_LOTECT+Z12_NUMLOT+Z12_NUMSER) ==;
-		xFilial("Z12")+cOrdSep+cProd+cArm+cEnd+cLote+cSLote+cNumSer
-		If Empty(nQtde)
-			Exit
-		EndIf
+
+Return
+
+
+//-- Estorna Z12
+Static Function GrvEstZ12(nQtde, nSldQtdDev)
+	Local nDevQtd := 0
+	Local cOrdSep := Z12->Z12_ORDSEP
+	Local cProd	  := Z12->Z12_PROD
+	Local cArm 	  := Z12->Z12_LOCAL
+	Local cEnd 	  := Z12->Z12_LCALIZ
+	Local cLote   := Z12->Z12_LOTECT
+	Local cSLote  := Z12->Z12_NUMLOT
+	Local cNumSer := Z12->Z12_NUMSER
+	Local cLoteOri:= Nil
+	Local cStatus := "1"
+	Local cItemAnt := ""
+
+	If nQtde <= Z12->Z12_QTESEP
+		//Devolve item(s) ja separados para o CB8
+		DevItemCB8(nQtde,cLoteOri)
 		
-		If Empty(Z12->Z12_QTESEP) //-- ja devolvido
-			Z12->(DbSkip())
-			Loop
-		EndIf
-		
-		If nQtde <= Z12->Z12_QTESEP
-			nDevQtd := nQtde
-			nQtde	  := 0
-		Else
-			nDevQtd := Z12->Z12_QTESEP
-			nQtde   -= nDevQtd
-		EndIf
-		
-		If !DevItemCB8(nDevQtd)
-			VTAlert("Item de valicacao nao localizado!","Aviso",.T.,4000,3)
-			Z12->(DbSetOrder(12))
-			Z12->(DbSeek(xFilial("Z12")+cOrdSep))
-			Return
-		EndIf
-		
+		//Atualiza item(s) separados
 		RecLock("Z12",.F.)
-		Z12->Z12_QTESEP -= nDevQtd
+		Z12->Z12_QTESEP -= nQtde
 		If Empty(Z12->Z12_QTESEP)
 			Z12->(DbDelete())
 		EndIf
 		Z12->(MsUnlock())
-	EndDo
-EndIf
+	Else
+		Z12->(DbSetOrder(9))
+		Z12->(DbSeek(xFilial("Z12")+cOrdSep+cProd+cArm+cEnd+cLote+cSLote+cNumSer))
+		While !Z12->(Eof()) .and. ;
+			Z12->(Z12_FILIAL+Z12_ORDSEP+Z12_PROD+Z12_LOCAL+Z12_LCALIZ+Z12_LOTECT+Z12_NUMLOT+Z12_NUMSER) ==;
+			xFilial("Z12")+cOrdSep+cProd+cArm+cEnd+cLote+cSLote+cNumSer
+			If Empty(nQtde)
+				Exit
+			EndIf
+			
+			If Empty(Z12->Z12_QTESEP) //-- ja devolvido
+				Z12->(DbSkip())
+				Loop
+			EndIf
+			
+			If nQtde <= Z12->Z12_QTESEP
+				nDevQtd := nQtde
+				nQtde	  := 0
+			Else
+				nDevQtd := Z12->Z12_QTESEP
+				nQtde   -= nDevQtd
+			EndIf
+			
+			If !DevItemCB8(nDevQtd)
+				VTAlert("Item de valicacao nao localizado!","Aviso",.T.,4000,3)
+				Z12->(DbSetOrder(12))
+				Z12->(DbSeek(xFilial("Z12")+cOrdSep))
+				Return
+			EndIf
+			
+			RecLock("Z12",.F.)
+			Z12->Z12_QTESEP -= nDevQtd
+			If Empty(Z12->Z12_QTESEP)
+				Z12->(DbDelete())
+			EndIf
+			Z12->(MsUnlock())
+		EndDo
+	EndIf
 
-If Empty( MpSysExecScalar("SELECT COUNT(1) AS OK FROM " + RetSQLName("Z12") + " Z12 WHERE Z12.Z12_FILIAL = '" + xFilial("Z12") + "' AND Z12.Z12_ORDSEP = '" + cOrdSep + "' AND Z12.D_E_L_E_T_= ' ' ", "OK") )
-	cStatus := "0"
-EndIf
+	If Empty( MpSysExecScalar("SELECT COUNT(1) AS OK FROM " + RetSQLName("Z12") + " Z12 WHERE Z12.Z12_FILIAL = '" + xFilial("Z12") + "' AND Z12.Z12_ORDSEP = '" + cOrdSep + "' AND Z12.D_E_L_E_T_= ' ' ", "OK") )
+		cStatus := "0"
+	EndIf
 
-RecLock("CB7",.F.)
-CB7->CB7_XSTATU := cStatus
-CB7->CB7_XSTATP := "1"
-If cStatus == "0"
-	CB7->CB7_XDIVER := "0"
-	CB7->CB7_XSTATP := "0"
-EndIf
-CB7->(MsUnlock())
+	RecLock("CB7",.F.)
+	CB7->CB7_XSTATU := cStatus
+	CB7->CB7_XSTATP := "1"
+	If cStatus == "0"
+		CB7->CB7_XDIVER := "0"
+		CB7->CB7_XSTATP := "0"
+	EndIf
+	CB7->(MsUnlock())
+
+	If cStatus == "0"
+		dbSelectArea("CB8")
+		CB8->(dbSetOrder(1))      
+		If CB8->(dbSeek(xFilial("CB8") + CB7->CB7_ORDSEP))
+			While CB8->(!EoF()) .AND. CB8->(CB8_FILIAL+CB8_ORDSEP) == CB7->(CB7_FILIAL+CB7_ORDSEP)
+				If cItemAnt != CB8->(CB8_PEDIDO+CB8_ITEM)
+					SetTraking("3", CB8->CB8_PEDIDO, CB8->CB8_ITEM, Nil, "Validação física totalmente desfeita PV-Item: " + AllTrim(CB8->CB8_PEDIDO) + "-" + AllTrim(CB8->CB8_ITEM), "Desfaz Validação Física")
+				EndIf
+				cItemAnt := CB8->(CB8_PEDIDO+CB8_ITEM)
+
+				CB8->(dbSkip())
+			EndDo
+		EndIf
+	EndIf
+
 Return
 
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡„o	 ³DevItemCB8  ³ Autor ³ ACD                 ³ Data ³ 16/02/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡„o ³ Devolve Items separados para o itens a separar CB8         ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
-Static Function DevItemCB8(nQtde,cLoteOri)
+//-- Estorna CB9
+Static Function GrvEstCB9(nQtde, nSldQtdDev)
+	Local nDevQtd := 0
+	Local cOrdSep := CB9->CB9_ORDSEP
+	Local cProd	  := CB9->CB9_PROD
+	Local cArm 	  := CB9->CB9_LOCAL
+	Local cEnd 	  := CB9->CB9_LCALIZ
+	Local cLote   := CB9->CB9_LOTECT
+	Local cSLote  := CB9->CB9_NUMLOT
+	Local cNumSer := CB9->CB9_NUMSER
+	Local cLoteOri:= Nil
+	Local cStatus := "1"
+	Local cItemAnt := ""
 
-Local aCB8			:= CB8->(GetArea())
-Local aLoteOri		:= {}
-Local lAtuLotCB8	:= .F.
-
-Default cLoteOri	:= ""
-
-CB8->(DbSetOrder(4))
-If !CB8->(DbSeek(xFilial("CB8")+Z12->(Z12_ORDSEP+Z12_ITESEP+Z12_PROD+Z12_LOCAL+Z12_LCALIZ+Z12_LOTECT+Z12_NUMLOT+Z12_NUMSER)))
-	Return .F.
-EndIf
-
-While CB8->(!Eof() .AND. ;
-	CB8_FILIAL+CB8_ORDSEP+CB8_ITEM+CB8_PROD+CB8_LOCAL+CB8_LCALIZ+CB8_LOTECT+CB8_NUMLOT+CB8_NUMSER ==;
-	xFilial("CB8")+Z12->(Z12_ORDSEP+Z12_ITESEP+Z12_PROD+Z12_LOCAL+Z12_LCALIZ+Z12_LOTECT+Z12_NUMLOT+Z12_NUMSER))
-	If CB8->CB8_PEDIDO # Z12->Z12_PEDIDO
-		CB8->(DbSkip())
-		Loop
-	EndIf
-
-	If CB8->CB8_SEQUEN # Z12->Z12_SEQUEN
-		CB8->(DbSkip())
-		Loop
-	EndIf
-
-	RecLock("CB8")
-	If nQtde < CB8->CB8_XQTDOR
-		CB8->CB8_XSALDO := CB8->CB8_XSALDO + nQtde
+	If nQtde <= CB9->CB9_QTESEP
+		//Devolve item(s) ja separados para o CB8
+		DevItemCB8(nQtde,cLoteOri)
+		
+		//Atualiza item(s) separados
+		RecLock("CB9",.F.)
+		CB9->CB9_QTESEP -= nQtde
+		If Empty(CB9->CB9_QTESEP)
+			CB9->(DbDelete())
+		EndIf
+		CB9->(MsUnlock())
 	Else
-		CB8->CB8_XSALDO := CB8->CB8_XSALDO + CB8->CB8_XQTDOR
+		CB9->(DbSetOrder(9))
+		CB9->(DbSeek(xFilial("CB9")+cOrdSep+cProd+cArm+cEnd+cLote+cSLote+cNumSer))
+		While !CB9->(Eof()) .and. ;
+			CB9->(CB9_FILIAL+CB9_ORDSEP+CB9_PROD+CB9_LOCAL+CB9_LCALIZ+CB9_LOTECT+CB9_NUMLOT+CB9_NUMSER) ==;
+			xFilial("CB9")+cOrdSep+cProd+cArm+cEnd+cLote+cSLote+cNumSer
+			If Empty(nQtde)
+				Exit
+			EndIf
+			
+			If Empty(CB9->CB9_QTESEP) //-- ja devolvido
+				CB9->(DbSkip())
+				Loop
+			EndIf
+			
+			If nQtde <= CB9->CB9_QTESEP
+				nDevQtd := nQtde
+				nQtde	  := 0
+			Else
+				nDevQtd := CB9->CB9_QTESEP
+				nQtde   -= nDevQtd
+			EndIf
+			
+			If !DevItemCB8(nDevQtd)
+				VTAlert("Item de valicacao nao localizado!","Aviso",.T.,4000,3)
+				CB9->(DbSetOrder(12))
+				CB9->(DbSeek(xFilial("CB9")+cOrdSep))
+				Return
+			EndIf
+			
+			RecLock("CB9",.F.)
+			CB9->CB9_QTESEP -= nDevQtd
+			If Empty(CB9->CB9_QTESEP)
+				CB9->(DbDelete())
+			EndIf
+			CB9->(MsUnlock())
+		EndDo
 	EndIf
 
-	If "01" $ CB7->CB7_TIPEXP .And. !"01" $ CB7->CB7_TIPEXP
-		CB8->CB8_SALDOE := CB8->CB8_SALDOE + nQtde
+	If Empty( MpSysExecScalar("SELECT COUNT(1) AS OK FROM " + RetSQLName("CB9") + " CB9 WHERE CB9.CB9_FILIAL = '" + xFilial("CB9") + "' AND CB9.CB9_ORDSEP = '" + cOrdSep + "' AND CB9.D_E_L_E_T_= ' ' ", "OK") )
+		cStatus := "0"
 	EndIf
 
-	If lAtuLotCB8
-		CB8->CB8_LOTECT := aTail(aLoteOri)
+	RecLock("CB7",.F.)
+		CB7->CB7_STATUS := cStatus
+		CB7->CB7_STATPA := "1"
+		If cStatus == "0"
+			CB7->CB7_DIVERG := "0"
+			CB7->CB7_STATPA := "0"
+		EndIf
+	CB7->(MsUnlock())
+
+	If cStatus == "0"
+		dbSelectArea("CB8")
+		CB8->(dbSetOrder(1))      
+		If CB8->(dbSeek(xFilial("CB8") + CB7->CB7_ORDSEP))
+			While CB8->(!EoF()) .AND. CB8->(CB8_FILIAL+CB8_ORDSEP) == CB7->(CB7_FILIAL+CB7_ORDSEP)
+				If cItemAnt != CB8->(CB8_PEDIDO+CB8_ITEM)
+					SetTraking("4", CB8->CB8_PEDIDO, CB8->CB8_ITEM, Nil, "Separação totalmente desfeita PV-Item: " + AllTrim(CB8->CB8_PEDIDO) + "-" + AllTrim(CB8->CB8_ITEM), "Desfaz Separação")
+				EndIf
+				cItemAnt := CB8->(CB8_PEDIDO+CB8_ITEM)
+
+				CB8->(dbSkip())
+			EndDo
+		EndIf
 	EndIf
 
-	CB8->(MsUnlock())
-	CB8->(DbSkip())
-EndDo
+Return
 
-//Restaura Ambiente
-CB8->(RestArea(aCB8))
+
+//-- Devolve Items separados para o itens a separar CB8
+Static Function DevItemCB8(nQtde,cLoteOri)
+	Local aCB8			:= CB8->(GetArea())
+	Local aLoteOri		:= {}
+	Local lAtuLotCB8	:= .F.
+
+	Default cLoteOri	:= ""
+
+	If nOSOpc == 1
+		CB8->(DbSetOrder(4))
+		If !CB8->(DbSeek(xFilial("CB8")+Z12->(Z12_ORDSEP+Z12_ITESEP+Z12_PROD+Z12_LOCAL+Z12_LCALIZ+Z12_LOTECT+Z12_NUMLOT+Z12_NUMSER)))
+			Return .F.
+		EndIf
+
+		While CB8->(!Eof() .AND. ;
+			CB8_FILIAL+CB8_ORDSEP+CB8_ITEM+CB8_PROD+CB8_LOCAL+CB8_LCALIZ+CB8_LOTECT+CB8_NUMLOT+CB8_NUMSER ==;
+			xFilial("CB8")+Z12->(Z12_ORDSEP+Z12_ITESEP+Z12_PROD+Z12_LOCAL+Z12_LCALIZ+Z12_LOTECT+Z12_NUMLOT+Z12_NUMSER))
+
+			If CB8->CB8_PEDIDO # Z12->Z12_PEDIDO
+				CB8->(DbSkip())
+				Loop
+			EndIf
+
+			If CB8->CB8_SEQUEN # Z12->Z12_SEQUEN
+				CB8->(DbSkip())
+				Loop
+			EndIf
+
+			RecLock("CB8")
+			If nQtde < CB8->CB8_XQTDOR
+				CB8->CB8_XSALDO := CB8->CB8_XSALDO + nQtde
+			Else
+				CB8->CB8_XSALDO := CB8->CB8_XSALDO + CB8->CB8_XQTDOR
+			EndIf
+
+			If "01" $ CB7->CB7_TIPEXP .And. !"01" $ CB7->CB7_TIPEXP
+				CB8->CB8_SALDOE := CB8->CB8_SALDOE + nQtde
+			EndIf
+
+			If lAtuLotCB8
+				CB8->CB8_LOTECT := aTail(aLoteOri)
+			EndIf
+
+			CB8->(MsUnlock())
+			CB8->(DbSkip())
+		EndDo
+	Else
+		CB8->(DbSetOrder(4))
+		If !CB8->(DbSeek(xFilial("CB8")+CB9->(CB9_ORDSEP+CB9_ITESEP+CB9_PROD+CB9_LOCAL+CB9_LCALIZ+CB9_LOTECT+CB9_NUMLOT+CB9_NUMSER)))
+			Return .F.
+		EndIf
+
+		While CB8->(!Eof() .AND. ;
+			CB8_FILIAL+CB8_ORDSEP+CB8_ITEM+CB8_PROD+CB8_LOCAL+CB8_LCALIZ+CB8_LOTECT+CB8_NUMLOT+CB8_NUMSER ==;
+			xFilial("CB8")+CB9->(CB9_ORDSEP+CB9_ITESEP+CB9_PROD+CB9_LOCAL+CB9_LCALIZ+CB9_LOTECT+CB9_NUMLOT+CB9_NUMSER))
+
+			If CB8->CB8_PEDIDO # CB9->CB9_PEDIDO
+				CB8->(DbSkip())
+				Loop
+			EndIf
+
+			If CB8->CB8_SEQUEN # CB9->CB9_SEQUEN
+				CB8->(DbSkip())
+				Loop
+			EndIf
+
+			RecLock("CB8")
+			If nQtde < CB8->CB8_QTDORI
+				CB8->CB8_SALDOS := CB8->CB8_SALDOS + nQtde
+			Else
+				CB8->CB8_SALDOS := CB8->CB8_SALDOS + CB8->CB8_QTDORI
+			EndIf
+
+			If "01" $ CB7->CB7_TIPEXP .And. !"01" $ CB7->CB7_TIPEXP
+				CB8->CB8_SALDOE := CB8->CB8_SALDOE + nQtde
+			EndIf
+
+			If lAtuLotCB8
+				CB8->CB8_LOTECT := aTail(aLoteOri)
+			EndIf
+
+			CB8->(MsUnlock())
+			CB8->(DbSkip())
+		EndDo
+	EndIf
+
+	//Restaura Ambiente
+	CB8->(RestArea(aCB8))
 
 Return .T.
+
+
+//--
+Static Function SetTraking(cOpc, cPedido, cItem, cMotivo, cObs, cTitLog)
+    local aArea   := GetArea()
+	local aASC5   := SC5->( GetArea() )
+    local aTrackS := {}
+	local nRecPos := CB7->( Recno() )
+	local cChave  := CB7->( CB7_FILIAL + CB7_PEDIDO )
+	local cAuxObs := ""
+
+	dbSelectArea("SC5")
+	SC5->( dbSetOrder(1) )
+    If SC5->( dbSeek( cChave ) )
+		RecLock("SC5", .f.)
+			If cOpc == "3"
+				SC5->C5_X4SSTAT := "A" // Em Validacao Fisica
+			ElseIf cOpc == "4"
+				SC5->C5_X4SSTAT := "8" // Em Agendamento
+			ElseIf cOpc == "5"
+				SC5->C5_X4SSTAT := "9" // Em Validacao Fiscal
+			EndIf
+
+			//Grava o campo C5_MSEXP para sinalizaro ao Scheduler
+			SC5->C5_MSEXP:=   ""  //DToS(dDataBase)
+		SC5->( MsUnLock() )
+
+		dbSelectArea("Z09")
+		Z09->( dbSetOrder(3) )
+
+		If Z09->( dbSeek(xFilial() + cPedido + cItem) )
+			aTrackS := Array( Len( Z09->( DbStruct() ) ) )
+
+			aTrackS[Z09->(FieldPos("Z09_FILIAL"))]  := Z09->Z09_FILIAL
+			aTrackS[Z09->(FieldPos("Z09_NUMPV")) ]  := Z09->Z09_NUMPV                   // Pedido Venda
+			aTrackS[Z09->(FieldPos("Z09_ITEMPV"))]  := Z09->Z09_ITEMPV                  // Item PV
+			If cOpc == "1"
+				cAuxObs += "--[" + DTOS(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+				cAuxObs += "De: Logistica" + chr(13)+chr(10)
+				cAuxObs += "Para: CS" + chr(13)+chr(10)
+				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
+				cAuxObs += "O que: "+ cObs + chr(13)+chr(10)
+				cAuxObs += Trim(Z09->Z09_DSMOTV) 
+
+				aTrackS[Z09->(FieldPos("Z09_ACAOCS"))]	:= "2"								// Acao CS
+				aTrackS[Z09->(FieldPos("Z09_DSMOTV")) ]	:= cAuxObs							// Detalhes do Motivo
+				If !Empty(cMotivo)
+					aTrackS[Z09->(FieldPos("Z09_MOTIVO")) ]	:= cMotivo						// Observacao para CS
+				EndIf
+			ElseIf cOpc == "2"
+				cAuxObs += "--[" + DTOS(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
+				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
+
+				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs							// Obs.Logistic para a alteracao do empenho
+			ElseIf cOpc == "3"
+				cAuxObs += "--[" + DTOS(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
+				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
+
+				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs							// Obs.Logistic para a Desfaz Validacao Fisica
+				aTrackS[Z09->(FieldPos("Z09_DVIFIS"))]  := CTOD("")		
+				aTrackS[Z09->(FieldPos("Z09_HVIFIS"))]  := Space(5)
+				aTrackS[Z09->(FieldPos("Z09_UVIFIS"))]  := Space(15)
+
+				aTrackS[Z09->(FieldPos("Z09_DVFISI"))]  := CTOD("")	
+				aTrackS[Z09->(FieldPos("Z09_HVFISI"))]  := Space(5)
+				aTrackS[Z09->(FieldPos("Z09_UVFISI"))]  := Space(15)
+				aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "3"							    // Status "Em Validacao Fisica"
+			ElseIf cOpc == "4"
+				cAuxObs += "--[" + DTOS(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
+				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
+
+				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs							// Obs.Logistic para a Desfaz Separacao
+				aTrackS[Z09->(FieldPos("Z09_DTEXPE"))]  := CTOD("")
+				aTrackS[Z09->(FieldPos("Z09_HREXPE"))]  := Space(5)
+				aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "4"							    // Status "Em Agendamento"
+			ElseIf cOpc == "5"
+				cAuxObs += "--[" + DTOS(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
+				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
+
+				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs							// Obs.Logistic para a Desfaz Separacao
+				aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "2"							    // Status "Em Validacao Fiscal"
+			EndIf
+
+			u_TRK006S(aTrackS, cTitLog)
+
+			Z09->( DbSkip() )
+		End
+
+		CB7->( DbGoto(nRecPos) )
+	EndIf
+
+	RestArea(aASC5)
+    RestArea(aArea)
+
+Return

@@ -285,8 +285,8 @@ User Function Trk006ME(cPedido)
     Local aArea := GetArea()
 
     cQuery := "SELECT COUNT(1) AS OK FROM " + RetSQLName("SC6") + " SC6 "
-    cQuery += " INNER JOIN " + RetSQLName("SF4") + " SF4 ON SF4.F4_FILIAL = ' ' AND SF4.F4_CODIGO= SC6.C6_TES AND SF4.F4_TIPO = 'S' AND SF4.F4_ESTOQUE = 'S' AND SF4.D_E_L_E_T_= ' ' "
-    cQuery += " WHERE SC6.D_E_L_E_T_= ' ' AND C6_NUM = '" + cPedido + "' "
+    cQuery += " INNER JOIN " + RetSQLName("SF4") + " SF4 ON SF4.F4_FILIAL = '" + xFilial("SF4") + "' AND SF4.F4_CODIGO= SC6.C6_TES AND SF4.F4_TIPO = 'S' AND SF4.F4_ESTOQUE = 'S' AND SF4.D_E_L_E_T_= ' ' "
+    cQuery += " WHERE SC6.C6_FILIAL = '" + xFilial("SC6") + "' AND SC6.D_E_L_E_T_= ' ' AND C6_NUM = '" + cPedido + "' "
 
     lRet := MpSysExecScalar(cQuery, "OK") > 0
     RestArea(aArea)
@@ -348,13 +348,14 @@ Ponto de entrada para Legenda no pedido de vendas
 @return array, Array com a regra da Legenda
 /*/
 Static Function sMA410LEG(aCores)
-    //aCores := GetCorLeg(aCores)[2]
+
     AAdd(aCores,{"br_branco.bmp"    , "Em Validação Fiscal"})  
     AAdd(aCores,{"br_amarelo.bmp"   , "Em Validação Física"})   
     AAdd(aCores,{"br_laranja.bmp"   , "Em Agendamento"     })       
     AAdd(aCores,{"br_marron.bmp"    , "Em Separação"       })
     AAdd(aCores,{"br_azul.bmp"      , "Em Faturamento"     })
     AAdd(aCores,{"br_verde.bmp"     , "Em Embarque"        })
+    
 Return aCores
 
 /*/{Protheus.doc} sMA410COR
@@ -368,7 +369,7 @@ Ponto de entrada para Legenda no
 Static Function sMA410COR(aCores)
     Local aRetCor := {}
     Local nI
-    //aCores := GetCorLeg(aCores)[1]
+
     /*
         C5_X4SSTAT
         1 = Em Separação
@@ -415,7 +416,6 @@ Ponto de entrada para Legenda no
 @return array, Array com a regra da Legenda
 /*/
 Static Function sMA440COR(aCores)
-//aCores := GetCorLeg(aCores)[1]
     aCores := sMA410COR(aCores)
 Return aCores
 
@@ -428,13 +428,14 @@ Ponto de entrada para Legenda no
 @return array, Array com a regra da Legenda
 /*/
 Static Function sM461LEG(aCores)
-//aCores := GetCorLeg(aCores)[2]
+
     AAdd(aCores,{"br_branco.bmp"    , "Em Validação Fiscal"})  
     AAdd(aCores,{"br_amarelo.bmp"   , "Em Validação Física"})   
     AAdd(aCores,{"br_laranja.bmp"   , "Em Agendamento"     })       
     AAdd(aCores,{"br_marron.bmp"    , "Em Separação"       })
     AAdd(aCores,{"br_azul.bmp"      , "Em Faturamento"     })
     AAdd(aCores,{"br_verde.bmp"     , "Em Embarque"        })
+
 Return aCores
 
 /*/{Protheus.doc} sM461COR
@@ -505,16 +506,13 @@ Else
     _cSTAT := "C5_X4SSTAT"
 EndIf
 
-AAdd(aRet[2],{"br_marron.bmp"        , "Em Separação"})
-AAdd(aRet[2],{"br_azul.bmp"    , "Em Faturamento"})
-//AAdd(aRet[2],{"BR_MARROM"         , "Em Coleta"})
-//AAdd(aRet[2],{"br_verde.bmp"     , "Em Transito"})
-//AAdd(aRet[2],{"BR_AZUL"           , "Pedido Entregue"}) 
-AAdd(aRet[2],{"BR_PRETO_0"        , "Em Fracionamento"})
-AAdd(aRet[2],{"br_laranja.bmp"           , "Em Agendamento"})
-AAdd(aRet[2],{"br_branco.bmp"   , "Em Validação Fiscal"})
-AAdd(aRet[2],{"br_amarelo.bmp"   , "Validação Física"})
-AAdd(aRet[2],{"BR_VERMELHO"       , "Em Embarque"})
+aadd(aRet[2], {"br_marron.bmp" , "Em Separação"})
+aadd(aRet[2], {"br_azul.bmp"   , "Em Faturamento"})
+aadd(aRet[2], {"BR_PRETO_0"    , "Em Fracionamento"})
+aadd(aRet[2], {"br_laranja.bmp", "Em Agendamento"})
+aadd(aRet[2], {"br_branco.bmp" , "Em Validação Fiscal"})
+aadd(aRet[2], {"br_amarelo.bmp", "Validação Física"})
+aadd(aRet[2], {"BR_VERMELHO"   , "Em Embarque"})
 
 AAdd(aRet[1],{_cSTAT+" == '1'",aRet[2][01][1]    , aRet[2][01][1]})
 AAdd(aRet[1],{_cSTAT+" == '2'",aRet[2][02][1]    , aRet[2][02][1]})
@@ -529,3 +527,132 @@ AAdd(aRet[1],{_cSTAT+" == 'B'",aRet[2][10][1]    , aRet[2][10][1]})
 
 
 Return aClone(aRet)
+
+
+Static Function SM460MARK()
+    local lRet := .T.
+Return lRet
+
+
+Static Function SM460FIM(aParam)
+    Local aArea     := GetArea()
+    Local aSF2      := SF2->( GetArea() )
+    Local aSD2      := SD2->( GetArea() )
+    Local aSC5      := SC5->( GetArea() )
+    Local cNumNFS   := aParam[1] // Número da NF
+    Local cSerieNFS := aParam[2] // Série da NF
+    Local cClieFor  := aParam[3] // Cliente/fornecedor da NF
+    Local cLoja     := aParam[4] // Loja da NF
+    Local aTrackS   := {}
+    Local nTamZ09   := 0
+    Local lAtuZ09   := .F.
+     
+
+    DbSelectAre("Z09")
+    nTamZ09 := Len( Z09->( DbStruct() ) )
+    
+    //-- Se a SF2 estiver desposicionada, posiciono novamente
+    If !(cNumNFS == SF2->F2_DOC .And. cSerieNFS == SF2->F2_SERIE .And. cClieFor == SF2->F2_CLIENTE .And. cLoja == SF2->F2_LOJA)
+        SF2->( DbSetOrder(1) )
+        SF2->( DbSeek(xFilial() + cNumNFS + cSerieNFS + cClieFor + cLoja) )
+    EndIf
+
+    If !(SF2->F2_TIPO == "N")
+        RestArea(aSF2)
+        RestArea(aArea)
+        Return
+    EndIf
+
+    SD2->( DbSetOrder(3) )
+    If SD2->( DbSeek(xFilial() + SF2->F2_DOC + SF2->F2_SERIE) ) .And. u_Trk006ME(SD2->D2_PEDIDO)
+        lAtuZ09 := .T.
+
+        DbSelectArea("SC5")
+        SC5->( DbSetOrder(1) )
+        If SC5->( DbSeek(xFilial() + SD2->D2_PEDIDO ) )
+
+            RecLock("SC5", .F.)
+            SC5->C5_X4SSTAT := "B" //-- Em Embarque
+            SC5->( MsUnLock() )
+
+            dbSelectArea("CB7")
+            CB7->(dbSetOrder(2) )
+            If CB7->(dbSeek(xFilial() + SC5->C5_NUM ) )
+                RecLock("SC5", .F.)
+                SC5->C5_X4SSTAT := "2"
+                SC5->( MsUnLock() )
+            EndIf
+        EndIf
+
+    Endif
+
+
+    While lAtuZ09 .And. SD2->( !Eof() ) .And. SD2->(D2_FILIAL+D2_DOC+D2_SERIE+D2_CLIENTE+D2_LOJA) == SF2->( F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA) 
+
+        aTrackS := Array( nTamZ09 )
+
+        //-- Atualiza Z09
+        DbSelectAre("Z09")
+        aTrackS[FieldPos("Z09_FILIAL")] := xFilial("SF2")       // Filial
+        aTrackS[FieldPos("Z09_NUMPV") ] := SD2->D2_PEDIDO       // Pedido Venda  C [ 6 ][ 0 ] 05
+        aTrackS[FieldPos("Z09_ITEMPV")] := SD2->D2_ITEMPV       // Item PV       C [ 2 ][ 0 ] 06
+        aTrackS[FieldPos("Z09_STATUS")] := "7"                  // Em Embarque
+        aTrackS[FieldPos("Z09_NF")    ] := SD2->D2_DOC          // Nota Fiscal
+        aTrackS[FieldPos("Z09_SERIE") ] := SD2->D2_SERIE        // Serie Nota Fiscal
+        aTrackS[FieldPos("Z09_DTEMNF")] := SD2->D2_EMISSAO      // Emissao Nota
+        aTrackS[FieldPos("Z09_HREMNF")] := SF2->F2_HORA         // Hora Emissao
+        aTrackS[FieldPos("Z09_TOTAL") ] := SF2->(F2_VALBRUT + F2_VALIPI)
+        u_TRK006S(aTrackS,"Em Embarque")
+
+        SD2->( DbSkip() )
+    End
+
+
+    RestArea(aSC5)
+    RestArea(aSD2)
+    RestArea(aSF2)
+    RestArea(aArea)
+
+Return
+
+Static Function sM410AGRV(aParam)
+    Local nOpcao    := aParam[1]
+
+    If nOpcao == 1
+        ChkCliRet()
+    ElseIf nOpcao == 2
+        u_Frete()
+    EndIf   
+Return 
+
+
+Static Function ChkCliRet()
+    Local nContI    := 0
+    Local nTotItens := 0
+    Local nLocal    := 0
+    Local lUdLog    := .F.
+    Local aArea     := GetArea() //Armazena o ambiente ativo para restaurar ao fim do processo
+
+    If FWCodFil() == "04" //cliente=010127 Loja=01
+        nLocal      := aScan(aHeader, {|x| Alltrim(x[2]) == "C6_LOCAL"})
+        nTotItens   := Len(aCols)
+
+        For nContI := 1 To nTotItens
+            If aCols[nContI][nLocal] == "19"
+                lUdLog := .T.
+                Exit
+            EndIf
+        Next nContI
+
+
+        If lUdLog
+            //--015268
+            //Conout("Entrou Tem armazém 19")
+        EndIf
+
+    EndIf
+    
+    //-- Restaura o ambiente ativo no início da chamada
+    RestArea(aArea)         
+Return
+
