@@ -188,7 +188,7 @@ static function TRK0005Brw(cTipoPedido as character)
 	Aadd( aFWMBrowseSeek, { "Pedido + Item"                 , RetFldIdx("C5_NUM+C6_ITEM")           , 1 } )
 	Aadd( aFWMBrowseSeek, { "Cliente + Pedido"              , RetFldIdx("C5_CLIENTE+C5_NUM")        , 1 } )
     Aadd( aFWMBrowseSeek, { "Faturamento + Pedido + Item"   , RetFldIdx("C6_DATFAT+C5_NUM+C6_ITEM") , 1 } )
-    Aadd( aFWMBrowseSeek, { "Entrega + Data de Faturamento + Data Inicio Bloqueio Fiscal"   , RetFldIdx("C6_ENTREG+C6_DATFAT+Z09_BLFDI") , 1 } )
+    Aadd( aFWMBrowseSeek, { "Entrega + Dt.Fat + Dt.Ini.Blq.Fiscal"   , RetFldIdx("C6_ENTREG+C6_DATFAT+Z09_BLFDI") , 1 } )
 
     oFWTemporaryTable:Create()
 
