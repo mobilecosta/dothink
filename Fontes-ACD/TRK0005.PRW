@@ -89,8 +89,9 @@ static function TRK0005Brw(cTipoPedido as character)
         ,{"C5_CLIENTE"  , TamSX3("C5_CLIENTE")  , GetSX3Cache("C5_CLIENTE"  ,"X3_TITULO"), GetSX3Cache("C5_CLIENTE" ,"X3_PICTURE"),"SC5.C5_CLIENTE" };
         ,{"C5_LOJACLI"  , TamSX3("C5_LOJACLI")  , GetSX3Cache("C5_LOJACLI"  ,"X3_TITULO"), GetSX3Cache("C5_LOJACLI" ,"X3_PICTURE"),"SC5.C5_LOJACLI" };
         ,{"A1_NOME"     , TamSX3("A1_NOME")     , GetSX3Cache("A1_NOME"     ,"X3_TITULO"), GetSX3Cache("A1_NOME"    ,"X3_PICTURE"),"SA1.A1_NOME"    };
-        ,{"C6_PRODUTO"  , TamSX3("C6_PRODUTO")  , GetSX3Cache("C6_PRODUTO"  ,"X3_TITULO"), GetSX3Cache("C6_PRODUTO" ,"X3_PICTURE"),"SC6.C6_PRODUTO" };
+        ,{"C6_PRODUTO"  , TamSX3("C6_PRODUTO")  , GetSX3Cache("C6_PRODUTO"  ,"X3_TITULO"), GetSX3Cache("C6_PRODUTO" ,"X3_PICTURE"),"SC6.C6_PRODUTO" };       
         ,{"B1_DESC"     , TamSX3("B1_DESC")     , GetSX3Cache("B1_DESC"     ,"X3_TITULO"), GetSX3Cache("B1_DESC"    ,"X3_PICTURE"),"SB1.B1_DESC"    };
+        ,{"C6_LOCAL"    , TamSX3("C6_LOCAL")    , GetSX3Cache("C6_LOCAL"    ,"X3_TITULO"), GetSX3Cache("C6_LOCAL"   ,"X3_PICTURE"),"SC6.C6_LOCAL"   };         
         ,{"B1_POSIPI"   , TamSX3("B1_POSIPI")   , GetSX3Cache("B1_POSIPI"   ,"X3_TITULO"), GetSX3Cache("B1_POSIPI"  ,"X3_PICTURE"),"SB1.B1_POSIPI"  };
         ,{"B1_ORIGEM"   , TamSX3("B1_ORIGEM")   , GetSX3Cache("B1_ORIGEM"   ,"X3_TITULO"), GetSX3Cache("B1_ORIGEM"  ,"X3_PICTURE"),"SB1.B1_ORIGEM"  };
         ,{"F4_SITTRIB"  , TamSX3("F4_SITTRIB")  , GetSX3Cache("F4_SITTRIB"  ,"X3_TITULO"), GetSX3Cache("F4_SITTRIB" ,"X3_PICTURE"),"SF4.F4_SITTRIB" };
@@ -125,6 +126,7 @@ static function TRK0005Brw(cTipoPedido as character)
         ,{"SF4RECNO"    , {18,0,"N"} , "RecNo SF4","@R 999999999999999999","SF4.R_E_C_N_O_ AS SF4RECNO"};
     }
 
+    aFilter := {}
     nFields:=Len(aCustomFields)
     for nField:=1 to nFields
 
@@ -169,6 +171,10 @@ static function TRK0005Brw(cTipoPedido as character)
         else
             aFWMBrwColumn[nField]:SetAlign("LEFT")
         endif
+        
+
+        //Filters
+        aAdd(aFilter, {aCustomFields[nField][1], aCustomFields[nField][3], aCustomFields[nField][2][3], aCustomFields[nField][2][1], aCustomFields[nField][2][2], aCustomFields[nField][4]} )
 
     next nField
 
@@ -331,6 +337,8 @@ static function TRK0005Brw(cTipoPedido as character)
         oBrowse:SetColumns(aFWMBrwColumn)
         oBrowse:SetSeek(.T.,aFWMBrowseSeek)
         oBrowse:SetMenuDef("")
+        oBrowse:SetUseFilter(.T.)
+        oBrowse:SetFieldFilter(aFilter) //Set Filters
 
         //oBrowse:AddButton(cTitle,xAction,uParam1,nOption,nVerify,lNeedFind)
         oBrowse:AddButton("&Liberar"        , {|| TRK0005Lib(cTitulo,cAlias,oBrowse)},NIL,2)
@@ -571,30 +579,35 @@ static function TRK0005Lib(cTitulo,cAlias,oBrowse)
 
         
         Begintran() 
-            SetTraking(cAlias, "2", "", "", "")
+            //SetTraking(cAlias, "2", "", "", "")
             
             GeraOS(cPedido, @cMsgOs)
             
             If At("Ordem de Separacao: N A O  G E R A D A", cMsgOs) > 0
                 lErro := .T.
                 DisarmTransaction() 
-            ElseIf !Empty(cTriangular)
+            EndIf
+        Endtran()
+
+
+
+        If lErro   
+            MostraTexto(cMsgOs)
+            //RecLock(cAlias, .F.)
+            //(cAlias)->C5_XBLFIS := "1"
+            //(cAlias)->( MsUnLock() )
+        Else
+            SetTraking(cAlias, "2", "", "", "")
+            
+            If !Empty(cTriangular)
                 dbSelectArea("CB7")
                 CB7->(dbSetOrder(2)) //-- CB7_FILIAL+CB7_PEDIDO+CB7_LOCAL+CB7_STATUS+CB7_CLIENT+CB7_LOJA+CB7_COND+CB7_LOJENT+CB7_AGREG
                 If CB7->(dbSeek(xFilial("CB7") + cPedido))  
                     RecLock("CB7", .F.)
                     CB7->CB7_XPVTRI := cTriangular
                     CB7->( MsUnLock() )
-                EndIf  
-
+                EndIf 
             EndIf
-        Endtran()
-
-        If lErro   
-            MostraTexto(cMsgOs)
-            RecLock(cAlias, .F.)
-            (cAlias)->C5_XBLFIS := "1"
-            (cAlias)->( MsUnLock() )
         EndIf
 
         oBrowse:Refresh()

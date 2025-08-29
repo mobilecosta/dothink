@@ -14,11 +14,13 @@ User Function TRK0016()
 	Local aPergs   := {}
 	Local xPar0 := Space(6)
 	Local xPar1 := Space(6)
+	Local xPar2	:= "19"
 	
-	aAdd(aPergs, {1, "Pedido De", xPar0,  "", ".T.", "CB7", ".T.", 80,  .F.})
-	aAdd(aPergs, {1, "Pedido Ate", xPar1,  "", ".T.", "CB7", ".T.", 80,  .F.})
+	aAdd(aPergs, {1, "Pedido De"	, xPar0,  "", ".T.", "CB7", ".T.", 80,  .F.})
+	aAdd(aPergs, {1, "Pedido Ate"	, xPar1,  "", ".T.", "CB7", ".T.", 80,  .F.})
+	aAdd(aPergs, {1, "Armazém"		, xPar2,  "", ".T.", "NNR", ".T.", 30,  .T.})
 	
-	If ParamBox(aPergs, 'Informe os parâmetros', /*aRet*/, /*bOk*/, /*aButtons*/, /*lCentered*/, /*nPosx*/, /*nPosy*/, /*oDlgWizard*/, /*cLoad*/, .F., .F.)
+	If ParamBox(aPergs, 'Gerar Planilha Armazém Terceiro', /*aRet*/, /*bOk*/, /*aButtons*/, /*lCentered*/, /*nPosx*/, /*nPosy*/, /*oDlgWizard*/, /*cLoad*/, .F., .F.)
 		Processa({|| GeraExcel()})
 	EndIf
 	
@@ -35,8 +37,10 @@ Rotina de criacao do arquivo Excel da funcao TRK0016
 @since 27/08/2025
 /*/
 Static Function GeraExcel()
-	Local aArea       := GetArea()
+	
 	Local oPrintXlsx
+	Local oExcel	
+	Local aArea       := GetArea()
 	Local dData       := Date()
 	Local cHora       := Time()
 	Local cArquivo    := GetTempPath() + "TRK0016" + dToS(dData) + "_" + StrTran(cHora, ":", "-") + ".rel"
@@ -44,7 +48,7 @@ Static Function GeraExcel()
 	Local nAtual      := 0
 	Local nTotal      := 0
 	Local aColunas    := {}
-	Local oExcel
+
 	Local cFonte      := FwPrinterFont():Arial()
 	Local nTamFonte   := 12
 	Local lItalico    := .F.
@@ -102,6 +106,8 @@ Static Function GeraExcel()
     cQuery += " WHERE CB8_FILIAL = '" + xFilial("CB8") + "' " + CRLF
     cQuery += " AND CB8_PEDIDO >= '" + mv_par01 + "' " + CRLF
     cQuery += " AND CB8_PEDIDO <= '" + mv_par02 + "' " + CRLF
+	cQuery += " AND CB8_PEDIDO <= '" + mv_par02 + "' " + CRLF
+	cQuery += " AND CB8_LOCAL  = '" + mv_par03 + "' " + CRLF
     cQuery += " AND CB8.D_E_L_E_T_ = ' ' " + CRLF
     cQuery += " ORDER BY " + SqlOrder(CB8->(IndexKey(2)))
 
