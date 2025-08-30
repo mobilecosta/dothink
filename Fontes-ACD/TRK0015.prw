@@ -41,7 +41,7 @@ User Function TRK0015()
 		// Pesquisa por registros ainda não processados
 		BEGINSQL ALIAS cAlias
             SELECT
-                Z09.R_E_C_N_O_ Z09_RECNO,
+                Z09.R_E_C_N_O_ Z09_RECNO
             FROM
                 %TABLE:Z09% Z09
             WHERE
