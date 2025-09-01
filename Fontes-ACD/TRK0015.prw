@@ -100,7 +100,7 @@ User Function TRK0015()
 					cZ09_MOTIVO := "NF CANCELADA"
 					cZ09_DSMOTV := "Coleta não realizada após 7 dias do agendamento."
 
-					cMessage := "Cancelada automaticamente pelo sistema em " + ;
+					cMessage := "Cancelamento automatico pelo sistema em " + ;
 						DToC(Date()) + " às " + Time()
 				EndIf
 
@@ -109,9 +109,9 @@ User Function TRK0015()
 				aTrackS[Z09->(FieldPos("Z09_FILIAL"))] := Z09->Z09_FILIAL
 				aTrackS[Z09->(FieldPos("Z09_NUMPV")) ] := Z09->Z09_NUMPV
 				aTrackS[Z09->(FieldPos("Z09_ITEMPV"))] := Z09->Z09_ITEMPV
-				aTrackS[Z09->(FieldPos("Z09_STATUS"))] := Z09->Z09_STATUS
-				aTrackS[Z09->(FieldPos("Z09_MOTIVO")) ] := Z09->Z09_MOTIVO
-				aTrackS[Z09->(FieldPos("Z09_DSMOTV")) ] := Z09->Z09_DSMOTV
+				aTrackS[Z09->(FieldPos("Z09_STATUS"))] := cZ09_STATUS
+				aTrackS[Z09->(FieldPos("Z09_MOTIVO")) ] := cZ09_MOTIVO
+				aTrackS[Z09->(FieldPos("Z09_DSMOTV")) ] := cZ09_DSMOTV
 
 				// Chama rotina de gravação/histórico
 				u_TRK006S(aTrackS, cMessage)
