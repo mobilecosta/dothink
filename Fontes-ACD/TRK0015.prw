@@ -20,6 +20,7 @@ User Function TRK0015()
 	Local nDays  As Numeric   // Dias desde a última coleta
 	Local dDate  As Date      // Data da coleta mais recente
 	Local cMessage As Character // Mensagem de status
+	Local dLimite := Date() - 7 // Data limite para coletas
 
 	// Inicialização das variáveis
 	aArea  := FwGetArea()
@@ -47,28 +48,44 @@ User Function TRK0015()
             WHERE
                 Z09.Z09_STATUS = '4'
                 AND (
-                    Z09.Z09_DT1COL <= %EXP:DToS(Date() - 7)%
-                    OR Z09.Z09_DT2COL <= %EXP:DToS(Date() - 7)%
-                    OR Z09.Z09_DT3COL <= %EXP:DToS(Date() - 7)%
+                    Z09.Z09_DT1COL <= %EXP:DToS(dLimite)%
+                    OR Z09.Z09_DT2COL <= %EXP:DToS(dLimite)%
+                    OR Z09.Z09_DT3COL <= %EXP:DToS(dLimite)%
                 )
                 AND Z09.%NOTDEL%
 		ENDSQL
+
+		// Garante que o cursor está no primeiro registro
+		DBSelectArea(cAlias)
+		DBGOTOP()
+
+		// Debug pra verificar retorno da query
+		QOut("Total de registros retornados: " + cValToChar(RecCount()))
+		QOut("EOF inicial: " + If(EOF(), "True", "False"))
 
 		// Percorre os registros encontrados
 		While (!EOF())
 			// Posiciona a tabela de monitoramento
 			nRecNo := Z09_RECNO
+			// Posiciona na tabela real
 			DBSelectArea("Z09")
 			DBGoTo(nRecNo)
 
 			// Define qual a coleta mais recente a ser utilizada
-			dDate := IIf(!Empty(Z09_DT3COL), Z09_DT3COL, IIf(!Empty(Z09_DT2COL), Z09_DT2COL, Z09_DT1COL))
+			// dDate := IIf(!Empty(Z09_DT3COL), Z09_DT3COL, IIf(!Empty(Z09_DT2COL), Z09_DT2COL, Z09_DT1COL))
+			If !Empty(Z09_DT3COL)
+				dDate := Z09_DT3COL
+			ElseIf !Empty(Z09_DT2COL)
+				dDate := Z09_DT2COL
+			Else
+				dDate := Z09_DT1COL
+			EndIf
+
 			nDays := Date() - dDate
 
 			// Verifica se a coleta está fora do prazo de no mínimo 5 dias úteis
 			If (nDays >= 5)
-				// Ativa a flag de registros encontrados se houver coletas fora do prazo
-				lEmpty := .F.
+				lEmpty := .F. // Ativa a flag de registros encontrados
 
 				// Altera o registro de monitoramento
 				If (nDays < 7)
@@ -76,27 +93,28 @@ User Function TRK0015()
 					cZ09_MOTIVO := "ATRASO"
 					cZ09_DSMOTV := "Coleta com atraso maior que 5 dias."
 
-					// Atualiza SC5 + grava histórico
 					cMessage := "Detectado no monitoramento automático em " + ;
 						DToC(Date()) + " às " + Time()
-				Else
+				Else // já é garantido que nDays >= 7
 					cZ09_STATUS := "3" // NF_CANCELADA (rejeição)
 					cZ09_MOTIVO := "NF CANCELADA"
 					cZ09_DSMOTV := "Coleta não realizada após 7 dias do agendamento."
 
-					// Atualiza SC5 + grava histórico
 					cMessage := "Cancelada automaticamente pelo sistema em " + ;
 						DToC(Date()) + " às " + Time()
 				EndIf
+
+				// Prepara array de tracking
 				aTrackS := Array( Len( Z09->( DbStruct() ) ) )
 				aTrackS[Z09->(FieldPos("Z09_FILIAL"))] := Z09->Z09_FILIAL
-                aTrackS[Z09->(FieldPos("Z09_NUMPV")) ] := Z09->Z09_NUMPV
+				aTrackS[Z09->(FieldPos("Z09_NUMPV")) ] := Z09->Z09_NUMPV
 				aTrackS[Z09->(FieldPos("Z09_ITEMPV"))] := Z09->Z09_ITEMPV
 				aTrackS[Z09->(FieldPos("Z09_STATUS"))] := Z09->Z09_STATUS
 				aTrackS[Z09->(FieldPos("Z09_MOTIVO")) ] := Z09->Z09_MOTIVO
-                aTrackS[Z09->(FieldPos("Z09_DSMOTV")) ] := Z09->Z09_DSMOTV
-				u_TRK006S(aTrackS, cMessage)
+				aTrackS[Z09->(FieldPos("Z09_DSMOTV")) ] := Z09->Z09_DSMOTV
 
+				// Chama rotina de gravação/histórico
+				u_TRK006S(aTrackS, cMessage)
 			EndIf
 
 			// Salta para o próximo registro
@@ -105,7 +123,7 @@ User Function TRK0015()
 		End
 
 		// Fecha o arquivo temporário
-		DBSelectArea(cAlias)
+		// DBSelectArea(cAlias)
 		DBCloseArea()
 
 		// Mensagem de status final do processamento se estiver via interface gráfica
