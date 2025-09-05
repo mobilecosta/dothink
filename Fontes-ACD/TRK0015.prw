@@ -20,7 +20,9 @@ User Function TRK0015()
 	Local nDays  As Numeric   // Dias desde a última coleta
 	Local dDate  As Date      // Data da coleta mais recente
 	Local cMessage As Character // Mensagem de status
-	Local dLimite := Date() - 7 // Data limite para coletas
+	Local dLimit := Date() - 7 // Data limite para coletas
+	Local cDelay := SuperGetMV("BA_Z09ATA",.F., "ATRASO") // Dias para considerar atraso
+	Local cCancel := SuperGetMV("BA_Z09CAN",.F., "CANCEL") // Dias para considerar cancelamento
 
 	// Inicialização das variáveis
 	aArea  := FwGetArea()
@@ -48,9 +50,9 @@ User Function TRK0015()
             WHERE
                 Z09.Z09_STATUS = '4'
                 AND (
-                    Z09.Z09_DT1COL <= %EXP:DToS(dLimite)%
-                    OR Z09.Z09_DT2COL <= %EXP:DToS(dLimite)%
-                    OR Z09.Z09_DT3COL <= %EXP:DToS(dLimite)%
+                    Z09.Z09_DT1COL <= %EXP:DToS(dLimit)%
+                    OR Z09.Z09_DT2COL <= %EXP:DToS(dLimit)%
+                    OR Z09.Z09_DT3COL <= %EXP:DToS(dLimit)%
                 )
                 AND Z09.%NOTDEL%
 		ENDSQL
@@ -90,14 +92,14 @@ User Function TRK0015()
 				// Altera o registro de monitoramento
 				If (nDays < 7)
 					cZ09_STATUS := "2" // ALERTA_CANC_NF - Bloqueio Fiscal Pendente
-					cZ09_MOTIVO := "ATRASO"
+					cZ09_MOTIVO := cDelay
 					cZ09_DSMOTV := "Coleta com atraso maior que 5 dias."
 
 					cMessage := "Detectado no monitoramento automático em " + ;
 						DToC(Date()) + " às " + Time()
 				Else // já é garantido que nDays >= 7
 					cZ09_STATUS := "3" // NF_CANCELADA (rejeição)
-					cZ09_MOTIVO := "NF CANCELADA"
+					cZ09_MOTIVO := cCancel
 					cZ09_DSMOTV := "Coleta não realizada após 7 dias do agendamento."
 
 					cMessage := "Cancelamento automatico pelo sistema em " + ;
@@ -112,6 +114,7 @@ User Function TRK0015()
 				aTrackS[Z09->(FieldPos("Z09_STATUS"))] := cZ09_STATUS
 				aTrackS[Z09->(FieldPos("Z09_MOTIVO")) ] := cZ09_MOTIVO
 				aTrackS[Z09->(FieldPos("Z09_DSMOTV")) ] := cZ09_DSMOTV
+				aTrackS[Z09->(FieldPos("Z09_ACAOCS")) ] := '2'
 
 				// Chama rotina de gravação/histórico
 				u_TRK006S(aTrackS, cMessage)
