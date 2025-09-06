@@ -48,7 +48,7 @@ User Function TRK0015()
             FROM
                 %TABLE:Z09% Z09
             WHERE
-                Z09.Z09_STATUS = '4'
+                Z09.Z09_STATUS = '4' AND Z09.Z09_NUMPV <> ' '
                 AND (
                     Z09.Z09_DT1COL <= %EXP:DToS(dLimit)%
                     OR Z09.Z09_DT2COL <= %EXP:DToS(dLimit)%
@@ -122,7 +122,7 @@ User Function TRK0015()
 
 			// Salta para o próximo registro
 			DBSelectArea(cAlias)
-			DBSkip()
+			(cAlias)->(DbSkip())
 		End
 
 		// Fecha o arquivo temporário
