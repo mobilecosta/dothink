@@ -28,14 +28,14 @@ User Function TRK0010()
 	Private aGetDados	:= {}
 	Private aColNaoOrd	:= {}
 	Private cAlias		:= "SZW"
-	Private cCadastro	:= "Missao da Separacao"
+	Private cCadastro	:= "Expedição - Impressão de Documentos"
 	Private c518Cli		:= ""
 	Private c518Loja	:= ""
 	Private lCrescente	:= .F.
 	Private nOrdena		:= 0
 	Private oTimer
 	Private oBrowse
-	Private _aImpres := {{"DF","0",.T.},{"LD","1",.T.},{"OS","2",.T.},{"CL","3",.T.}} // [1]=DF=Danfe;LD=Laudo;OS=Ordem de Separacao;CL=Check-List de Embarque [2]=Ordem de Impressao, [3]=Indica se Imprime
+	Private _aImpres := {{"LD","0",.T.},{"OS","1",.T.},{"CL","2",.T.},{"DF","3",.T.}} // [1]=DF=Danfe;LD=Laudo;OS=Ordem de Separacao;CL=Check-List de Embarque [2]=Ordem de Impressao, [3]=Indica se Imprime
 	
 	SX2->(DbSetOrder(1))
 	If !SX2->(DbSeek("Z13"))
@@ -200,10 +200,15 @@ MV_PAR01 := TRBZ13IMP->Z13_DOC
 MV_PAR02 := TRBZ13IMP->Z13_DOC
 MV_PAR03 := TRBZ13IMP->Z13_SERIE
 MV_PAR04 := 2
-SetMVValue(cPergSX1, "MV_PAR01", TRBZ13IMP->Z13_DOC    , .T.)
-SetMVValue(cPergSX1, "MV_PAR02", TRBZ13IMP->Z13_DOC    , .T.)
-SetMVValue(cPergSX1, "MV_PAR03", TRBZ13IMP->Z13_SERIE  , .T.)
-SetMVValue(cPergSX1, "MV_PAR04", 2                     , .T.)
+MV_PAR05 := 2
+SetMVValue(cPergSX1, "MV_PAR01", TRBZ13IMP->Z13_DOC    , .F.)
+SetMVValue(cPergSX1, "MV_PAR02", TRBZ13IMP->Z13_DOC    , .F.)
+SetMVValue(cPergSX1, "MV_PAR03", TRBZ13IMP->Z13_SERIE  , .F.)
+SetMVValue(cPergSX1, "MV_PAR04", 2                     , .F.)
+SetMVValue(cPergSX1, "MV_PAR05", 2                     , .F.)
+SetMVValue(cPergSX1, "MV_PAR07", ctod("  /  /  ")	   , .F.)
+SetMVValue(cPergSX1, "MV_PAR08", date()+10			   , .F.)
+
 
 _cIdEnt := GetIdEnt(lUsaColab)
 nFlags := PD_ISTOTVSPRINTER + PD_DISABLEPAPERSIZE + PD_DISABLEPREVIEW + PD_DISABLEMARGIN

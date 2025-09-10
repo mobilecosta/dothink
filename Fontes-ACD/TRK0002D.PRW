@@ -2,7 +2,7 @@
 #include 'FwMVCDef.ch'
 
 static cTitulo := "Ação CS (Customer Services)"
-Static aFields := { "Z09_ACAOCS", "Z09_OBSCS", "Z09_NUMPV", "Z09_ITEMPV", "Z09_IDTRAC", "Z09_RESTR" }
+Static aFields := { "Z09_ACAOCS", "Z09_OBSCS", "Z09_NUMPV", "Z09_ITEMPV", "Z09_IDTRAC", "Z09_RESTR", "Z09_OBSPV", "Z09_PENCS" }
 
 Static Function ViewDef()
     Local oModel  := Nil
@@ -16,7 +16,7 @@ Static Function ViewDef()
     For nFields := 1 To Len(aFields)
         cFields += aFields[nFields] + "|"
     Next
-    aPos := { Z09->(FieldPos("Z09_ACAOCS")), Z09->(FieldPos("Z09_OBSCS")), 0, 0, 0, 0 }
+    aPos := { Z09->(FieldPos("Z09_ACAOCS")), Z09->(FieldPos("Z09_OBSCS")), 0, 0, 0, 0, 0, 0 }
 
     U_TRK02FL(AClone(aFields), AClone(aPos), 'TRK0002D', cTitulo)
 

@@ -27,6 +27,7 @@ Local cMsgIni	:= ""
 Local cDtAgenda := ""
 Local cEndOrig	:= ""
 Local cEndDest	:= ""
+Local cDestino	:= ""
 Local cB5_ONU   := ""
 Local cB5_ITEM	:= ""
 Local cB5_RISCO := ""
@@ -36,6 +37,7 @@ Local cXML      := ""
 Local cItens	:= ""
 Local aDadosFil := {}
 Local cFile     := ""
+Local nTotal	:= 0
 
 Local cZ09_FILIAL := Z09->Z09_FILIAL
 Local cZ09_NUMPV  := Z09->Z09_NUMPV
@@ -91,6 +93,8 @@ cAssunto += " Pedido " + Z09->Z09_NUMPV + " (Filial: " + AllTrim(aDadosFil[1]) +
 SC5->( DbSetOrder(1) )
 SC5->( DbSeek(Z09->Z09_FILIAL + Z09->Z09_NUMPV) )
 
+nTotal := If(!Empty(Z09->Z09_TOTAL), Z09->Z09_TOTAL,If(!Empty(SC5->C5_XTOTAL),SC5->C5_XTOTAL, u_TRK0005A(Z09->Z09_NUMPV) ))
+
 SA1->( DbSetOrder(1) )
 SA1->( DbSeek(xFilial() + SC5->(C5_CLIENT + C5_LOJAENT)) )
 
@@ -98,22 +102,48 @@ SA1->( DbSeek(xFilial() + SC5->(C5_CLIENT + C5_LOJAENT)) )
 //-- Endereco de Origem
 cEndOrig := AllTrim(aDadosFil[4]) + ", " + AllTrim(aDadosFil[14]) + ", " + AllTrim(aDadosFil[13]) + ", " + AllTrim(aDadosFil[5]) + ", " + AllTrim(aDadosFil[6])
 
-//-- Endereco de Destino (Cliente de Entrega)
-cEndDest := SA1->A1_END
-If !Empty(SA1->A1_COMPLEM)
-	cEndDest += ", " + AllTrim(SA1->A1_COMPLEM)
-EndIf
-If !Empty(SA1->A1_BAIRRO)
-	cEndDest += ", " + AllTrim(SA1->A1_BAIRRO)
-EndIf
-If !Empty(SA1->A1_MUN)
-	cEndDest += ", " + AllTrim(SA1->A1_MUN)
-EndIf
-If !Empty(SA1->A1_EST)
-	cEndDest += ", " + AllTrim(SA1->A1_EST)
-EndIf
+If Empty(SC5->C5_REDESP)
+	//-- Endereco de Destino (Cliente de Entrega)
+	cEndDest := SA1->A1_END
+	If !Empty(SA1->A1_COMPLEM)
+		cEndDest += ", " + AllTrim(SA1->A1_COMPLEM)
+	EndIf
+	If !Empty(SA1->A1_BAIRRO)
+		cEndDest += ", " + AllTrim(SA1->A1_BAIRRO)
+	EndIf
+	If !Empty(SA1->A1_MUN)
+		cEndDest += ", " + AllTrim(SA1->A1_MUN)
+	EndIf
+	If !Empty(SA1->A1_EST)
+		cEndDest += ", " + AllTrim(SA1->A1_EST)
+	EndIf
 
-cEndDest := "<strong>" + cEndDest + "</strong>"
+	cEndDest := "<strong>" + cEndDest + "</strong>"
+	cDestino := "cliente"
+Else
+	//-- Endereco de Destino (Transportadaora Redespacho)
+	// Transportadora Redespacho
+	SA4->( DbSetOrder(1) )
+	SA4->( DbSeek(xFilial() + SC5->C5_REDESP) )	
+
+	cEndDest := SA4->A4_END
+	If !Empty(SA4->A4_COMPLEM)
+		cEndDest += ", " + AllTrim(SA4->A4_COMPLEM)
+	EndIf
+	If !Empty(SA4->A4_BAIRRO)
+		cEndDest += ", " + AllTrim(SA4->A4_BAIRRO)
+	EndIf
+	If !Empty(SA4->A4_MUN)
+		cEndDest += ", " + AllTrim(SA4->A4_MUN)
+	EndIf
+	If !Empty(SA4->A4_EST)
+		cEndDest += ", " + AllTrim(SA4->A4_EST)
+	EndIf
+
+	cEndDest := "<strong>" + cEndDest + "</strong>"
+
+	cDestino := "Transp.Redespacho"
+EndIf
 
 // Transportadora
 SA4->( DbSetOrder(1) )
@@ -168,10 +198,10 @@ oHtml := TWFHtml():New( cFileHTM )
 
 cTitOrig := If( Empty(Z09->Z09_NF), "o Pedido <strong>"+ Z09->Z09_NUMPV +"</strong>", "a NF <strong>"+ Z09->Z09_NF +"</strong>"  )
 
-
 oHTML:ValByName("INFO_PEDIDO"	, Substr(cTitOrig, 3)							)
 oHTML:ValByName("DT_AGENDADA"	, cDtAgenda										)
 oHTML:ValByName("A4_NOME"		, SC5->C5_TRANSP + " - " + AllTrim(SA4->A4_NOME))
+oHTML:ValByName("DESTINO"		, cDestino										)
 
 cMsgIni := "Informamos que " + cTitOrig + ", esta disponível para coleta, no endereço: "
 cMsgIni += "<strong>" + cEndOrig + "</strong>"
@@ -180,8 +210,7 @@ cMsgIni += ", no dia <strong>" + cDtAgenda + "</strong>."
 oHTML:ValByName("MSG_INI"	, cMsgIni									)
 
 If Empty(Z09->Z09_NF)
-
-	oHTML:ValByName("VLR_TOTAL"	, Trans(Z09->Z09_TOTAL, "@E 999,999,999.99"))
+	oHTML:ValByName("VLR_TOTAL"	, Trans(nTotal, "@E 999,999,999.99"))
 Else
 	//oHTML:ValByName("MSG_INI"	, "Informamos que o Nota Fiscal  " + Z09->Z09_NF + ", esta disponível para coleta, a partir do dia " + cDtAgenda)
 	oHTML:ValByName("VLR_TOTAL"	, Trans(SF2->(F2_VALBRUT + F2_VALIPI), "@E 999,999,999.99"))
@@ -637,19 +666,13 @@ User Function DtCombo( cCampo,cConteudo )
 Return(cCaption)
 
 
-User Function TRK12XML(cXML)
-
-Return
-
 /*/{Protheus.doc} SpedXML
 Função para recuperar o XML do TSS para uso no Protheus
 @type function
 @version 1.0
 @author DO THINK
 @since 22/08/2025
-
 /*/
-
 User Function SpedXML(cDocumento, cSerie, cError)
 
 	SpedXML(cDocumento, cSerie, cError)
@@ -828,3 +851,92 @@ aArea := aSize(aArea,0)
 aArea := nil
 
 Return(cIdEnt)
+
+
+
+/*/{Protheus.doc} TRK0012
+Função de envio de email para transportadora - PL_012_v01.pdf
+@type function
+@version 1.0
+@author DO THINK
+@since 10/08/2025
+@return logical, Indica se conseguiu enviar e-mail
+/*/
+User Function TRK0012C(cEMail, cAssunto, cMsgFim)
+Local aArea		:= Z09->(GetArea())
+Local lRet      := .F.
+Local cPathHTML := "\workflow"
+Local cFileHTM  := cPathHTML + "\agentransp.html"
+Local oHtml     := Nil
+Local cFileName := ""
+Local cTitOrig	:= ""
+Local cTexto    := "" 
+Local cAnexos	:= Nil
+Local cErro		:= ""
+Local cMsgIni	:= ""
+Local cDtAgenda := ""
+Local cEndOrig	:= ""
+Local cEndDest	:= ""
+Local cDestino	:= ""
+Local cB5_ONU   := ""
+Local cB5_ITEM	:= ""
+Local cB5_RISCO := ""
+Local cB5_CLASS := ""
+Local cControla := ""
+Local cXML      := ""
+Local cItens	:= ""
+Local aDadosFil := {}
+Local cFile     := ""
+
+Local cZ09_FILIAL := Z09->Z09_FILIAL
+Local cZ09_NUMPV  := Z09->Z09_NUMPV
+Local cZ09_ITEMPV := Z09->Z09_ITEMPV
+
+Default cMsgFim := ""
+
+If ! File(cFileHTM)
+    ApMsgInfo("Arquivo [" + cFileHTM + "] não localizado no servidor !")
+    Return lRet
+EndIf
+
+If Empty(cEmail)
+	cErro := "Endereço de e-mail da transportadora [" + cTransp + "] não cadastrado!"
+    
+	If Isblind()
+		Conout(cErro)
+	Else
+	    MsgAlert(cErro)
+    EndIf 
+
+	Return lRet
+EndIf
+
+//Carrega os dados da empresa e filial logada
+If !fInfo(@aDadosFil, Z09->Z09_FILIAL)
+	ApMsgInfo("Erro ao carregar dados da filial do pedido!")
+	Return
+EndIf
+
+//-- Ajusta assunto
+cAssunto += " Pedido " + Z09->Z09_NUMPV + " (Filial: " + AllTrim(aDadosFil[1]) + " - " + AllTrim(aDadosFil[2]) + ")"
+
+//-- Endereco de Origem
+cEndOrig := AllTrim(aDadosFil[4]) + ", " + AllTrim(aDadosFil[14]) + ", " + AllTrim(aDadosFil[13]) + ", " + AllTrim(aDadosFil[5]) + ", " + AllTrim(aDadosFil[6])
+
+// Transportadora
+SA4->( DbSetOrder(1) )
+SA4->( DbSeek(xFilial() + Z09->Z09_TRANSP) )
+
+cTexto := "Informamos que foi cancelado o agendamento do pedido "+ Z09->Z09_NUMPV 
+
+IF Empty(cEmail)
+    If ! Isblind()
+	    MsgAlert("Endereço de e-mail da transportadora [" + cTransp + "] não cadastrado!")
+    EndIf 
+Else
+	lRet := U_xSendMail(ALLTRIM(cEMail), cAssunto, cTexto, cAnexos , .T.,,,,,)
+Endif
+
+RestArea(aArea)
+
+Return lRet

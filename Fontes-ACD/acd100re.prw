@@ -80,10 +80,10 @@ Static Function ACD100Imp(lEnd, oPrinter)
     Private nColAmz	 := nMargEsq+135
     Private nColEnd	 := nColAmz+45
     Private nColLot	 := nColEnd+145
-    Private nColVdd	 := nColLot+85
+    Private nColVdd	 := nColLot+115
     Private nQtOri	 := nColVdd+75
     Private nQtSep	 := nQtOri+100
-    Private nColVol	 := nQtSep+125
+    Private nColVol	 := nQtSep+100
 
     Private oFontA7	 := TFont():new('Arial',,7,.T.)
     Private oFontA12 := TFont():new('Arial',,12,.T.)
@@ -95,7 +95,7 @@ Static Function ACD100Imp(lEnd, oPrinter)
     Pergunte(cPergSX1, .F.)
 
     //-- Monta o arquivo temporario
-    cQry := " SELECT CB7_ORDSEP,CB7_PEDIDO,CB7_CLIENT,CB7_LOJA,CB7_NOTA,"+SerieNfId('CB7',3,'CB7_SERIE')+",CB7_OP,CB7_STATUS,CB7_ORIGEM, "
+    cQry := " SELECT CB7_ORDSEP,CB7_PEDIDO,CB7_CLIENT,CB7_LOJA,CB7_NOTA,"+SerieNfId('CB7',3,'CB7_SERIE')+",CB7_OP,CB7_STATUS,CB7_ORIGEM, CB7_XPVTRI, CB7_XCLIRE, CB7_XLJREM, "
     cQry += " CB8_PROD,CB8_ORDSEP,CB8_LOCAL,CB8_LCALIZ,CB8_LOTECT,CB8_NUMLOT,CB8_NUMSER,CB8_QTDORI,CB8_SALDOS,CB8_SALDOE"
     cQry += " FROM "+RetSqlName("CB7")+","+RetSqlName("CB8")
     cQry += " WHERE CB7_FILIAL = '"+xFilial("CB7")+"' AND"
@@ -260,22 +260,38 @@ Static Function CabItem(oPrinter, cOrigem)
     Local cNFiscal := AllTrim((cAliasOS)->CB7_NOTA)+"-"+AllTrim((cAliasOS)->&(SerieNfId('CB7',3,'CB7_SERIE')))
     Local cOP	   := AllTrim((cAliasOS)->CB7_OP)
     Local cStatus  := RetStatus((cAliasOS)->CB7_STATUS)
+    Local cNomeCli := ""
+
+    If !Empty( (cAliasOS)->CB7_XPVTRI )
+        cClient  := AllTrim((cAliasOS)->CB7_XCLIRE)+"-"+AllTrim((cAliasOS)->CB7_XLJREM)
+        cNomeCli := AllTrim(Posicione("SA1", 1, xFilial("SA1") + (cAliasOS)->CB7_XCLIRE + (cAliasOS)->CB7_XLJREM, "A1_NREDUZ"))
+    Else
+        cNomeCli := AllTrim(Posicione("SA1", 1, xFilial("SA1") + (cAliasOS)->CB7_CLIENT + (cAliasOS)->CB7_LOJA, "A1_NREDUZ"))
+    EndIf
 
     oPrinter:sayAlign(li+50,nMargDir,"Ordem Separacao:",oFontC12,200,200,,0)
     oPrinter:sayAlign(li+50,nMargDir+95,cOrdSep,oFontC12,200,200,,0)
 
     If Alltrim(cOrigem) == "1" // Pedido venda
         If Empty(cPedVen) .And. (cAliasOS)->CB7_STATUS <> "9"
-            oPrinter:sayAlign(li+50,nMargDir+360,"PV's Aglutinados:",oFontC12,200,200,,0)
-            oPrinter:sayAlign(li+50,nMargDir+460,A100AglPd(cOrdSep),oFontC12,550,200,,0)		
+            oPrinter:sayAlign(li+50,nMargDir+460,"PV's Aglutinados:",oFontC12,200,200,,0)
+            oPrinter:sayAlign(li+50,nMargDir+555,A100AglPd(cOrdSep),oFontC12,550,200,,0)		
         Else
-            oPrinter:sayAlign(li+50,nMargDir+360,"Pedido de Venda:",oFontC12,200,200,,0)
-            oPrinter:sayAlign(li+50,nMargDir+455,cPedVen,oFontC12,200,200,,0)
+            If Empty( (cAliasOS)->CB7_XPVTRI )
+                oPrinter:sayAlign(li+50,nMargDir+460,"Pedido de Venda:",oFontC12,200,200,,0)
+                oPrinter:sayAlign(li+50,nMargDir+555,cPedVen,oFontC12,200,200,,0)
+            Else
+                oPrinter:sayAlign(li+50,nMargDir+460,"Pedido de Venda:",oFontC12,200,200,,0)
+                oPrinter:sayAlign(li+50,nMargDir+555,cPedVen,oFontC12,200,200,,0)
+
+                oPrinter:sayAlign(li+70,nMargDir+460,"Pedido de Remessa:",oFontC12,200,200,,0)
+                oPrinter:sayAlign(li+70,nMargDir+565, AllTrim( (cAliasOS)->CB7_XPVTRI ),oFontC12,200,200,,0)
+            EndIf
         EndIf
         oPrinter:sayAlign(li+70,nMargDir,"Cliente:",oFontC12,200,200,,0)
         oPrinter:sayAlign(li+70,nMargDir+50,cClient,oFontC12,200,200,,0)
         oPrinter:sayAlign(li+70,nMargDir+160,"Nome Cliente:",oFontC12,200,200,,0)
-        oPrinter:sayAlign(li+70,nMargDir+240,AllTrim(Posicione("SA1", 1, xFilial("SA1") + (cAliasOS)->CB7_CLIENT + (cAliasOS)->CB7_LOJA, "A1_NREDUZ")),oFontC12,200,200,,0)
+        oPrinter:sayAlign(li+70,nMargDir+240,cNomeCli,oFontC12,200,200,,0)
     ElseIf Alltrim(cOrigem) == "2" // Nota Fiscal
         oPrinter:sayAlign(li+50,nMargDir+360,"Nota Fiscal:",oFontC12,200,200,,0)
         oPrinter:sayAlign(li+50,nMargDir+435,cNFiscal,oFontC12,200,200,,0)

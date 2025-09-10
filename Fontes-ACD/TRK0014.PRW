@@ -33,8 +33,8 @@ Static Function ViewDef()
         cFields += aFields[nFields] + "|"
     Next
     
-    aFields := { "Z09_TRANSP", "Z09_NTRANS","Z09_REDESP", "Z09_NREDES", "Z09_REDICO","Z09_IDTRAC"   } 
-    aPos    := { 0           ,            0,           0,            0,            0,           0   } //, 0, 0, Z09->(FieldPos("Z09_ORDCOL")), Z09->(FieldPos("Z09_DC1COL")), Z09->(FieldPos("Z09_HC1COL")), Z09->(FieldPos("Z09_UC1COL")) }
+    aFields := { "Z09_TRANSP"                   , "Z09_NTRANS","Z09_REDESP"                     , "Z09_NREDES", "Z09_REDICO"                    ,"Z09_IDTRAC" } 
+    aPos    := { Z09->(FieldPos("Z09_TRANSP"))  ,            0, Z09->(FieldPos("Z09_REDESP"))   ,            0, Z09->(FieldPos("Z09_REDESP"))   ,         0   }
 
     U_TRK02FL(AClone(aFields), AClone(aPos), 'TRK0014', cTitulo)
 

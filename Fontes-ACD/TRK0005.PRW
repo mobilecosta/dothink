@@ -1,14 +1,15 @@
 #include"totvs.ch"
 #include"dbstruct.ch"
+#include "TopConn.ch"
 
 static __cTitulo       := "Validação Fiscal"
-Static aTiposDePedidos := {"1=Bloqueados", "2=Liberados", "3=Rejeitados", "4=Todos"}
+static aTiposDePedidos := {"1=Bloqueados", "2=Liberados", "3=Rejeitados", "4=Todos"}
 
 /*/{Protheus.doc} TRK0005
 Parametros para Filtro do Browse
 @type function
 @version 1.0
-@author DoThink
+@author wagner.mobile@dothink.com.br
 @since 22/07/2025
 /*/
 user function TRK0005() as logical
@@ -91,7 +92,8 @@ static function TRK0005Brw(cTipoPedido as character)
         ,{"A1_NOME"     , TamSX3("A1_NOME")     , GetSX3Cache("A1_NOME"     ,"X3_TITULO"), GetSX3Cache("A1_NOME"    ,"X3_PICTURE"),"CASE WHEN C5_TIPO IN ('F', 'B') THEN SA2.A2_NOME ELSE SA1.A1_NOME END AS A1_NOME" };
         ,{"C6_PRODUTO"  , TamSX3("C6_PRODUTO")  , GetSX3Cache("C6_PRODUTO"  ,"X3_TITULO"), GetSX3Cache("C6_PRODUTO" ,"X3_PICTURE"),"SC6.C6_PRODUTO" };       
         ,{"B1_DESC"     , TamSX3("B1_DESC")     , GetSX3Cache("B1_DESC"     ,"X3_TITULO"), GetSX3Cache("B1_DESC"    ,"X3_PICTURE"),"SB1.B1_DESC"    };
-        ,{"C6_LOCAL"    , TamSX3("C6_LOCAL")    , GetSX3Cache("C6_LOCAL"    ,"X3_TITULO"), GetSX3Cache("C6_LOCAL"   ,"X3_PICTURE"),"SC6.C6_LOCAL"   };         
+        ,{"C6_LOCAL"    , TamSX3("C6_LOCAL")    , GetSX3Cache("C6_LOCAL"    ,"X3_TITULO"), GetSX3Cache("C6_LOCAL"   ,"X3_PICTURE"),"SC6.C6_LOCAL"   }; 
+        ,{"C6_CF"       , TamSX3("C6_CF")       , GetSX3Cache("C6_CF"       ,"X3_TITULO"), GetSX3Cache("C6_CF"      ,"X3_PICTURE"),"SC6.C6_CF"      };        
         ,{"B1_POSIPI"   , TamSX3("B1_POSIPI")   , GetSX3Cache("B1_POSIPI"   ,"X3_TITULO"), GetSX3Cache("B1_POSIPI"  ,"X3_PICTURE"),"SB1.B1_POSIPI"  };
         ,{"B1_ORIGEM"   , TamSX3("B1_ORIGEM")   , GetSX3Cache("B1_ORIGEM"   ,"X3_TITULO"), GetSX3Cache("B1_ORIGEM"  ,"X3_PICTURE"),"SB1.B1_ORIGEM"  };
         ,{"F4_SITTRIB"  , TamSX3("F4_SITTRIB")  , GetSX3Cache("F4_SITTRIB"  ,"X3_TITULO"), GetSX3Cache("F4_SITTRIB" ,"X3_PICTURE"),"SF4.F4_SITTRIB" };
@@ -171,6 +173,7 @@ static function TRK0005Brw(cTipoPedido as character)
         else
             aFWMBrwColumn[nField]:SetAlign("LEFT")
         endif
+        
 
         //Filters
         aAdd(aFilter, {aCustomFields[nField][1], aCustomFields[nField][3], aCustomFields[nField][2][3], aCustomFields[nField][2][1], aCustomFields[nField][2][2], aCustomFields[nField][4]} )
@@ -335,9 +338,9 @@ static function TRK0005Brw(cTipoPedido as character)
         oBrowse:SetDescription(cTitulo)
         oBrowse:SetAlias(cAlias)
 
-        oBrowse:AddLegend("C5_XBLFIS=='1'"  , "RED"     , "Bloqueados"  ,/*[<cID>]*/,.T./*[<lFilter>]*/)
-        oBrowse:AddLegend("C5_XBLFIS=='2'"  , "GREEN"   , "Liberados"   ,/*[<cID>]*/,.T./*[<lFilter>]*/)
-        oBrowse:AddLegend("C5_XBLFIS=='3'"  , "GRAY"    , "Rejeitados"  ,/*[<cID>]*/,.T./*[<lFilter>]*/)
+        oBrowse:AddLegend("C5_XBLFIS=='1'"  , "RED"     , "Bloqueado"  ,/*[<cID>]*/,.T./*[<lFilter>]*/)
+        oBrowse:AddLegend("C5_XBLFIS=='2'"  , "GREEN"   , "Liberado"   ,/*[<cID>]*/,.T./*[<lFilter>]*/)
+        oBrowse:AddLegend("C5_XBLFIS=='3'"  , "GRAY"    , "Rejeitado"  ,/*[<cID>]*/,.T./*[<lFilter>]*/)
         oBrowse:AddLegend("Empty(C5_XBLFIS)", "BLUE"    , "Sem Bloqueio",/*[<cID>]*/,.T./*[<lFilter>]*/)
 
         oBrowse:SetColumns(aFWMBrwColumn)
@@ -392,6 +395,13 @@ static function TRK0005Brw(cTipoPedido as character)
 
 return
 
+/*/{Protheus.doc} TRK0005Leg
+Funcao de Legenda
+@type function
+@version 1.0
+@author wagner.mobile@dothink.com.br
+@since 22/07/2025
+/*/
 Static Function TRK0005Leg
 
 Local aCores := {	{"BR_VERMELHO"  , "Bloqueados"  },;
@@ -403,6 +413,15 @@ BrwLegenda("Validaçao Fiscal","Legenda",aCores)
 
 Return
 
+/*/{Protheus.doc} RetFldIdx
+Funcao de Criacao de chave de indice
+@type function
+@version 1.0
+@author wagner.mobile@dothink.com.br
+@since 22/07/2025
+@param cIndice, character, indice
+@return array, indices
+/*/
 Static Function RetFldIdx(cIndice)
 
 Local aIdx    := {}
@@ -551,42 +570,27 @@ static function TRK0005Lib(cTitulo,cAlias,oBrowse)
     local cProcTitle := cTitulo+" :: Liberação"
     local cMsgOs     := ""
     local cPedido    := ""
-    local cTriangular:= ""
     local cRemessa   := ""
+    local cTriangular:= ""
     local lErro      := .F.
-
+    local nRecRemess := 0
 
     //Verifica se o Item Está Bloqueado
     if ((cAlias)->C5_XBLFIS=="1")
         cPedido := (cAlias)->C5_NUM
         SC5->(MsGoTo((cAlias)->SC5RECNO))
         
-        If !Empty(SC5->C5_XPEDORI)
-            cTriangular := SC5->C5_NUM 
-            cRemessa    := MpSysExecScalar("SELECT C5_NUM AS PEDIDO FROM " + RetSQLName("SC5") + " SC5 WHERE SC5.C5_FILIAL = '" + xFilial("SC5") + "' AND SC5.D_E_L_E_T_= ' ' AND C5_XPEDWEB = '"+SC5->C5_XPEDORI+"'", "PEDIDO")
-            If !Empty(cRemessa)
-                FWAlertInfo("O pedido ["+cTriangular+"] é um pedido triangular com a remessa ["+cRemessa+"]", "Pedido Triangular")
-                cPedido := cRemessa
+        //-- Analise de remessa/triangulacao
+        If !ChkRemessa(cAlias, "2", @cPedido, @nRecRemess, @cRemessa, @cTriangular)
+            FWRestArea(aAreaAlias)
+            FWFreeArray(@aAreaAlias)
 
-                (cAlias)->( DbSetOrder(1) )
-                If !(cAlias)->( DbSeek(xFilial()+cRemessa) )
-                    FWAlertWarning("Pedido de remessa ["+cRemessa+"], não localizado. Verifique se o mesmo não esta com algum bloqueio.", "Pedido de Remessa")
-                
-                    FWRestArea(aAreaAlias)
-                    FWFreeArray(@aAreaAlias)
-
-                    FWRestArea(aArea)
-                    FWFreeArray(@aArea)                    
-                    Return
-                EndIf
-
-            EndIf
+            FWRestArea(aArea)
+            FWFreeArray(@aArea)                    
+            Return
         EndIf
-
         
-        Begintran() 
-            //SetTraking(cAlias, "2", "", "", "")
-            
+        Begintran()            
             GeraOS(cPedido, @cMsgOs)
             
             If At("Ordem de Separacao: N A O  G E R A D A", cMsgOs) > 0
@@ -595,23 +599,28 @@ static function TRK0005Lib(cTitulo,cAlias,oBrowse)
             EndIf
         Endtran()
 
-
-
         If lErro   
             MostraTexto(cMsgOs)
-            //RecLock(cAlias, .F.)
-            //(cAlias)->C5_XBLFIS := "1"
-            //(cAlias)->( MsUnLock() )
         Else
-            SetTraking(cAlias, "2", "", "", "")
+            SetTraking(cAlias, "2", "", "", "", cTriangular, cRemessa)
+
+            If nRecRemess > 0
+                (cAlias)->( DbGoto(nRecRemess) )
+                SetTraking(cAlias, "2", "", "", "", cTriangular, cRemessa)
+            EndIf
             
-            If !Empty(cTriangular)
+            If !Empty(cRemessa)
+                SC5->(MsGoTo((cAlias)->SC5RECNO))
+
                 dbSelectArea("CB7")
                 CB7->(dbSetOrder(2)) //-- CB7_FILIAL+CB7_PEDIDO+CB7_LOCAL+CB7_STATUS+CB7_CLIENT+CB7_LOJA+CB7_COND+CB7_LOJENT+CB7_AGREG
                 If CB7->(dbSeek(xFilial("CB7") + cPedido))  
                     RecLock("CB7", .F.)
-                    CB7->CB7_XPVTRI := cTriangular
+                    CB7->CB7_XPVTRI := cRemessa
+                    CB7->CB7_XCLIRE := SC5->C5_CLIENTE
+                    CB7->CB7_XLJREM := SC5->C5_LOJACLI
                     CB7->( MsUnLock() )
+                    
                 EndIf 
             EndIf
         EndIf
@@ -638,42 +647,63 @@ Processa a Rejeição
 /*/
 static function TRK0005Rej(cTitulo,cAlias,oBrowse)
 
-    local aArea:=FWGetArea()
-    local aAreaAlias:=(cAlias)->(FWGetArea())
+    local aArea      := FWGetArea()
+    local aAreaAlias := (cAlias)->(FWGetArea())
+    local cPedido    := ""  as character
+    local cRemessa   := ""  as character
+    local cTriangular:= ""  as character
+    local cRejCod    := ""  as character
+    local cRejObs    := ""  as character
+    local cProcTitle := cTitulo+" :: Rejeição"
+    local nRecRemess := 0   as numeric
+    local nRejSiz    := 6   as numeric
+    local nDesSiz    := 150 as numeric
+    local lRet       := .F. as logical
+    local oOk               as object
+    local oDlg              as object
+    local oPanel            as object
+    local oCancel           as object
+    local oCodRej           as object
+    local oRejObs           as object
 
-    local cRejCod as character
-    local cRejObs as character
-    local cProcTitle:=cTitulo+" :: Rejeição"
-    local nRejSiz:=6 as numeric
-
-    local oOk as object
-    local oDlg as object
-    local oPanel as object
-    local oCancel as object
-    local oCodRej as object
-    local oRejObs as object
-    Local lRet := .F.
-
-    cRejCod:=Space(Min(GetSX3Cache("X5_CHAVE","X3_TAMANHO"),nRejSiz))
-    cRejObs:=Space(50)
+    private cDescMotivo     := Space(nDesSiz)
+    private oDecMot         as object
+    
+    cRejCod := Space(Min(GetSX3Cache("X5_CHAVE","X3_TAMANHO"),nRejSiz))
+    cRejObs := Space(50)
 
     //Verifica se o Item Está Bloqueado
 
     if ((cAlias)->C5_XBLFIS=="1")
 
-        DEFINE MSDIALOG oDlg FROM 0,0 TO 275,450 TITLE cProcTitle PIXEL OF GetWNDDefault()
+        SC5->(MsGoTo((cAlias)->SC5RECNO))
+
+        //-- Analise de remessa/triangulacao
+        If !ChkRemessa(cAlias, "3", @cPedido, @nRecRemess, @cRemessa, @cTriangular)
+            FWRestArea(aAreaAlias)
+            FWFreeArray(@aAreaAlias)
+
+            FWRestArea(aArea)
+            FWFreeArray(@aArea)                    
+            Return
+        EndIf  
+
+
+        DEFINE MSDIALOG oDlg FROM 0,0 TO 310,450 TITLE cProcTitle PIXEL OF GetWNDDefault()
 
             @ 000,000 MSPANEL oPanel OF oDlg
             oPanel:Align:=CONTROL_ALIGN_ALLCLIENT
 
             @ 007,005 SAY "Código Rejeição:" SIZE 45,08 OF oPanel PIXEL
             @ 005,048 MSGET oCodRej VAR cRejCod SIZE CalcFieldSize("C",nRejSiz,0,"@!",Replicate("W",nRejSiz)),08 OF oPanel PIXEL F3 "Z0" VALID CodRejVld(@cRejCod,nRejSiz,@oCodRej)
+            @ 018,005 SAY "Descrição:" SIZE 45,08 OF oPanel PIXEL
+            @ 016,048 MSGET oDecMot VAR cDescMotivo SIZE 150,08 OF oPanel PIXEL WHEN .F.
 
-            @018,005 SAY "Observação" SIZE 60,07 OF oPanel PIXEL
-            @026,005 GET oRejObs VAR cRejObs MEMO SIZE 220,087 CENTERED DESIGN OF oPanel PIXEL WHEN (.T.)
+            @028,005 SAY "Observação" SIZE 60,07 OF oPanel PIXEL
+            @036,005 GET oRejObs VAR cRejObs MEMO SIZE 220,097 CENTERED DESIGN OF oPanel PIXEL WHEN (.T.)
 
-            DEFINE SBUTTON oOk     FROM 120,(220-48) TYPE 1 ENABLE OF oPanel PIXEL ACTION (If(VCloseDlgR(cRejCod, cRejObs, cProcTitle), (lRet:=.T.,oDlg:End()), nil))
-            DEFINE SBUTTON oCancel FROM 120,(220-20) Type 2 ENABLE OF oPanel PIXEL ACTION oDlg:End()
+            DEFINE SBUTTON oOk     FROM 140,(220-48) TYPE 1 ENABLE OF oPanel PIXEL ACTION (If(VCloseDlgR(cRejCod, cRejObs, cProcTitle), (lRet:=.T.,oDlg:End()), nil))
+            DEFINE SBUTTON oCancel FROM 140,(220-20) Type 2 ENABLE OF oPanel PIXEL ACTION oDlg:End()
 
             oRejObs:lReadOnly:=.F.
             oRejObs:EnableVScroll(.T.)
@@ -685,6 +715,12 @@ static function TRK0005Rej(cTitulo,cAlias,oBrowse)
 
         if (lRet)
             SetTraking(cAlias, "3", cRejCod, FWGetSX5( "Z0", cRejCod)[1][4], cRejObs)
+
+            If nRecRemess > 0
+                (cAlias)->( DbGoto(nRecRemess) )
+                SetTraking(cAlias, "3", cRejCod, FWGetSX5( "Z0", cRejCod)[1][4], cRejObs)
+            EndIf
+
         endif
         oBrowse:Refresh()
     else
@@ -714,9 +750,24 @@ Valida e Normaliza o Codigo de Rejeição.
 @since 22/07/2025
 /*/
 static function CodRejVld(cRejCod as character,nRejSiz as numeric,oCodRej as object) as logical
-    cRejCod:=PadL(AllTrim(cRejCod),nRejSiz,"0")
+    local lRet     := .F.
+    local aContent := {}
+
+    cRejCod := PadL(AllTrim(cRejCod),nRejSiz,"0")
     oCodRej:Refresh()
-return(ExistCpo("SX5","Z0"+cRejCod,1))
+    
+    cDescMotivo := Space(150)
+
+    lRet := ExistCpo("SX5","Z0"+cRejCod,1)
+    If lRet
+        aContent := FWGetSX5( "Z0", cRejCod )
+        If Len(aContent) > 0
+            cDescMotivo:= aContent[1][4]
+        EndIf     
+    EndIf
+
+    oDecMot:Refresh()   
+return(lRet)
 
 static function VCloseDlgR(cRejCod, cRejObs, cProcTitle)
     local lRet := .T.
@@ -749,11 +800,25 @@ static function TRK0005Blq(cTitulo,cAlias,oBrowse)
     local cProcTitle := cTitulo+" :: Bloqueio"
     local cPedido    := ""
     local cMsgOs     := ""
+    local nRecRemess := 0
+    local cRemessa   := ""
+    local cTriangular:= ""
     local lContinua  := .T.
 
     //Verifica se o Item Está Bloqueado
     if (cAlias)->C5_XBLFIS!="1"
         cPedido := (cAlias)->C5_NUM
+        SC5->(MsGoTo((cAlias)->SC5RECNO))
+
+        //-- Analise de remessa/triangulacao
+        If !ChkRemessa(cAlias, "1", @cPedido, @nRecRemess, @cRemessa, @cTriangular)
+            FWRestArea(aAreaAlias)
+            FWFreeArray(@aAreaAlias)
+
+            FWRestArea(aArea)
+            FWFreeArray(@aArea)                    
+            Return
+        EndIf        
 
         dbSelectArea("CB7")
         CB7->(dbSetOrder(2)) //-- CB7_FILIAL+CB7_PEDIDO+CB7_LOCAL+CB7_STATUS+CB7_CLIENT+CB7_LOJA+CB7_COND+CB7_LOJENT+CB7_AGREG
@@ -762,11 +827,19 @@ static function TRK0005Blq(cTitulo,cAlias,oBrowse)
         EndIf
 
         If lContinua
-            SetTraking(cAlias, "1", "", "", "")
-            EstornaOS(cPedido, @cMsgOs)
+            Begintran()            
+                SetTraking(cAlias, "1", "", "", "")
+                EstornaOS(cPedido, @cMsgOs)
+
+                If nRecRemess > 0
+                    (cAlias)->( DbGoto(nRecRemess) )
+                    SetTraking(cAlias, "1", "", "", "")
+                EndIf
+            Endtran()
         Else
             FWAlertHelp("A validação física para o pedido ["+cPedido+"] já foi iniciado ou já esta finalizada.", "Faça os estornos para poder realizar o bloqueio.")
-        EndIf        
+        EndIf   
+     
         oBrowse:Refresh()
     else
         ApMsgInfo("O Pedido já se encontra Bloqueado. Só é possível Bloquear Pedidos não Bloqueados.",cProcTitle)
@@ -834,18 +907,21 @@ static function AtuTracking(cAliasVldFis)
     local cRespon   := ""
     local cNTransp  := ""
     local cNTRedesp := ""
+    local cChave    := ""
     local aArea     := GetArea()    
     local aTrackS   := {}
     local aX5T3     := {}
 
     DbSelectAre("Z09")
+    Z09->( DbSetOrder(3) )
     aTrackS := Array( Len( Z09->( DbStruct() ) ) )
 
     (cAliasVldFis)->(dbGoTop())
     (cAliasVldFis)->(dbSetOrder(1))
-    while ((cAliasVldFis)->(!eof()))
+    while ((cAliasVldFis)->( !eof() ))
+        cChave    := (cAliasVldFis)->( C5_NUM + C6_ITEM)
 
-        If Empty( (cAliasVldFis)->C5_XBLFIS )
+        If !Z09->( DbSeek(xFilial() + cChave ) ) //Empty( (cAliasVldFis)->C5_XBLFIS )
             //-- Atualiza temporario
             RecLock(cAliasVldFis, .F.)
                 (cAliasVldFis)->C5_XBLFIS := "1"
@@ -881,7 +957,7 @@ static function AtuTracking(cAliasVldFis)
             aTrackS[FieldPos("Z09_CLIENT")] := (cAliasVldFis)->C5_CLIENTE   // Cliente       C [ 6 ][ 0 ] 15
             aTrackS[FieldPos("Z09_LOJA")  ] := (cAliasVldFis)->C5_LOJACLI   // Loja Cliente  C [ 2 ][ 0 ] 16
             aTrackS[FieldPos("Z09_NOMECL")] := (cAliasVldFis)->A1_NOME      // Nome Cliente ou fornecedor  C [60 ][ 0 ] 17
-            aTrackS[FieldPos("Z09_TOTAL") ] := (cAliasVldFis)->C5_XTOTAL    // Vlr. Total    N [16 ][ 2 ] 18
+            aTrackS[FieldPos("Z09_TOTAL") ] := If(Empty((cAliasVldFis)->C5_XTOTAL),GetTotPV((cAliasVldFis)->C5_NUM),(cAliasVldFis)->C5_XTOTAL)    // Vlr. Total    N [16 ][ 2 ] 18
             aTrackS[FieldPos("Z09_DTEMPV")] := SC5->C5_EMISSAO              // Emissao PV    D [ 8 ][ 0 ] 07
             aTrackS[FieldPos("Z09_HREMPV")] := Time()                       // Hr.Emiss.PV   C [ 5 ][ 0 ] 08
             aTrackS[FieldPos("Z09_STATUS")] := "2"                          // Em Validação Fiscal
@@ -896,6 +972,7 @@ static function AtuTracking(cAliasVldFis)
             aTrackS[FieldPos("Z09_DPEMPV")] := SC6->C6_ENTREG               // Previsao de Entrega PV
             aTrackS[FieldPos("Z09_DPFAPV")] := SC6->C6_DATFAT               // Previsao Faturamento PV 
             aTrackS[FieldPos("Z09_RESTR")]  := SC5->C5_XRESTR               // Restricao do Cliente 
+            aTrackS[FieldPos("Z09_OBSPV")]  := SC5->C5_XOBSVEN              // Restricao do Cliente 
             aTrackS[FieldPos("Z09_BLFDI")]  := Date()                       // Dt.Inicio Bloq.Fiscal    
             aTrackS[FieldPos("Z09_BLFHI")]  := Time()                       // Hr.Inicio Bloq.Fiscal 
              
@@ -910,12 +987,17 @@ static function AtuTracking(cAliasVldFis)
     RestArea(aArea)
 return
 
-Static Function SetTraking(cAlias, cOpc, cMotivo, cDescMotivo, cObsMotivo)
-    local aArea   := GetArea()
-    local aTrackS := {}
-    local nRecPos := (cAlias)->( Recno() )
-    local cChave  := (cAlias)->C5_NUM
-    local cAcao   := If(cOpc=="2","Liberacao", If(cOpc=="3","Rejeicao", "Bloqueio"))
+Static Function SetTraking(cAlias, cOpc, cMotivo, cDescMotivo, cObsMotivo, cTriangular, cRemessa)
+    local aArea         := GetArea()
+    local aTrackS       := {}
+    local nRecPos       := (cAlias)->( Recno() )
+    local cChave        := (cAlias)->C5_NUM
+    local cAcao         := If(cOpc=="2","Liberacao", If(cOpc=="3","Rejeicao", "Bloqueio"))
+    default cMotivo     := ""
+    default cDescMotivo := ""
+    default cObsMotivo  := ""
+    default cTriangular := ""
+    default cRemessa    := ""
 
     SC5->(MsGoTo((cAlias)->SC5RECNO))
 
@@ -959,7 +1041,13 @@ Static Function SetTraking(cAlias, cOpc, cMotivo, cDescMotivo, cObsMotivo)
         aTrackS[Z09->(FieldPos("Z09_OMTBLF"))]  := cObsMotivo                           // Observacao da Rejeicao
         aTrackS[Z09->(FieldPos("Z09_UBLFIS"))]  := cUserName                            // Usuario da Validacao
         aTrackS[Z09->(FieldPos("Z09_BLFDF")) ]  := (cAlias)->Z09_BLFDF                  // Dt.Finalizacao Bloq.Fiscal    
-        aTrackS[Z09->(FieldPos("Z09_BLFHF")) ]  := (cAlias)->Z09_BLFHF                  // Hr.Finalizacao Bloq.Fiscal         
+        aTrackS[Z09->(FieldPos("Z09_BLFHF")) ]  := (cAlias)->Z09_BLFHF                  // Hr.Finalizacao Bloq.Fiscal    
+        If !Empty(cTriangular)     
+            aTrackS[Z09->(FieldPos("Z09_PVTRIA"))]  := cTriangular                      // PV Triangular
+        EndIf
+        If !Empty(cRemessa)
+            aTrackS[Z09->(FieldPos("Z09_PVREME")) ] := cRemessa                         // Hr.Finalizacao Bloq.Fiscal  
+        EndIf           
         
         u_TRK006S(aTrackS, "Em Validacao Fiscal (" + cAcao + ")")
 
@@ -1111,4 +1199,203 @@ Static Function fCopiar(cTexto)
     //Copia o texto para a área de transferência em memória (similar a selecionar tudo e apertar Ctrl+C)
     CopyToClipBoard(cTexto)
     FWAlertSuccess("Texto copiado para área de transferência, agora basta você usar o atalho Ctrl+V para colar onde você deseja.", "Sucesso")
+Return
+
+
+
+Static Function ChkRemessa(cAlias, cOpc, cPedido, nRecRemess, cRemessa, cTriangular)
+local cMsg        := ""
+local nRecTriang  := 0
+local lRet        := .T.
+
+DO CASE
+    CASE cOpc == "1"
+        cMsg := "Você deseja bloquear os dois pedidos?" + CRLF + CRLF +"<strong>Se estiver tudo certo, deseja prosseguir com bloqueio?</strong>
+    CASE cOpc == "2"
+        cMsg := "Você já analisou os dois pedidos?" + CRLF + CRLF +"<strong>Se estiver tudo certo, deseja prosseguir com a liberação?</strong>
+    CASE cOpc == "3"
+        cMsg := "Você já analisou os dois pedidos?" + CRLF + CRLF +"<strong>Se estiver tudo certo, deseja prosseguir com a rejeição?</strong>
+END CASE
+
+//-- Verificar se é operacao remessa
+If !Empty(SC5->C5_XPEDORI)
+    nRecRemess  := (cAlias)->( RecNo() )
+    cRemessa    := SC5->C5_NUM 
+    cTriangular := MpSysExecScalar("SELECT C5_NUM AS PEDIDO FROM " + RetSQLName("SC5") + " SC5 WHERE SC5.C5_FILIAL = '" + xFilial("SC5") + "' AND SC5.D_E_L_E_T_= ' ' AND C5_XPEDWEB = '"+SC5->C5_XPEDORI+"'", "PEDIDO")
+    If !Empty(cTriangular)
+        If !FwAlertYesNo("O pedido ["+SC5->C5_NUM +"] é um pedido remessa do pedido triangular ["+cTriangular+"]. " + cMsg , "Pedido Remessa")               
+            Return .F.
+        EndIf
+
+        (cAlias)->( DbSetOrder(1) )
+        If !(cAlias)->( DbSeek(cTriangular) )
+            FWAlertWarning("Pedido de triangular ["+cTriangular+"], não localizado. Verifique se o mesmo não esta com algum bloqueio.", "Pedido Triangular")                
+            Return .F.
+        EndIf
+
+        cPedido := cTriangular
+    EndIf
+ElseIf !Empty(SC5->C5_XPEDWEB)
+    cRemessa := MpSysExecScalar("SELECT Coalesce(C5_NUM, '"+Space(TamSX3('C5_NUM')[1])+"') AS PEDIDO FROM " + RetSQLName("SC5") + " SC5 WHERE SC5.C5_FILIAL = '" + xFilial("SC5") + "' AND SC5.D_E_L_E_T_= ' ' AND C5_XPEDORI = '"+SC5->C5_XPEDWEB+"'", "PEDIDO")
+    If !Empty(cRemessa)
+        cTriangular := SC5->C5_NUM 
+        nRecTriang  := (cAlias)->( RecNo() )
+        If !FwAlertYesNo("O pedido [" + SC5->C5_NUM +"] é um pedido triangular do pedido remessa ["+cRemessa+"]. " + cMsg , "Pedido Triangular")               
+            Return .F.
+        EndIf
+
+        (cAlias)->( DbSetOrder(1) )
+        If !(cAlias)->( DbSeek(cRemessa) )
+            FWAlertWarning("Pedido de remessa ["+cRemessa+"], não localizado. Verifique se o mesmo não esta com algum bloqueio.", "Pedido Remessa")                
+            Return .F.
+        EndIf
+        nRecRemess  := (cAlias)->( RecNo() )
+        (cAlias)->( DbGoto(nRecTriang) )
+        
+    EndIf
+EndIf
+
+Return lRet
+
+/*/{Protheus.doc} GetTotPV
+Função que retorna o valor total do pedido com os impostos
+@author Atilio
+@since 25/08/2016
+@version undefined
+@param cNumPed, characters, Número do Pedido
+@type function
+/*/
+    
+Static Function GetTotPV(cNumPed)
+    Local aArea     := GetArea()
+    Local aAreaC5   := SC5->(GetArea())
+    Local aAreaB1   := SC6->(GetArea())
+    Local aAreaC6   := SB1->(GetArea())
+    Local cQryIte   := ""
+    Local nValPed   := 0
+    Local nNritem   := 0
+    Local nTotFrete := 0
+    Local nTotNF    := 0
+    Local nTotIPI   := 0
+    Local nTotISS   := 0
+
+    Default cNumPed := SC5->C5_NUM
+
+    //Seleciona agora os itens do pedido
+    cQryIte := " SELECT "
+    cQryIte += "    C6_ITEM, "
+    cQryIte += "    C6_PRODUTO "
+    cQryIte += " FROM "
+    cQryIte += "    "+RetSQLName('SC6')+" SC6 "
+    cQryIte += "    LEFT JOIN "+RetSQLName('SB1')+" SB1 ON ( "
+    cQryIte += "        B1_FILIAL = '"+FWxFilial('SB1')+"' "
+    cQryIte += "        AND B1_COD = SC6.C6_PRODUTO "
+    cQryIte += "        AND SB1.D_E_L_E_T_ = ' ' "
+    cQryIte += "    ) "
+    cQryIte += " WHERE "
+    cQryIte += "    C6_FILIAL = '"+FWxFilial('SC6')+"' "
+    cQryIte += "    AND C6_NUM = '"+cNumPed+"' "
+    cQryIte += "    AND SC6.D_E_L_E_T_ = ' ' "
+    cQryIte += " ORDER BY "
+    cQryIte += "    C6_ITEM "
+    cQryIte := ChangeQuery(cQryIte)
+    TCQuery cQryIte New Alias "QRY_ITE"
+    
+    MaFisEnd() 
+    DbSelectArea('SC5')
+    SC5->(DbSetOrder(1))
+    SC5->(DbSeek(FWxFilial('SC5') + cNumPed))
+    MaFisIni(SC5->C5_CLIENTE,;                      // 1-Codigo Cliente/Fornecedor
+        SC5->C5_LOJACLI,;                           // 2-Loja do Cliente/Fornecedor
+        If(SC5->C5_TIPO$'DB',"F","C"),;             // 3-C:Cliente , F:Fornecedor
+        SC5->C5_TIPO,;                              // 4-Tipo da NF
+        SC5->C5_TIPOCLI,;                           // 5-Tipo do Cliente/Fornecedor
+        MaFisRelImp("MT100",{"SF2","SD2"}),;        // 6-Relacao de Impostos que suportados no arquivo
+        ,;                                          // 7-Tipo de complemento
+        ,;                                          // 8-Permite Incluir Impostos no Rodape .T./.F.
+        "SB1",;                                     // 9-Alias do Cadastro de Produtos - ("SBI" P/ Front Loja)
+        "MATA461")                                  // 10-Nome da rotina que esta utilizando a funcao
+        
+    //Pega o total de itens
+    QRY_ITE->(DbGoTop())
+    While ! QRY_ITE->(EoF())
+        nNritem++
+        QRY_ITE->(DbSkip())
+    EndDo
+        
+    //Preenchendo o valor total
+    QRY_ITE->(DbGoTop())
+    nTotIPI := 0
+    While ! QRY_ITE->(EoF())
+        //Pega os tratamentos de impostos
+        SB1->(DbSeek(FWxFilial("SB1")+QRY_ITE->C6_PRODUTO))
+        SC6->(DbSeek(FWxFilial("SC6")+cNumPed+QRY_ITE->C6_ITEM))
+            
+        MaFisAdd(   SC6->C6_PRODUTO,;               // 1-Codigo do Produto                 ( Obrigatorio )
+                    SC6->C6_TES,;                   // 2-Codigo do TES                     ( Opcional )
+                    SC6->C6_QTDVEN,;                // 3-Quantidade                     ( Obrigatorio )
+                    SC6->C6_PRCVEN,;                // 4-Preco Unitario                 ( Obrigatorio )
+                    SC6->C6_VALDESC,;               // 5 desconto
+                    SC6->C6_NFORI,;                 // 6-Numero da NF Original             ( Devolucao/Benef )
+                    SC6->C6_SERIORI,;               // 7-Serie da NF Original             ( Devolucao/Benef )
+                    0,;                             // 8-RecNo da NF Original no arq SD1/SD2
+                    SC5->C5_FRETE/nNritem,;         // 9-Valor do Frete do Item         ( Opcional )
+                    SC5->C5_DESPESA/nNritem,;       // 10-Valor da Despesa do item         ( Opcional )
+                    SC5->C5_SEGURO/nNritem,;        // 11-Valor do Seguro do item         ( Opcional )
+                    0,;                             // 12-Valor do Frete Autonomo         ( Opcional )
+                    SC6->C6_VALOR,;                 // 13-Valor da Mercadoria             ( Obrigatorio )
+                    0,;                             // 14-Valor da Embalagem             ( Opcional )
+                    0,;                             // 15-RecNo do SB1
+                    0)                              // 16-RecNo do SF4
+            
+        //nItem++
+        QRY_ITE->(DbSkip())
+    EndDo
+        
+    //Pegando totais
+    nTotIPI   := MaFisRet(,'NF_VALIPI')
+    nTotICM   := MaFisRet(,'NF_VALICM')
+    nTotNF    := MaFisRet(,'NF_TOTAL')
+    //nTotFrete := MaFisRet(,'NF_FRETE')
+    nTotISS   := MaFisRet(,'NF_VALISS')
+        
+    QRY_ITE->(DbCloseArea())
+    MaFisEnd()        
+    
+    //Atualiza o retorno
+    nValPed := nTotNF + nTotIPI + nTotFrete + nTotISS
+        
+    RestArea(aAreaC6)
+    RestArea(aAreaB1)
+    RestArea(aAreaC5)
+    RestArea(aArea)
+Return nValPed
+
+
+User Function TRK0005A(cNumPed)
+Return GetTotPV(cNumPed)
+
+User Function TRK0005Z()
+local nCount := 0
+
+FWMsgRun(NIL, {|| ProcTotal(@nCount) }, "Aguarde...", "Atualizando Total")
+
+FWAlertSuccess("Processou "+cValToChar(nCount), "Fim Processamento")
+Return
+
+Static Function ProcTotal(nCount)
+    default nCount := 0
+    DbSelectArea("Z09")
+    Z09->( DbSetOrder(1) )
+    Z09->( DbSeek(FwFilial()) )
+    While Z09->( !Eof() .And. Z09_FILIAL == FwFilial())
+        If Empty(Z09->Z09_TOTAL)
+            RecLock("Z09", .F.)
+                Z09->Z09_TOTAL := GetTotPV(Z09->Z09_NUMPV)
+            Z09->( MsUnLock() )
+            nCount++
+        EndIf
+
+        Z09->( DbSkip() )
+    End
 Return

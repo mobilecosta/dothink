@@ -1,71 +1,6 @@
-#include 'totvs.ch'
-// Tabela SZ09
-#DEFINE CZ09XFILIAL  01	// Filial        C [ 2 ][ 0 ] 01
-#DEFINE CZ09XIDTRAC  02	// Id Tracking   C [13 ][ 0 ] 02
-#DEFINE CZ09XBU      03	// BU            C [30 ][ 0 ] 03
-#DEFINE CZ09XRESPON  04	// Reponsavel    C [30 ][ 0 ] 04
-#DEFINE CZ09XNUMPV   05	// Pedido Venda  C [ 6 ][ 0 ] 05
-#DEFINE CZ09XITEMPV  06	// Item PV       C [ 2 ][ 0 ] 06
-#DEFINE DZ09XDTEMPV  07	// Emissao PV    D [ 8 ][ 0 ] 07
-#DEFINE CZ09XHREMPV  08	// Hr.Emiss.PV   C [ 5 ][ 0 ] 08
-#DEFINE DZ09XDPFAPV  09	// Prev.Fat.PV   D [ 8 ][ 0 ] 09
-#DEFINE DZ09XDPEMPV  10	// Prev.Entr.PV  D [ 8 ][ 0 ] 10
-#DEFINE CZ09XNF      11	// Nota Fiscal   C [ 9 ][ 0 ] 11
-#DEFINE CZ09XSERIE   12	// Serie NF      C [ 3 ][ 0 ] 12
-#DEFINE DZ09XDTEMNF  13	// Emissao NF    D [ 8 ][ 0 ] 13
-#DEFINE CZ09XHREMNF  14	// Hr.Emiss.NF   C [ 5 ][ 0 ] 14
-#DEFINE CZ09XCLIENT  15	// Cliente       C [ 6 ][ 0 ] 15
-#DEFINE CZ09XLOJA    16	// Loja Cliente  C [ 2 ][ 0 ] 16
-#DEFINE CZ09XNOMECL  17	// Nome Cliente  C [60 ][ 0 ] 17
-#DEFINE NZ09XTOTAL   18	// Vlr. Total    N [16 ][ 2 ] 18
-#DEFINE CZ09XICOTER  19	// Incoterm      C [ 1 ][ 0 ] 19
-#DEFINE CZ09XTRANSP  20	// Transport.    C [ 6 ][ 0 ] 20
-#DEFINE CZ09XNTRANS  21	// N.Transport.  C [40 ][ 0 ] 21
-#DEFINE CZ09XREMNF   22	// NF Remessa    C [ 9 ][ 0 ] 22
-#DEFINE CZ09XREMSER  23	// Serie Remess  C [ 3 ][ 0 ] 23
-#DEFINE CZ09XREMICO  24	// Incoterm Rem  C [ 1 ][ 0 ] 24
-#DEFINE CZ09XRENTRA  25	// Transp.Rem.   C [ 6 ][ 0 ] 25
-#DEFINE CZ09XRENTRN  26	// N.Transp.Rem  C [40 ][ 0 ] 26
-#DEFINE CZ09XCCE     27	// Car.Correcao  C [ 9 ][ 0 ] 27
-#DEFINE CZ09XCCESER  28	// Serie CC      C [ 3 ][ 0 ] 28
-#DEFINE DZ09XDT1COL  29	// Dt.1a Coleta  D [ 8 ][ 0 ] 29
-#DEFINE CZ09XHR1COL  30	// Hr.1a Coleta  C [ 5 ][ 0 ] 30
-#DEFINE CZ09XUS1COL  31	// Us.1a Coleta  C [10 ][ 0 ] 31
-#DEFINE DZ09XDC1COL  32	// Dt.Conf.1a C  D [ 8 ][ 0 ] 32
-#DEFINE CZ09XHC1COL  33	// Hr.Conf.1a C  C [ 5 ][ 0 ] 33
-#DEFINE CZ09XUC1COL  34	// Us.Conf.1a C  C [10 ][ 0 ] 34
-#DEFINE DZ09XDT2COL  35	// Dt.2a Coleta  D [ 8 ][ 0 ] 35
-#DEFINE CZ09XHR2COL  36	// Hr.2a Coleta  C [ 5 ][ 0 ] 36
-#DEFINE CZ09XUS2COL  37	// Us.2a Coleta  C [10 ][ 0 ] 37
-#DEFINE DZ09XDC2COL  38	// Dt.Conf.2a C  D [ 8 ][ 0 ] 38
-#DEFINE CZ09XHC2COL  39	// Hr.Conf.2a C  C [ 5 ][ 0 ] 39
-#DEFINE CZ09XUC2COL  40	// Us.Conf.2a C  C [10 ][ 0 ] 40
-#DEFINE DZ09XDT3COL  41	// Dt.3a Coleta  D [ 8 ][ 0 ] 41
-#DEFINE CZ09XHR3COL  42	// Hr.3a Coleta  C [ 5 ][ 0 ] 42
-#DEFINE CZ09XUS3COL  43	// Us.3a Coleta  C [10 ][ 0 ] 43
-#DEFINE DZ09XDC3COL  44	// Dt.Conf.3a C  D [ 8 ][ 0 ] 44
-#DEFINE CZ09XHC3COL  45	// Hr.Conf.3a C  C [ 5 ][ 0 ] 45
-#DEFINE CZ09XUC3COL  46	// Us.Conf.3a C  C [10 ][ 0 ] 46
-#DEFINE DZ09XDTPEMB  47	// Dt.Embarque   D [ 8 ][ 0 ] 47
-#DEFINE CZ09XHRPEMB  48	// Hr.Embarque   C [ 5 ][ 0 ] 48
-#DEFINE DZ09XDTEXPE  49	// Dt.Expedicao  D [ 8 ][ 0 ] 49
-#DEFINE CZ09XHREXPE  50	// Hr.Expedicao  C [ 5 ][ 0 ] 50
-#DEFINE CZ09XCTE     51	// CTE           C [16 ][ 0 ] 51
-#DEFINE DZ09XDTENTR  52	// Dt.Real Entr  D [ 8 ][ 0 ] 52
-#DEFINE CZ09XSTATUS  53	// Status        C [ 1 ][ 0 ] 53
-#DEFINE CZ09XRESPPD  54	// Resp.Pendenc  C [30 ][ 0 ] 54
-#DEFINE MZ09XOBSLOG  55	// Obs.Logistic  M [ 0 ][ 0 ] 55
-#DEFINE NZ09XDIAS    56	// Dias          N [ 3 ][ 0 ] 56
-#DEFINE MZ09XOBSCS   57	// Obs. CS       M [ 0 ][ 0 ] 57
-#DEFINE CZ09XDEVNF   58	// NF Devolucao  C [ 9 ][ 0 ] 58
-#DEFINE CZ09XDEVSER  59	// Serie NF Dev  C [ 3 ][ 0 ] 59
-#DEFINE CZ09XSLA     60	// Status SLA    C [ 1 ][ 0 ] 60
-#DEFINE CZ09XARMAZ   61	// Armazem       C [ 2 ][ 0 ] 61
-#DEFINE CZ09XMOTIVO  62	// Motivos       C [ 6 ][ 0 ] 62
-#DEFINE CZ09XDCMOTV  63	// Desc.Motivo   C [55 ][ 0 ] 63
-#DEFINE MZ09XDSMOTV  64	// Det.Motivo    M [10 ][ 0 ] 64
-#DEFINE CZ09XCDTPVC  65	// Tipo Veiculo  C [10 ][ 0 ] 65
-#DEFINE CZ09XCHVNFE  66	// Chave NFe     C [44 ][ 0 ] 66
+#include "totvs.ch"
+#include "topconn.ch"
+
 
 /*/{Protheus.doc} TRK006SP
 Centralizacao dos pontos de de entrada na gravacao do item da nota de saida
@@ -73,17 +8,16 @@ Centralizacao dos pontos de de entrada na gravacao do item da nota de saida
 @version 1.0
 @author fernando.muta@dothink.com.br
 @since 30/07/2025
-@param aTrackE, array, param_description
-@param cEvento, character, param_description
-@return variant, return_description
+@param uXParam, array, Parametro indefinido pois dependera da funcao chamadora
+@return variant, retorno indefinido pois dependera da funcao chamadora
 /*/
-
 User Function TRK006SP(uXParam)
 Local aArea		:= GetArea()
 Local cParam    := "()"
 Local cFuncPE	:= ""
 Local uReturn	:= Nil
 Default uXParam := Nil
+
 cFuncPE := Upper( ProcName(1) )			// Recebe o nome do ponto de entrada
 cFuncPE := StrTran( cFuncPE, "U_", "" )	// Remove o "U_"
 
@@ -91,15 +25,14 @@ If ValType(uXParam) <> "U"
     cParam := "(uXParam)"
 EndIf
 
-cFuncPE := "s" + cFuncPE + cParam			// Ajusta para o nome da Static Function correspondente
+cFuncPE := "s" + cFuncPE + cParam		// Ajusta para o nome da Static Function correspondente
 
 If !(Empty( cFuncPE ))
     uReturn := &( cFuncPE )
 EndIf
+
 RestArea(aArea)
 Return(uReturn)
-
-
 
 
 
@@ -109,13 +42,10 @@ Ponto de entrada apos geracao da liberacao do pedido
 @version 1.0
 @author fernando.muta@dothink.com.br
 @since 30/07/2025
-@param aTrackE, array, param_description
-@param cEvento, character, param_description
-@return variant, return_description
 /*/
-
-Static Function sMTA440C9()
-local xRet      := nil /*
+Static Function sMTA440C9(lRet)
+local xRet      := lRet
+/*
 local aTrackS   := Array(66)
 local cNomClFo  := ""
 local cRespon   := ""
@@ -198,27 +128,29 @@ Ponto de entrada na gravacao da nota fiscal de saida
 @version 1.0
 @author fernando.muta@dothink.com.br
 @since 30/07/2025
-@param aTrackE, array, param_description
-@param cEvento, character, param_description
-@return variant, return_description
+@return variant, Nenhum
 /*/
-
 Static Function sMSD2460()
 local xRet    := Nil
 local aArea   := GetArea()
 local aTrackS := {}
 
 DbSelectArea("Z09")
-aTrackS := Array( Len( Z09->( DbStruct() ) ) )
+Z09->( DbSetOrder(3) )
+If Z09->( DbSeek(xFilial() + SD2->D2_FILIAL + SD2->D2_PEDIDO) )
+    aTrackS := Array( Len( Z09->( DbStruct() ) ) )
 
-aTrackS[ Z09->(FieldPos("Z09_FILIAL"))] := SD2->D2_FILIAL	  // Filial        C [ 2 ][ 0 ] 01
-aTrackS[ Z09->(FieldPos("Z09_NUMPV")) ] := SD2->D2_PEDIDO	  // Pedido Venda  C [ 6 ][ 0 ] 05
-aTrackS[ Z09->(FieldPos("Z09_ITEMPV"))] := SD2->D2_ITEMPV     // Item PV       C [ 2 ][ 0 ] 06
-aTrackS[ Z09->(FieldPos("Z09_NF"))    ] := SD2->D2_DOC	      // Nota Fiscal   C [ 9 ][ 0 ] 11
-aTrackS[ Z09->(FieldPos("Z09_SERIE")) ] := SD2->D2_SERIE	  // Serie NF      C [ 3 ][ 0 ] 12
-aTrackS[ Z09->(FieldPos("Z09_DTEMNF"))] := SD2->D2_EMISSAO    // Emissao NF    D [ 8 ][ 0 ] 13
-aTrackS[ Z09->(FieldPos("Z09_HREMNF"))] := SF2->F2_HORA	      // Hr.Emiss.NF   C [ 5 ][ 0 ] 14
-u_TRK006S(aTrackS,"Faturamento")
+    aTrackS[ Z09->(FieldPos("Z09_FILIAL"))] := SD2->D2_FILIAL	  // Filial        C [ 2 ][ 0 ] 01
+    aTrackS[ Z09->(FieldPos("Z09_NUMPV")) ] := SD2->D2_PEDIDO	  // Pedido Venda  C [ 6 ][ 0 ] 05
+    aTrackS[ Z09->(FieldPos("Z09_ITEMPV"))] := SD2->D2_ITEMPV     // Item PV       C [ 2 ][ 0 ] 06
+    aTrackS[ Z09->(FieldPos("Z09_NF"))    ] := SD2->D2_DOC	      // Nota Fiscal   C [ 9 ][ 0 ] 11
+    aTrackS[ Z09->(FieldPos("Z09_SERIE")) ] := SD2->D2_SERIE	  // Serie NF      C [ 3 ][ 0 ] 12
+    aTrackS[ Z09->(FieldPos("Z09_DTEMNF"))] := SD2->D2_EMISSAO    // Emissao NF    D [ 8 ][ 0 ] 13
+    aTrackS[ Z09->(FieldPos("Z09_HREMNF"))] := SF2->F2_HORA	      // Hr.Emiss.NF   C [ 5 ][ 0 ] 14
+
+    u_TRK006S(aTrackS,"Faturamento")
+EndIf
+
 RestArea(aArea)
 Return xRet
 
@@ -231,6 +163,7 @@ Verifico o tipo do pedido e se tem validacao fiscal
 @version 1.0 
 @author erike.yuri@dothink.com.br
 @since 12/8/2025
+@param nRecSC5, numeric, Recno no SC5
 @return logical, Indica se prossegue ou nao com o processamento para a geracao da NF
 /*/
 Static Function sM410PVNF(nRecSC5)
@@ -245,25 +178,52 @@ Static Function sM410PVNF(nRecSC5)
     
     //-- Avalia somente se o pedido possui itens que atualiza estoque
     If u_Trk006ME(SC5->C5_NUM)
+
+        DbSelectArea("Z09")
+        Z09->( DbSetOrder(3) )
+        If Z09->( DbSeek(SC5->C5_FILIAL + SC5->C5_NUM) )
+            If Z09->Z09_ACAOCS == "2"
+                lRet     := .F.
+                cMsgTit  := "Aguardando acao CS"
+                cMensag  := "O pedido ["+ SC5->C5_NUM +"] esta em aguardando acao do CS."
+                cSolucao := "Aguarde a analise do processo de acao do CS."
+            ElseIf Z09->Z09_ACAOCS == "4"
+                lRet     := .F.
+                cMsgTit  := "Cancelamento CS"
+                cMensag  := "O pedido ["+ SC5->C5_NUM +"] esta em cancelamento, conforme acao do CS."
+                cSolucao := "Este pedido nao podera seguir, pois o CS solicitou cancelamento."
+            EndIf
+        EndIf
+
         //-- Verifica se existe bloqueio fiscal
-        If SC5->C5_XBLFIS <> "2" 
+        If lRet .And. SC5->C5_XBLFIS <> "2" 
             lRet     := .F.
             cMsgTit  := "Bloqueio Fiscal"
             cMensag  := "O pedido ["+ SC5->C5_NUM +"] nao foi liberado na validacao fiscal."
             cSolucao := "Verificar com o departamento fiscal o motivo."
         EndIf
 
-        If SC5->C5_X4SSTAT == "A"
+        If lRet .And. SC5->C5_X4SSTAT == "A"
             lRet     := .F.
             cMsgTit  := "Em validacao fisica"
             cMensag  := "O pedido ["+ SC5->C5_NUM +"] esta em validacao fisica."
             cSolucao := "Aguarde a finalizacao do processo de validacao fisica."
         EndIf
 
+        If lRet .And. SC5->C5_X4SSTAT == "8"
+            lRet     := .F.
+            cMsgTit  := "Em Agendamento"
+            cMensag  := "O pedido ["+ SC5->C5_NUM +"] esta em agendamento."
+            cSolucao := "Aguarde a finalizacao do processo de agendamento."
+        EndIf        
+
         If !lRet
             Help(NIL, NIL, cMsgTit, NIL, cMensag, 1, 0, NIL, NIL, NIL, NIL, NIL, {cSolucao})
         EndIf
 
+        If lRet
+            AcdPVxOsep()
+        EndIf
     EndIf
 
     RestArea(aArea)
@@ -271,7 +231,7 @@ Return lRet
 
 
 /*/{Protheus.doc} Trk006ME
-Verifica se o produto movimenta estoque
+Verifica se o pedido tem produto que movimenta estoque
 @type function
 @version 1.0  
 @author erike.yuri@dothink.com.br
@@ -384,22 +344,22 @@ Static Function sMA410COR(aCores)
         B = Em Embarque    
     */
     //-- Em Validação Fiscal
-    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == '9' .and. Empty(C5_BLQ) ", "br_branco.bmp", "Em Validação Fiscal"})   
+    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == '9' .and. Empty(C5_BLQ) " , "br_branco.bmp"  , "Em Validação Fiscal"})   
 
     //-- Em Validação Fisica
-    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == 'A' .and. Empty(C5_BLQ)  ", "br_amarelo.bmp", "Em Validação Física"}) 
+    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == 'A' .and. Empty(C5_BLQ)  ", "br_amarelo.bmp" , "Em Validação Física"}) 
 
     //-- Em Agendamento
-    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == '8' .and. Empty(C5_BLQ) ", "br_laranja.bmp"        , "Em Agendamento"}) 
+    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == '8' .and. Empty(C5_BLQ) " , "br_laranja.bmp" , "Em Agendamento"}) 
 
     //-- Em Separacao
-    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == '1'  .and. Empty(C5_BLQ) ", "br_marron.bmp"     , "Em Separação"}) 
+    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == '1'  .and. Empty(C5_BLQ) ", "br_marron.bmp"  , "Em Separação"}) 
 
     //-- Em Faturamento
-    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == '2'  .and. Empty(C5_BLQ) ", "br_azul.bmp" , "Em Faturamento"})
+    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == '2'  .and. Empty(C5_BLQ) ", "br_azul.bmp"    , "Em Faturamento"})
 
     //-- Em Embarque
-    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == 'B'  .and. Empty(C5_BLQ) ", "br_verde.bmp"  , "Em Embarque"})
+    Aadd(aRetCor,{"C5_XBLQINI <> 'S' .and. (C5_XBLRENT == '2' .Or. C5_XBLRENT = ' ')  .and. C5_X4SSTAT == 'B'  .and. Empty(C5_BLQ) ", "br_verde.bmp"   , "Em Embarque"})
 
     For nI:=1 To Len(aCores)
         aadd(aRetCor, aCores[nI] )
@@ -529,8 +489,47 @@ AAdd(aRet[1],{_cSTAT+" == 'B'",aRet[2][10][1]    , aRet[2][10][1]})
 Return aClone(aRet)
 
 
-Static Function SM460MARK()
-    local lRet := .T.
+Static Function SM460MARK(aParam)
+    Local cMarca   := aParam[1]
+    Local lInverte := aParam[2]
+    Local lRet     := .T.
+    Local cMsgTit  := ""
+    Local cMensag  := ""
+    Local cSolucao := ""
+    Local aArea    := GetArea()
+
+     If lRet
+        DbSelectArea("Z09")
+        Z09->( DbSetOrder(3) )
+        If Z09->( DbSeek(SC9->C9_FILIAL + SC9->C9_PEDIDO) )
+            If Z09->Z09_ACAOCS == "2"
+                lRet     := .F.
+                cMsgTit  := "Aguardando acao CS"
+                cMensag  := "O pedido ["+ SC9->C9_PEDIDO +"] esta em aguardando acao do CS."
+                cSolucao := "Aguarde a analise do processo de acao do CS."
+            ElseIf Z09->Z09_ACAOCS == "4"
+                lRet     := .F.
+                cMsgTit  := "Cancelamento CS"
+                cMensag  := "O pedido ["+ SC9->C9_PEDIDO +"] esta em cancelamento, conforme acao do CS."
+                cSolucao := "Este pedido nao podera seguir, pois o CS solicitou cancelamento."
+            EndIf
+        EndIf
+
+        If !lRet
+            Help(NIL, NIL, cMsgTit, NIL, cMensag, 1, 0, NIL, NIL, NIL, NIL, NIL, {cSolucao})
+        EndIf
+
+    EndIf
+
+    If lRet
+        //-- Essa chamda serve para fazer o preenchimento do campo C9_ORDSEP de todas as OS estao vazias e com OS existente
+        AcdGrvOsep(1)
+
+        //-- Essa chamda serva para fazer a lipeza do campo C9_ORDSEP para a NF que esta sendo faturada
+        AcdNFxOsep(cMarca, lInverte)
+    EndIf
+
+    RestArea(aArea)
 Return lRet
 
 
@@ -539,13 +538,16 @@ Static Function SM460FIM(aParam)
     Local aSF2      := SF2->( GetArea() )
     Local aSD2      := SD2->( GetArea() )
     Local aSC5      := SC5->( GetArea() )
+    Local aCB7      := CB7->( GetArea() )
     Local cNumNFS   := aParam[1] // Número da NF
     Local cSerieNFS := aParam[2] // Série da NF
     Local cClieFor  := aParam[3] // Cliente/fornecedor da NF
     Local cLoja     := aParam[4] // Loja da NF
+    Local cChave    := ""
     Local aTrackS   := {}
     Local nTamZ09   := 0
     Local lAtuZ09   := .F.
+    Local aStatus   := Array(2)
      
 
     DbSelectAre("Z09")
@@ -567,21 +569,29 @@ Static Function SM460FIM(aParam)
     If SD2->( DbSeek(xFilial() + SF2->F2_DOC + SF2->F2_SERIE) ) .And. u_Trk006ME(SD2->D2_PEDIDO)
         lAtuZ09 := .T.
 
+        dbSelectArea("CB7")
+        CB7->(dbsetorder(2))
+
+        If CB7->(dbSeek(xFilial("CB7") + SD2->D2_PEDIDO)) .And. ("*99" $ CB7->CB7_TIPEXP)
+            If CB7->CB7_STATUS >= "2"
+                aStatus[1] := "B" //-- Em Embarque
+                aStatus[2] := "7" //-- Em Embarque
+            Else
+                aStatus[1] := "1" //-- Em Separacao
+                aStatus[2] := "5" //-- Em Separacao
+            EndIf
+        EndIf
+
+        aStatus[1] := IIF(Empty(aStatus[1]), "B", aStatus[1]) 
+        aStatus[2] := IIF(Empty(aStatus[2]), "7", aStatus[2])
+
         DbSelectArea("SC5")
         SC5->( DbSetOrder(1) )
+
         If SC5->( DbSeek(xFilial() + SD2->D2_PEDIDO ) )
-
             RecLock("SC5", .F.)
-            SC5->C5_X4SSTAT := "B" //-- Em Embarque
+            SC5->C5_X4SSTAT := aStatus[1]
             SC5->( MsUnLock() )
-
-            dbSelectArea("CB7")
-            CB7->(dbSetOrder(2) )
-            If CB7->(dbSeek(xFilial() + SC5->C5_NUM ) )
-                RecLock("SC5", .F.)
-                SC5->C5_X4SSTAT := "2"
-                SC5->( MsUnLock() )
-            EndIf
         EndIf
 
     Endif
@@ -590,24 +600,69 @@ Static Function SM460FIM(aParam)
     While lAtuZ09 .And. SD2->( !Eof() ) .And. SD2->(D2_FILIAL+D2_DOC+D2_SERIE+D2_CLIENTE+D2_LOJA) == SF2->( F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA) 
 
         aTrackS := Array( nTamZ09 )
-
+        cChave  := SD2->D2_FILIAL + SD2->D2_DOC + SD2->D2_SERIE 
         //-- Atualiza Z09
         DbSelectAre("Z09")
         aTrackS[FieldPos("Z09_FILIAL")] := xFilial("SF2")       // Filial
         aTrackS[FieldPos("Z09_NUMPV") ] := SD2->D2_PEDIDO       // Pedido Venda  C [ 6 ][ 0 ] 05
         aTrackS[FieldPos("Z09_ITEMPV")] := SD2->D2_ITEMPV       // Item PV       C [ 2 ][ 0 ] 06
-        aTrackS[FieldPos("Z09_STATUS")] := "7"                  // Em Embarque
+        aTrackS[FieldPos("Z09_STATUS")] := aStatus[2]           // Em Embarque
         aTrackS[FieldPos("Z09_NF")    ] := SD2->D2_DOC          // Nota Fiscal
         aTrackS[FieldPos("Z09_SERIE") ] := SD2->D2_SERIE        // Serie Nota Fiscal
         aTrackS[FieldPos("Z09_DTEMNF")] := SD2->D2_EMISSAO      // Emissao Nota
         aTrackS[FieldPos("Z09_HREMNF")] := SF2->F2_HORA         // Hora Emissao
         aTrackS[FieldPos("Z09_TOTAL") ] := SF2->(F2_VALBRUT + F2_VALIPI)
-        u_TRK006S(aTrackS,"Em Embarque")
+        u_TRK006S(aTrackS,"Faturamento (Fim)")
 
         SD2->( DbSkip() )
     End
 
+    AcdGrvOsep(2, {cNumNFS, cSerieNFS, cClieFor, cLoja})
 
+    //-- Verifica se tem remessa
+    If !Empty(cChave)
+        DbSelectArea("Z09")
+        Z09->( DbSetOrder(2) )
+        If Z09->( DbSeek(cChave) ) .And. !Empty(Z09->Z09_PVREME) .And. Z09->Z09_NUMPV <> Z09->Z09_PVREME
+            lAtuZ09 := .F.
+            DbSelectArea("SC5")
+            SC5->( DbSetOrder(1) )
+            If SC5->( DbSeek(xFilial() + Z09->Z09_PVREME ) )
+                RecLock("SC5", .F.)
+                SC5->C5_X4SSTAT := aStatus[1]
+                SC5->( MsUnLock() )
+
+                SF2->( DbSetOrder(1) )
+                SF2->( DbSeek(xFilial() + SC5->C5_NOTA + SC5->C5_SERIE) )
+
+
+                //-- Atualiza Tracking
+                DbSelectArea("SD2")
+                SD2->( DbSetOrder(3) )
+                SD2->( DbSeek(xFilial() + SC5->C5_NOTA + SC5->C5_SERIE) )
+                While SD2->( !Eof() ) .And. SD2->(D2_FILIAL+D2_DOC+D2_SERIE) == SC5->(C5_FILIAL + C5_NOTA + C5_SERIE)
+                    aTrackS := Array( nTamZ09 )
+                    //-- Atualiza Z09
+                    DbSelectAre("Z09")
+                    aTrackS[FieldPos("Z09_FILIAL")] := xFilial("SF2")       // Filial
+                    aTrackS[FieldPos("Z09_NUMPV") ] := SD2->D2_PEDIDO       // Pedido Venda  C [ 6 ][ 0 ] 05
+                    aTrackS[FieldPos("Z09_ITEMPV")] := SD2->D2_ITEMPV       // Item PV       C [ 2 ][ 0 ] 06
+                    aTrackS[FieldPos("Z09_STATUS")] := aStatus[2]           // Em Embarque
+                    aTrackS[FieldPos("Z09_NF")    ] := SD2->D2_DOC          // Nota Fiscal
+                    aTrackS[FieldPos("Z09_SERIE") ] := SD2->D2_SERIE        // Serie Nota Fiscal
+                    aTrackS[FieldPos("Z09_DTEMNF")] := SD2->D2_EMISSAO      // Emissao Nota
+                    aTrackS[FieldPos("Z09_HREMNF")] := SF2->F2_HORA         // Hora Emissao
+                    aTrackS[FieldPos("Z09_TOTAL") ] := SF2->(F2_VALBRUT + F2_VALIPI)
+                    u_TRK006S(aTrackS,"Faturamento (Fim)")
+               
+                    SD2->( DbSkip() )
+                End
+
+            EndIf
+        EndIf
+    EndIf
+
+    RestArea(aCB7)
     RestArea(aSC5)
     RestArea(aSD2)
     RestArea(aSF2)
@@ -623,7 +678,7 @@ Static Function sM410AGRV(aParam)
     ElseIf nOpcao == 2
         u_Frete()
     EndIf   
-Return 
+Return
 
 
 Static Function ChkCliRet()
@@ -656,3 +711,260 @@ Static Function ChkCliRet()
     RestArea(aArea)         
 Return
 
+
+/*/{Protheus.doc} FISENVNFE
+Executado logo após a transmissão da NF-e
+@type function
+@author erike.yuri@dothink.com.br
+@since 20250829
+/*/
+Static Function sFISENVNFE(ParamIXB)
+    local aArea := GetArea()
+    local aSF2  := SF2->( GetArea() )
+    local cNota := ""
+    local cSerie:= ""
+
+    If !Empty(ParamIXB)
+        cNota := SubStr(ParamIXB[1][1], 4)
+        cSerie:= SubStr(ParamIXB[1][1], 1, 3)
+        
+        DbSelectAre("SF2")
+        SF2->( DbSetOrder(1) )
+        If SF2->( DbSeek(xFilial()+ cNota + cSerie) )
+            //F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA+F2_FORMUL+F2_TIPO                                                                                                  
+            DbSelectAre("Z09")
+            Z09->( DbSetOrder(2) )
+            If Z09->( DbSeek( xFilial() + SF2->F2_DOC + SF2->F2_SERIE  ) )
+                RecLock("Z09", .F.)
+                Z09->Z09_CHVNFE := SF2->F2_CHVNFE
+                Z09->( MsUnLock() )
+            EndIf
+
+        EndIf
+
+    EndIf
+
+    RestArea(aSF2)
+    RestArea(aArea)
+Return( Nil )
+
+//-- 
+Static Function AcdPVxOsep()
+    Local aAreaAnt  := GetArea()
+    Local aAreaCB7  := CB7->(GetArea())
+    Local aAreaSC9  := SC9->(GetArea())
+
+    dbSelectArea("CB7")
+    CB7->(dbsetorder(1))
+
+    dbSelectArea("SC9")
+    SC9->(dbsetorder(1)) //-- C9_FILIAL, C9_PEDIDO, C9_ITEM, C9_SEQUEN, C9_PRODUTO, C9_BLEST, C9_BLCRED
+
+    If SC9->(dbSeek(xFilial("SC9" ) + SC5->C5_NUM))
+        While !SC9->(EoF()) .And. SC9->C9_FILIAL == xFilial("SC9") .And. SC9->C9_PEDIDO == SC5->C5_NUM
+            If !Empty(SC9->C9_ORDSEP) 
+                If CB7->(dbSeek(xFilial("CB7") + SC9->C9_ORDSEP))
+                    If ("*99" $ CB7->CB7_TIPEXP) .AND. CB7->CB7_XSTATU == "9"
+                        RecLock("SC9", .F.)
+                            SC9->C9_ORDSEP := ""
+                        SC9->(MsUnlock())
+                    EndIf 
+                EndIf
+            EndIf
+            SC9->(dbSkip())
+        EndDo
+    EndIf
+
+    RestArea(aAreaSC9)
+    RestArea(aAreaCB7)
+    RestArea(aAreaAnt)
+
+Return
+
+
+//--
+Static Function AcdNFxOsep(cMarca, lInverte)
+    Local aAreaAnt := GetArea()
+    Local aAreaCB7 := CB7->(GetArea())
+    Local aAreaSC9 := SC9->(GetArea())
+    Local cQuery   := ""
+
+    dbSelectArea("CB7")
+    CB7->(dbsetorder(1))
+
+    dbSelectArea("SC9")
+    SC9->(dbsetorder(1)) //-- C9_FILIAL, C9_PEDIDO, C9_ITEM, C9_SEQUEN, C9_PRODUTO, C9_BLEST, C9_BLCRED
+
+    If Select("_QRYSC9") > 0
+        _QRYSC9->(dbCloseArea())
+    EndIf
+
+    Pergunte("MT461A", .F.)
+
+    cQuery := " SELECT C9_FILIAL, C9_PEDIDO, C9_ITEM, C9_SEQUEN, C9_PRODUTO, C9_ORDSEP "
+    cQuery += " FROM " + RetSQLName("SC9") + " SC9 "
+    cQuery += " WHERE C9_FILIAL='" + xFilial("SC9") + "' "
+    cQuery += " AND C9_OK"+Iif(lInverte, "<>", "=") + "'" + cMarca + "' "
+    cQuery += " AND C9_CLIENTE >= '" + MV_PAR07 + "' AND C9_CLIENTE <= '" + MV_PAR08 + "' "
+    cQuery += " AND C9_LOJA >= '" + MV_PAR09 + "' AND C9_LOJA <= '" + MV_PAR10 + "' "
+    cQuery += " AND C9_DATALIB >= '" + dToS(MV_PAR11) + "' AND C9_DATALIB <= '" + dToS(MV_PAR12) + "' "
+    cQuery += " AND C9_PEDIDO >= '" + MV_PAR05 + "' AND C9_PEDIDO <= '" + MV_PAR06 + "' "
+    cQuery += " AND C9_BLEST = '' AND C9_BLCRED = '' "
+    cQuery += " AND SC9.D_E_L_E_T_ = ' ' "
+
+    cQuery := ChangeQuery(cQuery)
+    TCQUERY cQuery New Alias "_QRYSC9"
+
+    _QRYSC9->(dbGoTop())
+    While !_QRYSC9->(EoF())
+        If !Empty(_QRYSC9->C9_ORDSEP) 
+            If CB7->(dbSeek(xFilial("CB7") + _QRYSC9->C9_ORDSEP))
+                If ("*99" $ CB7->CB7_TIPEXP) .AND. CB7->CB7_XSTATU == "9"
+                    If SC9->(dbSeek(_QRYSC9->(C9_FILIAL+C9_PEDIDO+C9_ITEM+C9_SEQUEN+C9_PRODUTO)))
+                        RecLock("SC9", .F.)
+                            SC9->C9_ORDSEP := ""
+                        SC9->(MsUnlock())
+                    EndIf
+                EndIf 
+            EndIf
+        EndIf
+        _QRYSC9->(dbSkip())
+    EndDo
+
+    If Select("_QRYSC9") > 0
+        _QRYSC9->(dbCloseArea())
+    EndIf
+
+    RestArea(aAreaSC9)
+    RestArea(aAreaCB7)
+    RestArea(aAreaAnt)
+
+Return
+
+
+//--
+Static Function AcdGrvOsep(nOpc, aParam)
+    Local aAreaAnt  := GetArea()
+    Local aAreaCB7  := CB7->(GetArea())
+    Local aAreaSC9  := SC9->(GetArea())
+    Local cNumNFS   := ""
+    Local cSerieNFS := ""
+    Local cClieFor  := ""
+    Local cLoja     := ""
+    Local cQuery    := ""
+
+    Default aParam := Array(4)
+
+    cNumNFS   := aParam[1]
+    cSerieNFS := aParam[2]
+    cClieFor  := aParam[3]
+    cLoja     := aParam[4]
+
+    dbSelectArea("CB7")
+    CB7->(dbsetorder(2))
+
+    dbSelectArea("SC9")
+    SC9->(dbsetorder(1)) //-- C9_FILIAL, C9_PEDIDO, C9_ITEM, C9_SEQUEN, C9_PRODUTO, C9_BLEST, C9_BLCRED
+
+    cQuery := " SELECT C9_FILIAL, C9_PEDIDO, C9_ITEM, C9_SEQUEN, C9_PRODUTO, C9_ORDSEP, CB7_ORDSEP "
+    cQuery += " FROM " + RetSQLName("SC9") + " SC9 "
+    cQuery += " INNER JOIN " + RetSQLName("CB7") + " CB7 "
+    cQuery += " ON CB7_FILIAL = C9_FILIAL "
+    cQuery += " AND CB7_ORIGEM = '1' "
+    cQuery += " AND CB7_PEDIDO = C9_PEDIDO "
+    cQuery += " AND CB7.D_E_L_E_T_ = ' ' "
+    cQuery += " WHERE C9_FILIAL = '" + xFilial("SC9") + "' "
+    If nOpc == 2
+        cQuery += " AND C9_NFISCAL = '" + cNumNFS + "' "
+        cQuery += " AND C9_SERIENF = '" + cSerieNFS + "' "
+        cQuery += " AND C9_CLIENTE = '" + cClieFor + "' "
+        cQuery += " AND C9_LOJA = '" + cLoja + "' "
+    EndIf
+    cQuery += " AND C9_ORDSEP = ' ' "
+    cQuery += " AND SC9.D_E_L_E_T_ = ' ' "
+
+    cQuery := ChangeQuery(cQuery)
+    TCQUERY cQuery New Alias "_QRYSC9"
+
+    _QRYSC9->(dbGoTop())
+    While !_QRYSC9->(EoF())
+        If Empty(_QRYSC9->C9_ORDSEP) 
+            If CB7->(dbSeek(xFilial("CB7") + _QRYSC9->C9_PEDIDO)) .And. CB7->CB7_ORIGEM == "1"
+                If ("*99" $ CB7->CB7_TIPEXP) .AND. CB7->CB7_XSTATU == "9"
+                    If SC9->(dbSeek(_QRYSC9->(C9_FILIAL+C9_PEDIDO+C9_ITEM+C9_SEQUEN+C9_PRODUTO)))
+                        RecLock("SC9", .F.)
+                            SC9->C9_ORDSEP := CB7->CB7_ORDSEP
+                        SC9->(MsUnlock())
+                    EndIf
+                EndIf 
+            EndIf
+        EndIf
+        _QRYSC9->(dbSkip())
+    EndDo
+
+    If Select("_QRYSC9") > 0
+        _QRYSC9->(dbCloseArea())
+    EndIf
+
+    RestArea(aAreaSC9)
+    RestArea(aAreaCB7)
+    RestArea(aAreaAnt)
+
+Return
+
+
+//--
+Static Function sSF2520E(aParam)
+    Local aArea   := GetArea()
+    Local aSF2    := SF2->( GetArea() )
+    Local aSD2    := SD2->( GetArea() )
+    Local aSC5    := SC5->( GetArea() )
+    Local aTrackS := {}
+    Local nTamZ09 := 0
+    Local lAtuZ09 := .F.
+     
+    dbSelectAre("Z09")
+    nTamZ09 := Len( Z09->( dbStruct() ) )
+    
+    SD2->( DbSetOrder(3) )
+    If SD2->( DbSeek(xFilial() + SF2->F2_DOC + SF2->F2_SERIE + SF2->F2_CLIENTE + SF2->F2_LOJA) ) .And. u_Trk006ME(SD2->D2_PEDIDO)
+        lAtuZ09 := .T.
+
+        DbSelectArea("SC5")
+        SC5->( DbSetOrder(1) )
+        If SC5->( DbSeek(xFilial() + SD2->D2_PEDIDO ) )
+            RecLock("SC5", .F.)
+            SC5->C5_X4SSTAT := "2" //-- Em Faturamento
+            SC5->( MsUnLock() )
+        EndIf
+
+    Endif
+
+    While lAtuZ09 .And. SD2->( !Eof() ) .And. SD2->(D2_FILIAL+D2_DOC+D2_SERIE+D2_CLIENTE+D2_LOJA) == SF2->( F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA) 
+
+        aTrackS := Array( nTamZ09 )
+
+        //-- Atualiza Z09
+        DbSelectAre("Z09")
+        aTrackS[FieldPos("Z09_FILIAL")] := xFilial("SF2") // Filial
+        aTrackS[FieldPos("Z09_NUMPV") ] := SD2->D2_PEDIDO // Pedido Venda  C [ 6 ][ 0 ] 05
+        aTrackS[FieldPos("Z09_ITEMPV")] := SD2->D2_ITEMPV // Item PV       C [ 2 ][ 0 ] 06
+        aTrackS[FieldPos("Z09_STATUS")] := "6"            // Em Faturamento
+        aTrackS[FieldPos("Z09_NF")    ] := ""             // Nota Fiscal
+        aTrackS[FieldPos("Z09_SERIE") ] := ""             // Serie Nota Fiscal
+        aTrackS[FieldPos("Z09_DTEMNF")] := CTOD("")      // Emissao Nota
+        aTrackS[FieldPos("Z09_HREMNF")] := ""            // Hora Emissao
+        aTrackS[FieldPos("Z09_CHVNFE")] := ""
+        aTrackS[FieldPos("Z09_TOTAL") ] := 0
+
+        u_TRK006S(aTrackS, "Exclusão NF " + Alltrim(SF2->F2_DOC) + "-" + Alltrim(SF2->F2_SERIE))
+
+        SD2->( DbSkip() )
+    EndDo
+
+    RestArea(aSC5)
+    RestArea(aSD2)
+    RestArea(aSF2)
+    RestArea(aArea)
+
+Return

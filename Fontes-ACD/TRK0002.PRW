@@ -45,20 +45,22 @@ User Function TRK0002()
     7 = Em Embarque
     8 = Pedido Entregue    
     */
-    oBrowse:AddLegend( "Z09->Z09_STATUS == '1' .and. Z09->Z09_ACAOCS <> '2'", "BR_PRETO"         , "Em Liberação"            , "1")
-    oBrowse:AddLegend( "Z09->Z09_STATUS == '2' .and. Z09->Z09_ACAOCS <> '2'", "br_branco.bmp"    , "Em Validação Fiscal"     , "1")
-    oBrowse:AddLegend( "Z09->Z09_STATUS == '3' .and. Z09->Z09_ACAOCS <> '2'", "br_amarelo.bmp"   , "Em Validação Física"     , "1")
-    oBrowse:AddLegend( "Z09->Z09_STATUS == '4' .and. Z09->Z09_ACAOCS <> '2'", "br_laranja.bmp"   , "Em Agendamento"          , "1")
-    oBrowse:AddLegend( "Z09->Z09_STATUS == '5' .and. Z09->Z09_ACAOCS <> '2'", "br_marron.bmp"    , "Em Separação"            , "1")
-    oBrowse:AddLegend( "Z09->Z09_STATUS == '6' .and. Z09->Z09_ACAOCS <> '2'", "br_azul.bmp"      , "Em Faturamento"          , "1")
-    oBrowse:AddLegend( "Z09->Z09_STATUS == '7' .and. Z09->Z09_ACAOCS <> '2'", "br_verde.bmp"     , "Em Embarque"             , "1")
-    oBrowse:AddLegend( "Z09->Z09_STATUS == '8' .and. Z09->Z09_ACAOCS <> '2'", "GREEN"            , "Pedido Entregue"         , "1") 
-    oBrowse:AddLegend( "Z09->Z09_ACAOCS == '2'"                             , "CLIENTE"          , "Pendencia CS"            , "1")
-    oBrowse:AddLegend( "Z09->Z09_SLA == ' ' .or. Z09_SLA == '1' "           , "sps_updated"      , "Dentro do Prazo"         , "2")
-    oBrowse:AddLegend( "Z09_SLA == '2' "                                    , "sps_outdated"     , "Próximo Vencimento"      , "2")
-    oBrowse:AddLegend( "Z09_SLA == '3' "                                    , "sps_not_installed", "Fora do Prazo"           , "2")
-    oBrowse:AddLegend( "Z09_SLA == '4' "                                    , "sps_not_compatible", "SLA Pausado"            , "2")
-
+    oBrowse:AddLegend( "Z09->Z09_STATUS == '1' ", "BR_PRETO"         , "Em Liberação"            , "1")
+    oBrowse:AddLegend( "Z09->Z09_STATUS == '2' ", "br_branco.bmp"    , "Em Validação Fiscal"     , "1")
+    oBrowse:AddLegend( "Z09->Z09_STATUS == '3' ", "br_amarelo.bmp"   , "Em Validação Física"     , "1")
+    oBrowse:AddLegend( "Z09->Z09_STATUS == '4' ", "br_laranja.bmp"   , "Em Agendamento"          , "1")
+    oBrowse:AddLegend( "Z09->Z09_STATUS == '5' ", "br_marron.bmp"    , "Em Separação"            , "1")
+    oBrowse:AddLegend( "Z09->Z09_STATUS == '6' ", "br_azul.bmp"      , "Em Faturamento"          , "1")
+    oBrowse:AddLegend( "Z09->Z09_STATUS == '7' ", "br_verde.bmp"     , "Em Embarque"             , "1")
+    oBrowse:AddLegend( "Z09->Z09_STATUS == '8' ", "BR_BRANCO"            , "Pedido Em Transito"      , "1") 
+    oBrowse:AddLegend( "Z09->Z09_STATUS == '9' ", "GREEN"            , "Pedido Entregue"         , "1") 
+    oBrowse:AddLegend( "Z09->Z09_SLA == ' ' .or. Z09->09_SLA == '1' "      , "sps_updated"      , "Dentro do Prazo"         , "2")
+    oBrowse:AddLegend( "Z09->Z09_SLA == '2' "                               , "sps_outdated"     , "Próximo Vencimento"      , "2")
+    oBrowse:AddLegend( "Z09->Z09_SLA == '3' "                               , "sps_not_installed", "Fora do Prazo"           , "2")
+    oBrowse:AddLegend( "Z09->Z09_SLA == '4' "                               , "sps_not_compatible", "SLA Pausado"            , "2")
+    oBrowse:AddLegend( "Z09->Z09_ACAOCS == '2' "                            , "CLIENTE"          , "Pendencia CS"            , "3")
+    oBrowse:AddLegend( "Z09->Z09_ACAOCS == '3' "                            , "checked"             , "Ajustado CS"             , "3")
+    oBrowse:AddLegend( "Z09->Z09_ACAOCS == '4' "                            , "cancel"              , "Cancelado CS"            , "3")
     //Ativa a Browse
     oBrowse:Activate()
      
@@ -78,15 +80,18 @@ Static Function MenuDef()
     ADD OPTION aRot TITLE 'Registrar Atraso'        ACTION 'VIEWDEF.TRK0002A'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
     ADD OPTION aRot TITLE 'Troca Transportadora'    ACTION 'U_TRK00014()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
     ADD OPTION aRot TITLE 'Email Transportadora'    ACTION 'U_TRK02Mtr()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aRot TITLE 'Acao CS'                 ACTION 'VIEWDEF.TRK0002D'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aRot TITLE 'Ajuste Status'           ACTION 'U_TRK0001S()'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    ADD OPTION aRot TITLE 'Acao Operação (CS)'      ACTION 'VIEWDEF.TRK0002D'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    ADD OPTION aRot TITLE 'Informar Operações (CS)' ACTION 'U_TRK0013()'        OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    ADD OPTION aRot TITLE 'Ajuste Status'           ACTION 'U_TRK0001S()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    ADD OPTION aRot TITLE 'Import. Plan. Terceiro'  ACTION 'U_TRK0016I()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
 
     ADD OPTION aAge TITLE '1o Coleta'               ACTION 'U_TRK00021()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
     ADD OPTION aAge TITLE '1o Confirmacao'          ACTION 'U_TRK00021(.T.)'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
     ADD OPTION aAge TITLE '2o Coleta'               ACTION 'U_TRK00022()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
     ADD OPTION aAge TITLE '2o Confirmacao'          ACTION 'U_TRK00022(.T.)'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
     ADD OPTION aAge TITLE '3o Coleta'               ACTION 'U_TRK00023()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aAge TITLE '3o Confirmacao'          ACTION 'U_TRK00023(.T.)'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5    
+    ADD OPTION aAge TITLE '3o Confirmacao'          ACTION 'U_TRK00023(.T.)'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5 
+    ADD OPTION aAge TITLE 'Cancelar'                ACTION 'U_TRK00025()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5   
 
 Return aRot
  
@@ -121,11 +126,16 @@ Static Function ModelDef()
 Return oModel
 
 Static Function Commit(oModel) 
-
-local aTrackS := {}
 Local nPos    := 1
+Local nPosRec := 0
+Local cChave  := ""
+Local cTitLog := ""
+Local lPrivez := .T.
+Local aTrackS := {}
+Local aArea   := GetArea()
 Local oZ09    := oModel:GetModel("FORMZ09")
-Local cEmail  := ""
+Local aPVs    := {}
+Local nI
 
 // Chamada TRK0002A
 /*
@@ -151,114 +161,124 @@ C5_X4SSTAT (Sistem de Pedido de Vendas Web - 4Sales)
 ;A = Validação Física
 ;B = Em Embarque
 */
-Varinfo("cModel",cModel)
 
-If cModel == 'TRK0002A'
-    oZ09:LoadValue(aFields[GetPCpo("Z09_DTATRS")], Date())
-    oZ09:LoadValue(aFields[GetPCpo("Z09_HRATRS")], Left(Time(), 5))
+nPosRec:= Z09->( Recno() )
 
-    aTrackS := Array( Len( Z09->( DbStruct() ) ) )
-    aTrackS[Z09->(FieldPos("Z09_FILIAL"))] := Z09->Z09_FILIAL
-    aTrackS[Z09->(FieldPos("Z09_NUMPV")) ] := oZ09:GetValue("Z09_NUMPV")
-    aTrackS[Z09->(FieldPos("Z09_ITEMPV"))] := oZ09:GetValue("Z09_ITEMPV")    
-    aTrackS[Z09->(FieldPos("Z09_DTATRS"))] := oZ09:GetValue("Z09_DTATRS")      
-    aTrackS[Z09->(FieldPos("Z09_HRATRS"))] := oZ09:GetValue("Z09_HRATRS") 
-    aTrackS[Z09->(FieldPos("Z09_MOTIVO"))] := oZ09:GetValue("Z09_MOTIVO")
-    aTrackS[Z09->(FieldPos("Z09_DCMOTV"))] := oZ09:GetValue("Z09_DCMOTV")  
-    aTrackS[Z09->(FieldPos("Z09_DSMOTV"))] := oZ09:GetValue("Z09_DSMOTV") 
-    u_TRK006S(aTrackS,"Registro de Atraso")
-    
-    TRK02Grv(oZ09, aFields, aPos)
-
-ElseIf cModel == 'TRK0002C' // Chamada TRK0002C
-    oZ09:LoadValue("Z09_STATUS", "4")  // Em agendamento
-    oZ09:LoadValue(aFields[Len(aFields) - 1], Left(Time(), 5))
-    oZ09:LoadValue(aFields[Len(aFields)], cUserName)
-
-    aTrackS := Array( Len( Z09->( DbStruct() ) ) )
-
-    aTrackS[Z09->(FieldPos("Z09_FILIAL"))] := Z09->Z09_FILIAL
-    aTrackS[Z09->(FieldPos("Z09_NUMPV")) ] := oZ09:GetValue("Z09_NUMPV")
-    aTrackS[Z09->(FieldPos("Z09_ITEMPV"))] := oZ09:GetValue("Z09_ITEMPV")
-    aTrackS[Z09->(FieldPos("Z09_STATUS"))] := oZ09:GetValue("Z09_STATUS")
-    SC5->(DbSetOrder(1))
-    If  SC5->(DbSeek(Z09->Z09_FILIAL + oZ09:GetValue("Z09_NUMPV"))) .And.;
-        SC5->(RecLock("SC5", .F.))
-        If !Empty( oZ09:GetValue("Z09_DC1COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC2COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC3COL") )
-            SC5->C5_X4SSTAT := "1" // Em Separacao
-        Else
-            SC5->C5_X4SSTAT := "8" // Em Agendamento
-        EndIf
-        SC5->C5_MSEXP := ""
-        SC5->(MsUnLock())
+aAdd(aPVs, oZ09:GetValue("Z09_FILIAL") + oZ09:GetValue("Z09_NUMPV")) 
+If !Empty(oZ09:GetValue("Z09_PVREME"))
+    If oZ09:GetValue("Z09_NUMPV") == oZ09:GetValue("Z09_PVREME")
+        aAdd(aPVs, oZ09:GetValue("Z09_FILIAL") + oZ09:GetValue("Z09_PVTRIA"))
+    Else
+        aAdd(aPVs, oZ09:GetValue("Z09_FILIAL") + oZ09:GetValue("Z09_PVREME"))
     EndIf
+Endif
 
-    For nPos := 1 To Len(aPos)
-        If aPos[nPos] > 0
-            aTrackS[ Z09->(FieldPos(aFields[nPos]) ) ] := oZ09:GetValue(aFields[nPos])
-        EndIf
-    Next
+For nI := 1 To Len(aPVs)
+    cChave := aPVs[nI]
 
-    If !Empty( oZ09:GetValue("Z09_DC1COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC2COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC3COL") )
-        aTrackS[ Z09->(FieldPos("Z09_STATUS") ) ] := "5"
-    EndIf
-
-    u_TRK006S(aTrackS,"Agendamento")
-
-    aTrackS[Z09->(FieldPos("Z09_FILIAL"))] := Z09->Z09_FILIAL
-    aTrackS[Z09->(FieldPos("Z09_NUMPV")) ] := oZ09:GetValue("Z09_NUMPV")
-    aTrackS[Z09->(FieldPos("Z09_ITEMPV"))] := oZ09:GetValue("Z09_ITEMPV")
-
-    TRK02Grv(oZ09, aFields, aPos)
-
-    // Envio do Email
-    cEmail := "erike.yuri@dothink.com.br;mobile.costa@gmail.com" // Alltrim(SA4->A4_EMAIL)
-
-    FWMsgRun(NIL,{||U_TRK0012(cEmail, "Agendamento")},"Aguarde...","Enviando email para transportadora")
-
-ElseIf cModel == 'TRK0002D'
-    aTrackS := Array( Len( Z09->( DbStruct() ) ) )
-    aTrackS[Z09->(FieldPos("Z09_FILIAL"))] := Z09->Z09_FILIAL
-    aTrackS[Z09->(FieldPos("Z09_NUMPV")) ] := oZ09:GetValue("Z09_NUMPV")
-    aTrackS[Z09->(FieldPos("Z09_ITEMPV"))] := oZ09:GetValue("Z09_ITEMPV")    
-    aTrackS[Z09->(FieldPos("Z09_ACAOCS"))] := oZ09:GetValue("Z09_ACAOCS")      
-    aTrackS[Z09->(FieldPos("Z09_OBSCS")) ] := oZ09:GetValue("Z09_OBSCS") 
-    u_TRK006S(aTrackS,"Acao do CS (Customer Services)")
-    
-    TRK02Grv(oZ09, aFields, aPos)
-
-ElseIf cModel == 'TRK0014'
-    SC5->(DbSetOrder(1))
-    If  SC5->(DbSeek(Z09->Z09_FILIAL + oZ09:GetValue("Z09_NUMPV"))) .And.;
-        SC5->(RecLock("SC5", .F.))
-        SC5->C5_TRANSP := oZ09:GetValue("Z09_TRANSP")
-        SC5->C5_REDESP := oZ09:GetValue("Z09_REDESP")
-        SC5->C5_TFRDP1 := oZ09:GetValue("Z09_REDICO")
-        
-        //SC5->C5_X4SSTAT := "8" // Em Agendamento
-        SC5->C5_MSEXP := ""
-        SC5->(MsUnLock())
-        
+    Z09->( DbSetOrder(3) )
+    Z09->( DbSeek(cChave) )
+    While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
         aTrackS := Array( Len( Z09->( DbStruct() ) ) )
+
         aTrackS[Z09->(FieldPos("Z09_FILIAL"))] := Z09->Z09_FILIAL
-        aTrackS[Z09->(FieldPos("Z09_NUMPV")) ] := oZ09:GetValue("Z09_NUMPV")
-        aTrackS[Z09->(FieldPos("Z09_ITEMPV"))] := oZ09:GetValue("Z09_ITEMPV")
-        aTrackS[Z09->(FieldPos("Z09_TRANSP"))] := oZ09:GetValue("Z09_TRANSP")
-        aTrackS[Z09->(FieldPos("Z09_NTRANS"))] := oZ09:GetValue("Z09_NTRANS")
-        aTrackS[Z09->(FieldPos("Z09_REDESP"))] := oZ09:GetValue("Z09_REDESP")
-        aTrackS[Z09->(FieldPos("Z09_NREDES"))] := oZ09:GetValue("Z09_NREDES")
-        aTrackS[Z09->(FieldPos("Z09_REDICO"))] := oZ09:GetValue("Z09_REDICO")
-        aTrackS[Z09->(FieldPos("Z09_REDICO"))] := oZ09:GetValue("Z09_REDICO")
+        aTrackS[Z09->(FieldPos("Z09_NUMPV")) ] := Z09->Z09_NUMPV
+        aTrackS[Z09->(FieldPos("Z09_ITEMPV"))] := Z09->Z09_ITEMPV   
 
-        u_TRK006S(aTrackS,"Troca de Transportadora / Incoterm")
-    EndIf
+        If cModel == 'TRK0002A'
+            cTitLog := "Registro de Atraso"
+            oZ09:LoadValue(aFields[GetPCpo("Z09_DTATRS")], Date())
+            oZ09:LoadValue(aFields[GetPCpo("Z09_HRATRS")], Left(Time(), 5))
 
-    //TRK02Grv(oZ09, aFields, aPos)
+            aTrackS[Z09->(FieldPos("Z09_DTATRS"))] := oZ09:GetValue("Z09_DTATRS")      
+            aTrackS[Z09->(FieldPos("Z09_HRATRS"))] := oZ09:GetValue("Z09_HRATRS") 
+            aTrackS[Z09->(FieldPos("Z09_MOTIVO"))] := oZ09:GetValue("Z09_MOTIVO")
+            aTrackS[Z09->(FieldPos("Z09_DCMOTV"))] := oZ09:GetValue("Z09_DCMOTV")  
+            aTrackS[Z09->(FieldPos("Z09_DSMOTV"))] := oZ09:GetValue("Z09_DSMOTV") 
 
-Else
-    Conout("Entrou aqui")
-    FWFormCommit(oModel)
-EndIf
+        ElseIf cModel == 'TRK0002C' // Chamada TRK0002C
+            cTitLog := "Agendamento"
+
+            oZ09:LoadValue("Z09_STATUS"             , "4"               )  // Em agendamento
+            oZ09:LoadValue(aFields[Len(aFields) - 1], Left(Time(), 5)   )
+            oZ09:LoadValue(aFields[Len(aFields)]    , cUserName         )
+            
+            If lPrivez
+                SC5->(DbSetOrder(1))
+                If  SC5->(DbSeek( cChave )) .And.;
+                    SC5->(RecLock("SC5", .F.))
+                    If !Empty( oZ09:GetValue("Z09_DC1COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC2COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC3COL") )
+                        SC5->C5_X4SSTAT := "1" // Em Separacao
+                        cTitLog += " (Confirmação Coleta)"
+                    Else
+                        SC5->C5_X4SSTAT := "8" // Em Agendamento
+                    EndIf
+                    SC5->C5_MSEXP := ""
+                    SC5->(MsUnLock())
+                EndIf
+                lPrivez := .F.
+            EndIf
+
+            aTrackS[Z09->(FieldPos("Z09_STATUS"))] := oZ09:GetValue("Z09_STATUS")
+            For nPos := 1 To Len(aPos)
+                If aPos[nPos] > 0
+                    aTrackS[ Z09->(FieldPos(aFields[nPos]) ) ] := oZ09:GetValue(aFields[nPos])
+                EndIf
+            Next
+
+            If !Empty( oZ09:GetValue("Z09_DC1COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC2COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC3COL") )
+                aTrackS[ Z09->(FieldPos("Z09_STATUS") ) ] := "5"
+            EndIf
+
+            // Envio do Email
+            //cEmail := "erike.yuri@dothink.com.br;mobile.costa@gmail.com" // Alltrim(SA4->A4_EMAIL)
+
+            //FWMsgRun(NIL,{|| U_TRK0012(cEmail, "Agendamento")}, "Aguarde...", "Enviando email para transportadora")
+
+        ElseIf cModel == 'TRK0002D'
+            cTitLog := "Acao do CS (Customer Services)"
+            aTrackS[Z09->(FieldPos("Z09_ACAOCS"))] := oZ09:GetValue("Z09_ACAOCS")      
+            aTrackS[Z09->(FieldPos("Z09_OBSCS")) ] := oZ09:GetValue("Z09_OBSCS") 
+        
+            //TRK02Grv(oZ09, aFields, aPos)
+        ElseIf cModel == 'TRK0014'
+            cTitLog := "Troca de Transportadora / Incoterm"
+
+            If lPrivez
+                SC5->( DbSetOrder(1) )
+                If  SC5->(DbSeek( cChave )) .And.;
+                    SC5->(RecLock("SC5", .F.))
+                    SC5->C5_TRANSP := oZ09:GetValue("Z09_TRANSP")
+                    SC5->C5_REDESP := oZ09:GetValue("Z09_REDESP")
+                    SC5->C5_TFRDP1 := oZ09:GetValue("Z09_REDICO")
+                    SC5->C5_MSEXP := ""
+                    SC5->(MsUnLock())
+                EndIf
+                lPrivez := .F.
+            EndIf
+
+            aTrackS[Z09->(FieldPos("Z09_TRANSP"))] := oZ09:GetValue("Z09_TRANSP")
+            aTrackS[Z09->(FieldPos("Z09_NTRANS"))] := oZ09:GetValue("Z09_NTRANS")
+            aTrackS[Z09->(FieldPos("Z09_REDESP"))] := oZ09:GetValue("Z09_REDESP")
+            aTrackS[Z09->(FieldPos("Z09_NREDES"))] := oZ09:GetValue("Z09_NREDES")
+            aTrackS[Z09->(FieldPos("Z09_REDICO"))] := oZ09:GetValue("Z09_REDICO")
+
+        Else
+            Conout("Entrou aqui")
+            FWFormCommit(oModel)
+            Exit
+        EndIf
+
+        //-- Atualiza Tabela de Tracking
+        u_TRK006S(aTrackS, cTitLog)
+
+        Z09->( DbSkip() )
+    End
+Next nI
+
+Z09->( DbGoto(nPosRec) )
+
+RestArea(aArea)
 
 Return .T.
 
@@ -357,13 +377,16 @@ User Function TRK0002L()
     AADD(aLegenda,{"br_marron.bmp"      ,    "Em Separação"         })
     AADD(aLegenda,{"br_azul.bmp"        ,    "Em Faturamento"       })
     AADD(aLegenda,{"br_verde.bmp"       ,    "Em Embarque"          })
+    AADD(aLegenda,{"BR_BRANCO"          ,    "Pedido Em Transito"   })
     AADD(aLegenda,{"BR_VERDE"           ,    "Pedido Entregue"      })
-    AADD(aLegenda,{"CLIENTE"            ,    "Pendencia CS"         })
     AADD(aLegenda,{"sps_updated"        ,    "Dentro do Prazo"      })
     AADD(aLegenda,{"sps_outdated"       ,    "Próximo Vencimento"   })
     AADD(aLegenda,{"sps_not_installed"  ,    "Fora do Prazo"        })
     AADD(aLegenda,{"sps_not_compatible" ,    "SLA Pausado"          })
-   
+    AADD(aLegenda,{"CLIENTE"            ,    "Pendencia CS"         })
+    AADD(aLegenda,{"checked"            ,    "Ajustado CS"          })
+    AADD(aLegenda,{"cancel"             ,    "Cancelado CS"         })
+ 
     BrwLegenda("Tracking Expedição", "Status", aLegenda)
 
 Return

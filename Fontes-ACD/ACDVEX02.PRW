@@ -1,4 +1,5 @@
 #include "totvs.ch"
+#include "topconn.ch"
 #include "apvt100.ch"
 
 
@@ -87,6 +88,8 @@ Rotina de validacao fisica
 /*/
 Static Function ACDV166X(nOpc)
 	Local cAliasCB8     := " "
+	Local cQryCS		:= ""
+	Local cQryCSCancel	:= ""
 	Local cKey04        := VTDescKey(04)
 	Local cKey09        := VTDescKey(09)
 	Local cKey12        := VTDescKey(12)
@@ -111,6 +114,7 @@ Static Function ACDV166X(nOpc)
 	Local nOSOrder      := 7 //-- Indice padrao da separacao
 	Local cCB8Qry       := ""
 	Local aBind         := {}
+	Local nRecSC5		:= 0
 
 	Private cCodOpe     := CBRetOpe()
 	Private cImp        := CBRLocImp("MV_IACD01")
@@ -127,6 +131,7 @@ Static Function ACDV166X(nOpc)
 	Private nSaldoCB8   := 0
 	Private cVolume     := Space(TamSX3("CB9_VOLUME")[1])
 	Private cCodSep     := Space(TamSX3("CB9_ORDSEP")[1])
+	Private cRestricao	:= ""
 
 	If Type("cOrdSep")=="U"
 		Private cOrdSep := Space(TamSX3("CB9_ORDSEP")[1])
@@ -172,7 +177,7 @@ Static Function ACDV166X(nOpc)
 	If VtModelo()=="RF" .or. lVT100B // GetMv("MV_RF4X20")
 		@ 0,0 VtSay IIF(nOSOpc==1, "Validacao Fisica", "Separacao")//"Separacao"
 	EndIf
-	If ! CBSolCB7(nOpc,{|| VldCodSep()})
+	If ! U_CBSolCB7(nOpc,{|| VldCodSep()})
 		Return MSCBASem() // valor necessario para finalizar o acv170 e liberar o semaforo
 	EndIf
 
@@ -182,6 +187,8 @@ Static Function ACDV166X(nOpc)
 		cCodSep := cOrdSep
 	EndIf
 
+	cQryCS 		:= "SELECT COUNT(1) AS OK FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.Z09_ACAOCS = '2' AND Z09.Z09_NUMPV = '" + CB7->CB7_PEDIDO + "' AND Z09.D_E_L_E_T_= ' ' " 
+	cQryCSCancel:= "SELECT COUNT(1) AS OK FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.Z09_ACAOCS = '4' AND Z09.Z09_NUMPV = '" + CB7->CB7_PEDIDO + "' AND Z09.D_E_L_E_T_= ' ' " 
 	If nOSOpc == 1
 		If !(CBUltExp(CB7->CB7_TIPEXP) $ "99*")
 			VTAlert("Processo de validacao fisica nao parametrizado","Aviso",.t.,4000,3)
@@ -189,15 +196,22 @@ Static Function ACDV166X(nOpc)
 		EndIf
 
 		If CB7->CB7_XSTATU >= "2" .And. Separou(cOrdSep)
-			VTAlert("Processo de validacao finalizado","Aviso",.t.,4000,3) //"Processo de separacao finalizado"###"Aviso"
-			/*If VTYesNo("Deseja estornar a validacao ?","Atencao",.T.) //"Deseja estornar a separacao ?"###"Atencao"
-				VTSetKey(09,{|| Informa()},"Informacoes") //"Informacoes"
-				Estorna()
-				vtsetkey(09,bKey09,cKey09)
-				MSCBASem()
-				Return FimProcess(,cOrdSep)
-			EndIf*/
+			VTAlert("Processo de validacao finalizado","Aviso",.t.,4000,3)
+			Return
 		EndIf
+
+		//-- Verifica se algum item tem acao pendendo com o CS
+		If MpSysExecScalar(cQryCS, "OK") > 0
+			VTAlert("Processo aguardando acao do CS!","Aviso",.t.,4000,3)
+			Return
+		EndIf
+
+		//-- Verifica se algum item tem acao para cancelamento com o CS
+		If MpSysExecScalar(cQryCSCancel, "OK") > 0
+			VTAlert("Solicitacao de cancelamento CS!","Aviso",.t.,4000,3)
+			Return
+		EndIf
+				
 	Else
 		If CBUltExp(CB7->CB7_TIPEXP) $ "99*" .And. CB7->CB7_XSTATU < "2" .And. !Separou(cOrdSep)
 			VTAlert("Processo de validacao fisica nao finalizado","Aviso",.t.,4000,3)
@@ -205,8 +219,20 @@ Static Function ACDV166X(nOpc)
 		EndIf
 
 		//-- Verifica se algum item tem acao pendendo com o CS
-		If MpSysExecScalar("SELECT COUNT(1) AS OK FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.Z09_ACAOCS = '2' AND Z09.Z09_NUMPV = '" + CB7->CB7_PEDIDO + "' AND Z09.D_E_L_E_T_= ' ' ", "OK") > 0
+		If MpSysExecScalar(cQryCS, "OK") > 0
 			VTAlert("Processo aguardando acao do CS!","Aviso",.t.,4000,3)
+			Return
+		EndIf
+
+			//-- Verifica se algum item tem acao para cancelamento com o CS
+		If MpSysExecScalar(cQryCSCancel, "OK") > 0
+			VTAlert("Solicitacao de cancelamento CS!","Aviso",.t.,4000,3)
+			Return
+		EndIf
+
+		//-- Verifica se tem agendamento para este item na separacao
+		If MpSysExecScalar("SELECT COUNT(1) AS OK FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.Z09_STATUS < '5' AND Z09.Z09_NUMPV = '" + CB7->CB7_PEDIDO + "' AND Z09.D_E_L_E_T_= ' ' " , "OK") > 0
+			VTAlert("Processo aguardando agendamento!","Aviso",.t.,4000,3)
 			Return
 		EndIf
 
@@ -243,6 +269,18 @@ Static Function ACDV166X(nOpc)
 		//-- CB8_FILIAL+CB8_ORDSEP+CB8_PROD+CB8_LOCAL+CB8_PRIOR+CB8_LCALIZ+CB8_LOTECT+CB8_NUMLOT+CB8_NUMSER
 		nOSOrder := 9
 	EndIf
+
+	//-- Atualiza campo de restricao
+	nRecSC5 	:= MpSysExecScalar("SELECT Coalesce(R_E_C_N_O_, 0) AS SC5RECNO FROM " + RetSQLName("SC5") + " SC5 WHERE SC5.C5_FILIAL = '" + xFilial("SC5") + "' AND SC5.D_E_L_E_T_= ' ' AND C5_NUM = '"+CB7->CB7_PEDIDO+"'", "SC5RECNO")
+	cRestricao	:= ""
+	If !Empty(nRecSC5)
+		DbSelectArea("SC5")
+		SC5->( DbGoto(nRecSC5) )
+		cRestricao := AllTrim(SC5->C5_XRESTR)
+
+		DbSelectArea("SC7")
+	EndIf
+	//-- Fim atualiza restricao
 
 	IniProcesso()
 
@@ -486,9 +524,7 @@ Static Function IniProcesso()
 		// AJUSTE DO STATUS
 		If CB7->CB7_XSTATU == "0" .or. Empty(CB7->CB7_XSTATU)
 			CB7->CB7_XSTATU := "1"  // em validacao fisica
-			If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
-				SetTraking("1", "Em Validação Fisica (Inicio)")
-			EndIf
+			SetTraking("1", "Em Validação Fisica (Inicio)")
 		EndIf
 		CB7->CB7_XSTATP := " "
 	Else
@@ -498,9 +534,7 @@ Static Function IniProcesso()
 			CB7->CB7_DTINIS := dDataBase
 			CB7->CB7_HRINIS := LEFT(TIME(),5)
 
-			If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
-				SetTraking("3", "Em Separação")
-			EndIf
+			SetTraking("3", "Em Separação")
 		EndIf
 		CB7->CB7_STATPA := " "  // se estiver pausado tira o STATUS  de pausa
 	EndIf
@@ -625,9 +659,7 @@ Static Function FimProcess(lApp,cOrdSep,cAppLog)
 				CB7->CB7_XSTATU := cStatus   //  "2" -- validacao finalizada
 				CB7->CB7_XSTATP := " "
 
-				If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
-					SetTraking("2", "Em Validação Fisica (Fim)")
-				EndIf
+				SetTraking("2", "Em Validação Fisica (Fim)")
 
 				If CB7->CB7_ORIGEM == "2" .And. CB7->CB7_XDIVER == "1"
 					CB7->CB7_XDIVER := " "
@@ -643,9 +675,7 @@ Static Function FimProcess(lApp,cOrdSep,cAppLog)
 				CB7->CB7_DTFIMS := dDataBase
 				CB7->CB7_HRFIMS := LEFT(TIME(),5)
 
-				If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
-					SetTraking("4", "Em Faturamento")
-				EndIf
+				SetTraking("4", "Em Faturamento")
 
 				If CB7->CB7_ORIGEM == "2" .And. CB7->CB7_DIVERG == "1"
 					CB7->CB7_DIVERG := " "
@@ -726,10 +756,18 @@ Static Function FimProcess(lApp,cOrdSep,cAppLog)
 
     //Se existir divergencia estorna o item do pedido
 	EstItemPv(lApp)
-	If CB7->CB7_STATUS == "2"
-		If !lApp
-			VTAlert("Processo de separacao finalizado","Aviso",.t.,4000)  //"Processo de separacao finalizado"###"Aviso"
-		Endif
+	If nOSOpc == 1
+		If CB7->CB7_XSTATU >= "2"
+			If !lApp
+				VTAlert("Processo de validacao finalizado","Aviso",.t.,4000)
+			Endif
+		EndIf
+	Else
+		If CB7->CB7_STATUS == "2"
+			If !lApp
+				VTAlert("Processo de separacao finalizado","Aviso",.t.,4000)  //"Processo de separacao finalizado"###"Aviso"
+			Endif
+		EndIf
 	EndIf
 	CBLogExp(cOrdSep)
 
@@ -922,6 +960,7 @@ Static Function Tela()
 		// isto nao deve acontecer
 		Return .f.
 	EndIf
+
 	nQtdQE	  := SB1->B1_QE
 	nSaldoCB8 := CB8->(AglutCB8(CB8_ORDSEP,CB8_LOCAL,CB8_LCALIZ,CB8_PROD,CB8_LOTECT,CB8_NUMLOT,CB8_NUMSER))
 	If GetNewPar("MV_OSEP2UN","0") $ "0 " // verifica se separa utilizando a 1 unidade de media
@@ -1081,12 +1120,15 @@ Static Function EtiProduto()
 	Local cEtiProd 	:= IIf( FindFunction( 'AcdGTamETQ' ), AcdGTamETQ(), Space(48) )
 	Local nQtde 	:= 1
 	Local uRetQtde 	:= 1
+	Local cKey05    := VTDescKey(05)		
+	Local bKey05    := VTSetKey(05)		
 	Local bKey16 	:= VtSetKey(16)
 	Local lDiverge 	:= .F.
 	Local lV166NQTDE:= ExistBlock("V166NQTDE")
 
 	lEtiProduto := .T.
 
+	VtSetKey(05,{||  GetInfoPv() },"Inf.Adicionais") 
 	VtSetKey(16,{||  lDiverge:= .t.,VtKeyboard(CHR(27)) },"Pula")  // CTRL+P //"Pula Item"
 
 	While .t.
@@ -1146,9 +1188,11 @@ Static Function EtiProduto()
 			//Verifica se esta sendo chamado pelo ACDV170 e se existe um avanco
 			//ou retrocesso forcado pelo operador
 			If ACDGet170() .AND. A170AvOrRet()
+				vtsetkey(05,bKey05,cKey05)
 				Return .F.
 			EndIf
 			If VTYesNo("Confirma a saida?","Atencao",.T.) //"Confirma a saida?"###"Atencao"
+				vtsetkey(05,bKey05,cKey05)
 				Return .f.
 			Else
 				Loop
@@ -1157,6 +1201,8 @@ Static Function EtiProduto()
 
 		Exit
 	Enddo
+	
+	vtsetkey(05,bKey05,cKey05)
 	lEtiProduto := .F.
 Return .t.
 
@@ -1859,6 +1905,7 @@ Static Function Informa()
 	EndIf
 
 	VTaBrowse(,,,VtMaxCol(),aCab,aTemp,aSize)
+
 	VtRestore(,,,,aSave)
 
 Return
@@ -2849,13 +2896,7 @@ Static Function VldOcoSep(cOcoSep,cChave)
 	While CB8->(!Eof() .AND. ;
 			CB8_FILIAL+CB8_ORDSEP+CB8_LOCAL+CB8_LCALIZ+CB8_PROD+CB8_LOTECT+CB8_NUMLOT+CB8_NUMSER==;
 			xFilial("CB8")+cOrdSep+cChave)
-		If nOSOpc == 1
-			If CB8->(CB8_XQTDOR<>CB8_XSALDO)
-				VtAlert("Esta ocorrencia exige o estorno dos itens validados deste produto!","Aviso",.t.,4000,3) //"Esta ocorrencia exige o estorno dos itens lidos deste produto!"###"Aviso"
-				VtKeyboard(Chr(20))  // zera o get
-				Return .F.
-			EndIf
-		Else
+		If nOSOpc <> 1
 			If CB8->(CB8_QTDORI<>CB8_SALDOS)
 				VtAlert("Esta ocorrencia exige o estorno dos itens lidos deste produto!","Aviso",.t.,4000,3) //"Esta ocorrencia exige o estorno dos itens lidos deste produto!"###"Aviso"
 				VtKeyboard(Chr(20))  // zera o get
@@ -5888,80 +5929,91 @@ Static Function SetTraking(cOpc, cTitLog)
 	local aASC5   := SC5->( GetArea() )
     local aTrackS := {}
     local nRecPos := CB7->( Recno() )
-    local cChave  := CB7->( CB7_FILIAL + CB7_PEDIDO )
+    local cChave  := ""
 	local cTransp := ""
 	local cEmail  := ""
+	local aPvs	  := {}
+	local nI	  := 0
+
+	aadd(aPVs, CB7->( CB7_FILIAL + CB7_PEDIDO ))
+	If !Empty(CB7->CB7_XPVTRI)
+		aadd(aPVs, CB7->( CB7_FILIAL + CB7_XPVTRI ))
+	Endif
 
 	DbSelectArea("SC5")
 	SC5->( DbSetOrder(1) )
-    If SC5->( DbSeek( cChave ) )
-		RecLock("SC5", .f.)
-		If cOpc == "1"
-			SC5->C5_X4SSTAT := "A" // Em Validacao Fisica
-		ElseIf cOpc == "2"
-			SC5->C5_X4SSTAT := "8" // Em Agendamento
-		ElseIf cOpc == "3"
-			SC5->C5_X4SSTAT := "1" // Em Separacao
-		ElseIf cOpc == "4"
-			SC5->C5_X4SSTAT := "2" // Em Faturamento
+	For nI:=1 To Len(aPvs)
+		cChave := aPvs[nI]
+
+		If SC5->( DbSeek( cChave ) )
+			RecLock("SC5", .f.)
+			If cOpc == "1"
+				SC5->C5_X4SSTAT := "A" // Em Validacao Fisica
+			ElseIf cOpc == "2"
+				SC5->C5_X4SSTAT := "8" // Em Agendamento
+			ElseIf cOpc == "3"
+				SC5->C5_X4SSTAT := "1" // Em Separacao
+			ElseIf cOpc == "4"
+				SC5->C5_X4SSTAT := IIF(Empty(SC5->C5_NOTA), "2"/*Em Faturamento*/, "B"/*Em Embarque*/) 
+			EndIf
+
+			//Grava o campo C5_MSEXP para sinalizaro ao Scheduler
+			SC5->C5_MSEXP:=   ""  //DToS(dDataBase)
+			SC5->( MsUnLock() )
+
+			DbSelectAre("Z09")
+			Z09->( DbSetOrder(3) )
+
+			If Z09->( DbSeek(cChave) )
+				aTrackS := Array( Len( Z09->( DbStruct() ) ) )
+
+				//Atualiza, também, no alias temporário para atualização do status
+				While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
+
+					aTrackS[Z09->(FieldPos("Z09_FILIAL"))]  := xFilial("SC5")
+					aTrackS[Z09->(FieldPos("Z09_NUMPV")) ]  := Z09->Z09_NUMPV                   // Pedido Venda
+					aTrackS[Z09->(FieldPos("Z09_ITEMPV"))]  := Z09->Z09_ITEMPV                  // Item PV
+					If cOpc == "1"
+						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "3"							// Status "Em Validacao Fisica"
+						aTrackS[Z09->(FieldPos("Z09_DVIFIS"))]  := dDataBase	
+						aTrackS[Z09->(FieldPos("Z09_HVIFIS"))]  := Time()
+						aTrackS[Z09->(FieldPos("Z09_UVIFIS"))]  := cUserName
+
+						aTrackS[Z09->(FieldPos("Z09_DVFISI"))]  := CTOD("")	
+						aTrackS[Z09->(FieldPos("Z09_HVFISI"))]  := Space(5)
+						aTrackS[Z09->(FieldPos("Z09_UVFISI"))]  := Space(15)
+					ElseIf cOpc == "2"
+						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "4"							// Status "Em Agendamento"
+						aTrackS[Z09->(FieldPos("Z09_DVFISI"))]  := dDataBase
+						aTrackS[Z09->(FieldPos("Z09_HVFISI"))]  := Time()
+						aTrackS[Z09->(FieldPos("Z09_UVFISI"))]  := cUserName
+						//-- Agendamento
+						aTrackS[Z09->(FieldPos("Z09_DT1COL"))]  := Z09->Z09_DPFAPV
+						aTrackS[Z09->(FieldPos("Z09_HR1COL"))]  := Time()
+						aTrackS[Z09->(FieldPos("Z09_US1COL"))]  := "AUTOMATICO"
+						cTransp := Z09->Z09_TRANSP
+					ElseIf cOpc == "3"
+						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "5"							// Status "Em Separacao"
+						aTrackS[Z09->(FieldPos("Z09_DTEXPE"))]  := dDataBase
+						aTrackS[Z09->(FieldPos("Z09_HREXPE"))]  := Time()
+					ElseIf cOpc == "4"
+						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := IIF(Empty(Z09->Z09_NF), "6"/*Em Faturamento*/, "7"/*Em Embarque*/)
+					EndIf
+					
+					u_TRK006S(aTrackS, cTitLog)
+
+					Z09->( DbSkip() )
+				End
+			EndIf
+			
+			CB7->( DbGoto(nRecPos) )
 		EndIf
-
-		//Grava o campo C5_MSEXP para sinalizaro ao Scheduler
-		SC5->C5_MSEXP:=   ""  //DToS(dDataBase)
-		SC5->( MsUnLock() )
-
-		DbSelectAre("Z09")
-		Z09->( DbSetOrder(3) )
-
-		If Z09->( DbSeek(cChave) )
-			aTrackS := Array( Len( Z09->( DbStruct() ) ) )
-
-			//Atualiza, também, no alias temporário para atualização do status
-			While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
-
-				aTrackS[Z09->(FieldPos("Z09_FILIAL"))]  := xFilial("SC5")
-				aTrackS[Z09->(FieldPos("Z09_NUMPV")) ]  := Z09->Z09_NUMPV                   // Pedido Venda
-				aTrackS[Z09->(FieldPos("Z09_ITEMPV"))]  := Z09->Z09_ITEMPV                  // Item PV
-				If cOpc == "1"
-					aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "3"							// Status "Em Validacao Fisica"
-					aTrackS[Z09->(FieldPos("Z09_DVIFIS"))]  := dDataBase	
-					aTrackS[Z09->(FieldPos("Z09_HVIFIS"))]  := Time()
-					aTrackS[Z09->(FieldPos("Z09_UVIFIS"))]  := cUserName
-
-					aTrackS[Z09->(FieldPos("Z09_DVFISI"))]  := CTOD("")	
-					aTrackS[Z09->(FieldPos("Z09_HVFISI"))]  := Space(5)
-					aTrackS[Z09->(FieldPos("Z09_UVFISI"))]  := Space(15)
-				ElseIf cOpc == "2"
-					aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "4"							// Status "Em Agendamento"
-					aTrackS[Z09->(FieldPos("Z09_DVFISI"))]  := dDataBase
-					aTrackS[Z09->(FieldPos("Z09_HVFISI"))]  := Time()
-					aTrackS[Z09->(FieldPos("Z09_UVFISI"))]  := cUserName
-					//-- Agendamento
-					aTrackS[Z09->(FieldPos("Z09_DT1COL"))]  := Z09->Z09_DPFAPV
-					aTrackS[Z09->(FieldPos("Z09_HR1COL"))]  := Time()
-					aTrackS[Z09->(FieldPos("Z09_US1COL"))]  := "AUTOMATICO"
-					cTransp := Z09->Z09_TRANSP
-				ElseIf cOpc == "3"
-					aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "5"							// Status "Em Separacao"
-					aTrackS[Z09->(FieldPos("Z09_DTEXPE"))]  := dDataBase
-					aTrackS[Z09->(FieldPos("Z09_HREXPE"))]  := Time()
-				ElseIf cOpc == "4"
-					aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "6"							// Status "Em Faturamento"
-				EndIf
-				
-				u_TRK006S(aTrackS, cTitLog)
-
-				Z09->( DbSkip() )
-			End
-		EndIf
-		
-		CB7->( DbGoto(nRecPos) )
-	EndIf
+	Next nI
 
 	If !Empty(cTransp)
 		DbSelectAre("Z09")
 		Z09->( DbSetOrder(3) )
-
+		//-- Se for remessa irá sempre pagar o último cTransp e também o último cChave
 		If Z09->( DbSeek(cChave) )
 			cEmail := Posicione("SA4", 1, FWxFilial('SA4') + cTransp, "A4_EMAIL")
 			cEmail := "erike.yuri@dothink.com.br;janine.duarte@barentz.com;"
@@ -5971,5 +6023,211 @@ Static Function SetTraking(cOpc, cTitLog)
 
 	RestArea(aASC5)
     RestArea(aArea)
+
+Return
+
+
+
+//--
+User Function CBSolCB7(nOpc,bBlcVld)
+	Local cPedido,cNota,cSerie
+	Local aTela:= VtSave()
+
+	IF !Type("lVT100B") == "L"
+		Private lVT100B := .F.
+	EndIf
+	
+	If nOpc == 0
+		Return Eval(bBlcVld)
+	ElseIf nOpc ==1  // por codigo da Ordem de Separacao
+		cOrdSep := Space(TamSX3("CB7_ORDSEP")[1])       
+		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,2,0),0 VTSay "Informe o codigo:"  //"Informe o codigo:"
+		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,3,1),0 VTGet cOrdSep PICT "@!" F3 "CB7"  Valid Eval(bBlcVld)
+		VTRead                                                                        		
+	ElseIf nOpc ==2 // por pedido
+		cPedido := Space(TamSX3("C6_NUM")[1])
+		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,2,0),0 VTSay "Informe o Pedido"  //"Informe o Pedido"
+		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,3,1),0 VTSay "de venda: " VTGet cPedido PICT "@!"  F3 "CBL"  Valid (VldGet(cPedido) .and. U_CBSelCB7(1,cPedido) .and. Eval(bBlcVld))//'de venda: '
+		VTRead                                                                        		
+	ElseIf nOpc ==3 // por Nota fiscal    
+		cNota  := Space(TamSx3("F2_DOC")[1])
+		cSerie := Space(SerieNfId("SF1",6,"F2_SERIE"))
+		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,2,0),00 VTSay "Informe a NFS" //"Informe a NFS"
+		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,3,1),00 VTSAY  "Nota" VTGet cNota   pict '@S<20>' F3 "CBM"  Valid VldGet(cNota) //"Nota"
+		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,3,1),14 VTSAY '-' VTGet cSerie  pict '@!'   	  Valid Empty(cSerie) .or. U_CBSelCB7(2,cNota+cSerie,.T.,cNota,cSerie) .and. Eval(bBlcVld)
+		VTRead                                                                        	                                                                        		
+	EndIf     
+
+	VTRestore(,,,,aTela)
+	
+	If VTLastKey() == 27
+		Return .f.
+	EndIf
+
+Return .t.
+
+
+//Verifica se o conteudo da variavel esta em branco, caso esteja chama consulta F3 da mesma
+Static Function VldGet(cVar)
+
+	If Empty(cVar)
+		VtKeyBoard(chr(23))
+		Return .F.
+	EndIf
+
+Return .T.
+
+
+/*
+nModo 
+1=Pedido
+2=Nota Fiscal Saida
+3=OP
+*/
+User Function CBSelCB7(nModo,cChave,lSerie,cNota,cSerie)
+	Local aOrdSep:={}   
+	Local aCab
+	Local aSize
+	Local nPos                  
+	Local aTela                   
+
+	Default lSerie := .F.
+
+	DbSelectArea("CB7")
+	CB7->(DbSetOrder(1))
+	DbSelectArea("CB8")
+
+	If lSerie
+		CBMULTDOC("SF2",cNota,@cSerie)
+	EndIf
+
+	If nModo == 1 // pedido
+		//-- Consulta pedido triangular que tem a OS
+		cChave := ChkPVTri(cChave)
+
+		CB8->(DbSetOrder(2)) 
+		CB8->(DbSeek(xFilial("CB8")+cChave))
+		bBlock:={|| CB8->(CB8_FILIAL+CB8_PEDIDO) == xFilial("CB8")+cChave}
+	ElseIf nModo == 2
+		CB8->(DbSetOrder(5)) 
+		CB8->(DbSeek(xFilial("CB8")+cChave))
+		bBlock:={|| CB8->(CB8_FILIAL+CB8_NOTA+CB8_SERIE) == xFilial("CB8")+cNota+cSerie}
+		If CB8->(!Found())
+			CB7->(DbSetOrder(4)) 
+			If CB7->(DbSeek(xFilial("CB7")+cChave))
+				cChave := CB7->CB7_ORDSEP
+				CB8->(DbSetOrder(1))
+				If CB8->(DbSeek(xFilial("CB8")+cChave))
+					bBlock:={|| CB8->(CB8_FILIAL+CB8_ORDSEP) == xFilial("CB8")+cChave}
+				EndIf
+			EndIf
+		EndIf
+	ElseIf nModo == 3
+		CB8->(DbSetOrder(6)) 
+		CB8->(DbSeek(xFilial("CB8")+cChave))
+		bBlock:={|| CB8->(CB8_FILIAL+AllTrim(CB8_OP)) == xFilial("CB8")+AllTrim(cChave)}
+	EndIf      		
+
+	While ! CB8->(Eof()) .and. eval(bBlock)
+		If CB8->CB8_TIPSEP=='1' // PRE-SEPARACAO
+			CB8->(DbSkip())
+			Loop 
+		EndIf
+
+		If nModo==1
+			If Ascan(aOrdSep,{|x| x[1]+x[3] == CB8->(CB8_ORDSEP+CB8_PEDIDO)}) == 0
+				CB8->(aadd(aOrdSep,{CB8_ORDSEP,CB8_LOCAL,CB8_PEDIDO,CB7->CB7_CODOPE}))						  
+			EndIf   
+		ElseIf nModo==2
+			If Ascan(aOrdSep,{|x| x[1]+x[3]+x[4] == CB8->(CB8_ORDSEP+CB8_NOTA+CB8_SERIE)}) == 0
+				CB8->(aadd(aOrdSep,{CB8_ORDSEP,CB8_LOCAL,CB8_NOTA,CB8_SERIE,CB7->CB7_CODOPE}))						  
+			EndIf   
+		ElseIf nModo==3
+			If Ascan(aOrdSep,{|x| x[1]+x[3] == CB8->(CB8_ORDSEP+CB8_OP)}) == 0
+				CB8->(aadd(aOrdSep,{CB8_ORDSEP,CB8_LOCAL,CB8_OP,CB7->CB7_CODOPE}))						  
+			EndIf   
+		EndIf			   
+		CB8->(DbSkip())
+	Enddo
+
+	If Empty(aOrdSep)
+		VtAlert("Ordem de separacao nao encontrada","Aviso",.t.,4000,3)
+		VtKeyboard(Chr(20))  // zera o get
+		Return .F.
+	EndIf
+
+	aOrdSep := aSort(aOrdSep,,,{|x,y| x[1] < y[1]})
+	If len(aOrdSep) == 1 .and. ! Empty(cChave)
+		cOrdSep:= aOrdSep[1,1]
+		Return .T.
+	EndIf      
+
+	aTela := VTSave()   
+	VtClear   
+	If nModo ==1 
+		acab :={"Ord.Sep","Arm","PEDIDO","Operador"} //"Ord.Sep","Arm","PEDIDO","Operador"
+		aSize   := {7,3,7,6}                                  	
+	ElseIf nModo==2
+		acab :={"Ord.Sep","Arm","Nota","Serie","Operador"} //"Ord.Sep","Arm","Nota","Serie","Operador"
+		aSize   := {7,3,6,4,6}                                  	
+	ElseIf nModo==3
+		acab :={"Ord.Sep","Arm","O.P.","Operador"} //"Ord.Sep","Arm","O.P.","Operador"
+		aSize   := {7,3,13,6}                                  	
+	EndIF	
+
+	nPos := 1
+	npos := VTaBrowse(,,,,aCab,aOrdSep,aSize,,nPos)
+	VtRestore(,,,,aTela)
+
+	If VtLastkey() == 27                 
+		VtKeyboard(Chr(20))  // zera o get
+		Return .f.
+	EndIf    
+
+	cOrdSep:=aOrdSep[nPos,1]                  
+	VtKeyboard(Chr(13))  // zera o get
+
+Return .T.              
+
+
+//-- Rotina faz a checagem se o PV digitado foi de triangilacao, caso seja triangular localizao o PV que tem a OS
+Static Function ChkPVTri(cChave)
+	Local cQuery  := ""
+	Local cNewChv := cChave
+
+    If Select("_QRYCB7") > 0
+        _QRYCB7->(dbCloseArea())
+    EndIf
+
+    //-- Consulta pedido triangular
+	cQuery := " SELECT CB7_PEDIDO, CB7_XPVTRI " + CRLF
+	cQuery += " FROM " + RetSQLName("CB7") + " CB7 " + CRLF
+	cQuery += " WHERE CB7_FILIAL = '" + xFilial("CB7") + "' " + CRLF
+	cQuery += " AND CB7_XPVTRI = '" + cChave + "' " + CRLF
+	cQuery += " AND CB7.D_E_L_E_T_ = ' ' " + CRLF
+
+    cQuery := ChangeQuery(cQuery)
+    TCQUERY cQuery New Alias "_QRYCB7"
+
+	If !_QRYCB7->(EoF()) .And. !(AllTrim(_QRYCB7->CB7_PEDIDO) == AllTrim(cChave))
+		cNewChv := _QRYCB7->CB7_PEDIDO
+	EndIf
+
+    If Select("_QRYCB7") > 0
+        _QRYCB7->(dbCloseArea())
+    EndIf
+
+Return cNewChv
+
+
+
+Static Function GetInfoPv()
+Local cAux	 := If(Empty(cRestricao), "Sem Restricao", cRestricao)
+
+If !Empty(CB8->CB8_XCODSI)
+	VtAlert("Codigo Similar: " + CB8->CB8_XCODSI,"PROD.SIMILAR",.t.)
+EndIf
+
+VtAlert(cAux, "RESTRICAO:", .t.)
 
 Return

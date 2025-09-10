@@ -80,7 +80,8 @@ DO CASE
         cOpcoes += "5=Em Separação;"
         cOpcoes += "6=Em Faturamento;"
         cOpcoes += "7=Em Embarque;"
-        cOpcoes += "8=Pedido Entregue;"
+        cOpcoes += "8=Em Transito;"
+        cOpcoes += "9=Pedido Entregue;"
     CASE nOpc == 2 // Inglês
         cOpcoes += "1=In Release;"
         cOpcoes += "2=Tax Validation;"
@@ -89,7 +90,8 @@ DO CASE
         cOpcoes += "5=Picking;"
         cOpcoes += "6=Billing;"
         cOpcoes += "7=Shipping;"
-        cOpcoes += "8=Order Delivered;"
+        cOpcoes += "8=In Transit;"
+        cOpcoes += "9=Order Delivered;"
     CASE nOpc == 3 // Espanhol
         cOpcoes += "1=En Liberación;"
         cOpcoes += "2=Validación Fiscal;"
@@ -98,7 +100,8 @@ DO CASE
         cOpcoes += "5=Separación;"
         cOpcoes += "6=Facturación;"
         cOpcoes += "7=Embarque;"
-        cOpcoes += "8=Pedido Entregado;"
+        cOpcoes += "8=En tránsito;"
+        cOpcoes += "9=Pedido Entregado;"
 END CASE
 
 RestArea(aArea)

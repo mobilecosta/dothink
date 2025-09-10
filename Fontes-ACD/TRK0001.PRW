@@ -86,7 +86,7 @@ Static Function MotaCockpit(nOpc as numeric)
     //-- Inicialização de variáveis
     aButton     := {}
     aDbCards    := GetDbCards(nOpc)
-    aCards      := Array( Len(aDbCards), 5)
+    aCards      := Array( Len(aDbCards), 6)
     aSize       := FWGetDialogSize( oMainWnd )
     lTelaG      := (ASIZE[4] > 1580)
     nHDown      := 150
@@ -136,7 +136,7 @@ Static Function MotaCockpit(nOpc as numeric)
     oMExit:SetCSS("QWidget { background: "+cClrMenu+"; border: 1px solid white; }")
     oMExit:align:= CONTROL_ALIGN_BOTTOM
 
-    aadd(aButton, {AddBotao("MENURUN"   , "Fechar menu" , {|| oMenu:nWidth := If(oMenu:nWidth == 160, 50, 160) }, oMExit, cClrMenu, cClrText)})
+    aadd(aButton, {AddBotao("MENURUN"   , "Fechar menu" , {|| oMenu:nWidth := If(oMenu:nWidth == 160, 48, 160) }, oMExit, cClrMenu, cClrText)})
 
     aadd(aButton, {AddBotao("PARAMETROS", "Inf.Gerais"  , bInfG, oMenu, cClrMenu, cClrText)})
     aadd(aButton, {AddBotao("TK_REFRESH", "Atu.Cards"   , {|| FWMsgRun(NIL,{|| SetVldCards()  },"Aguarde...","Atualizando Cards") }, oMenu, cClrMenu, cClrText)})
@@ -202,6 +202,7 @@ Static Function MotaCockpit(nOpc as numeric)
         nLinLista := 15
         aCards[nI,4] := Array( Len(aDbCards[nI, 3]) )
         aCards[nI,5] := Array( Len(aDbCards[nI, 3]) )
+        aCards[nI,6] := Array( Len(aDbCards[nI, 3]) )
         For nJ:=1 To Len(aDbCards[nI, 3])
             aCards[nI,4,nJ] := TSay():New(nLinLista, 20, {|| "" }, aCards[nI,1], /*cPicture*/, /*oFontPadrao*/, , , , .T., /*nClrText*/, /*nClrBack*/, 60, 7, , , , , , .T.)
             aCards[nI,4,nJ]:SetText( '<div>'+aDbCards[nI, 3, nJ]+'</div>')
@@ -209,6 +210,11 @@ Static Function MotaCockpit(nOpc as numeric)
             aCards[nI,5,nJ] := TButton():New(nLinLista, 02, cValtoChar(aDbCards[nI, 4, nJ]), aCards[nI,1], {|| .T. }, 15, 7, , /*oFontPadrao*/, , .T.)
             aCards[nI,5,nJ]:SetCSS("TButton { font: bold;     background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #3DAFCC, stop: 1 #0D9CBF);    color: #FFFFFF;     border-width: 1px;     border-style: solid;     border-radius: 3px;     border-color: #369CB5; }TButton:focus {    padding:0px; outline-width:1px; outline-style:solid; outline-color: #51DAFC; outline-radius:3px; border-color:#369CB5;}TButton:hover {    color: #FFFFFF;     background-color : qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #3DAFCC, stop: 1 #1188A6);    border-width: 1px;     border-style: solid;     border-radius: 3px;     border-color: #369CB5; }TButton:pressed {    color: #FFF;     background-color : qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #1188A6, stop: 1 #3DAFCC);    border-width: 1px;     border-style: solid;     border-radius: 3px;     border-color: #369CB5; }TButton:disabled {    color: #FFFFFF;     background-color: #4CA0B5; }")
             aCards[nI,5,nJ]:cMsg := aDbCards[nI, 5, nJ] //-- Variavel de controle
+
+            aCards[nI,6,nJ] := TSay():New(nLinLista, 80, {|| "" }, aCards[nI,1], /*cPicture*/, /*oFontPadrao*/, , , , .T., /*nClrText*/, /*nClrBack*/, 30, 7, , , , , , .T.)
+            aCards[nI,6,nJ]:SetText( '<div>(0)</div>')
+            aCards[nI,6,nJ]:cMsg := aDbCards[nI, 5, nJ]+"_ALL" //-- Variavel de controle
+
             nLinLista += 8
         Next nJ
 
@@ -255,12 +261,15 @@ Static Function MotaCockpit(nOpc as numeric)
             oBrowseUp:AddLegend( "Z09->Z09_STATUS == '5' "                      , "br_marron.bmp"       , "Em Separação"            , "1")
             oBrowseUp:AddLegend( "Z09->Z09_STATUS == '6' "                      , "br_azul.bmp"         , "Em Faturamento"          , "1")
             oBrowseUp:AddLegend( "Z09->Z09_STATUS == '7' "                      , "br_verde.bmp"        , "Em Embarque"             , "1")
-            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '8' "                      , "GREEN"               , "Pedido Entregue"         , "1") 
-            oBrowseUp:AddLegend( "Z09->Z09_ACAOCS == '2' "                      , "CLIENTE"             , "Pendencia CS"            , "2")
+            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '8' "                      , "BR_BRANCO"           , "Pedido Em Transito"      , "1") 
+            oBrowseUp:AddLegend( "Z09->Z09_STATUS == '9' "                      , "GREEN"               , "Pedido Entregue"         , "1") 
             oBrowseUp:AddLegend( "Z09->Z09_SLA == ' ' .or. Z09->Z09_SLA == '1' ", "sps_updated"         , "Dentro do Prazo"         , "2")
             oBrowseUp:AddLegend( "Z09->Z09_SLA == '2' "                         , "sps_outdated"        , "Próximo Vencimento"      , "2")
             oBrowseUp:AddLegend( "Z09->Z09_SLA == '3' "                         , "sps_not_installed"   , "Fora do Prazo"           , "2")
             oBrowseUp:AddLegend( "Z09->Z09_SLA == '4' "                         , "sps_not_compatible"  , "SLA Pausado"             , "2")
+            oBrowseUp:AddLegend( "Z09->Z09_ACAOCS == '2' "                      , "CLIENTE"             , "Pendencia CS"            , "3")
+            oBrowseUp:AddLegend( "Z09->Z09_ACAOCS == '3' "                      , "checked"             , "Ajustado CS"             , "3")
+            oBrowseUp:AddLegend( "Z09->Z09_ACAOCS == '4' "                      , "cancel"              , "Cancelado CS"            , "3")
         EndIf
 
         oBrowseUp:Activate()
@@ -351,7 +360,7 @@ Static Function GetDbCards(nOpc)
 
     If nOpc == 0 .or. nOpc == 4
         //--- CS
-        Aadd(aRet, {"CS"            , "trk-cs-32x32"    , {"Validação CS"}, {0}, {"_nCS"}})
+        Aadd(aRet, {"CS"            , "trk-cs-32x32"    , {"Validação CS", "Ajustado CS", "Cancelado CS"}, {0, 0, 0}, {"_nCS2", "_nCS3", "_nCS4"}})
     EndIf
 
     If nOpc == 0 .or. nOpc == 1 .or. nOpc == 4 .or. nOpc == 5
@@ -366,11 +375,13 @@ return aRet
 
 Static Function SetVldCards()
     local nI, nJ
-    local cVar  := ""
-    local cItem := ""
-    local nCount:= 0
-    local aArea := GetArea()
-    local cQryZ09 := "SELECT COUNT(1) AS OK FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.D_E_L_E_T_= ' ' "
+    local cVar       := ""
+    local cVar1      := ""
+    local cItem      := ""
+    local nCount     := 0
+    local aArea      := GetArea()
+    local cQryZ09    := "SELECT COUNT(1) AS OK FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.D_E_L_E_T_= ' ' "
+    local cQryZ09ALL := "SELECT COUNT(1) AS OK FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.D_E_L_E_T_= ' ' "
 
     For nI:=1 To Len(aCards)
         For nJ:=1 To Len(aCards[nI, 4])
@@ -390,8 +401,12 @@ Static Function SetVldCards()
                     nCount := MpSysExecScalar(cQryZ09 + " AND Z09.Z09_STATUS = '6' ", "OK")
                 CASE cVar == "_nEMBARQ"
                     nCount := MpSysExecScalar(cQryZ09 + " AND Z09.Z09_STATUS = '7' ", "OK")
-                CASE cVar == "_nCS"
+                CASE cVar == "_nCS2"
                     nCount := MpSysExecScalar(cQryZ09 + " AND Z09.Z09_ACAOCS = '2' ", "OK")
+                CASE cVar == "_nCS3"
+                    nCount := MpSysExecScalar(cQryZ09 + " AND Z09.Z09_ACAOCS = '3' ", "OK")
+                CASE cVar == "_nCS4"
+                    nCount := MpSysExecScalar(cQryZ09 + " AND Z09.Z09_ACAOCS = '4' ", "OK")
                 CASE "_nSLA_" $ cVar
                     cItem := Right(cVar,1)
                     If cItem == "1"
@@ -402,6 +417,41 @@ Static Function SetVldCards()
             END CASE
 
             aCards[nI,5,nJ]:cCaption := cValtoChar(nCount)
+
+            cVar1   := aCards[nI,6,nJ]:cMsg
+            nCount  := 0
+
+            DO CASE
+                CASE cVar1 == "_nVLDFISCAL_ALL"
+                    nCount := MpSysExecScalar(cQryZ09ALL + " AND Z09.Z09_STATUS = '2' ", "OK")
+                CASE cVar1 == "_nVLDFISICA_ALL"
+                    nCount := MpSysExecScalar(cQryZ09ALL + " AND Z09.Z09_STATUS = '3' ", "OK")
+                CASE cVar1 == "_nAGENDA_ALL"
+                    nCount := MpSysExecScalar(cQryZ09ALL + " AND Z09.Z09_STATUS = '4' ", "OK")
+                CASE cVar1 == "_nSEP_ALL"
+                    nCount := MpSysExecScalar(cQryZ09ALL + " AND Z09.Z09_STATUS = '5' ", "OK")
+                CASE cVar1 == "_nFATUR_ALL"
+                    nCount := MpSysExecScalar(cQryZ09ALL + " AND Z09.Z09_STATUS = '6' ", "OK")
+                CASE cVar1 == "_nEMBARQ_ALL"
+                    nCount := MpSysExecScalar(cQryZ09ALL + " AND Z09.Z09_STATUS = '7' ", "OK")
+                CASE cVar1 == "_nCS2_ALL"
+                    nCount := MpSysExecScalar(cQryZ09ALL + " AND Z09.Z09_ACAOCS = '2' ", "OK")
+                CASE cVar1 == "_nCS3_ALL"
+                    nCount := MpSysExecScalar(cQryZ09ALL + " AND Z09.Z09_ACAOCS = '3' ", "OK")
+                CASE cVar1 == "_nCS4_ALL"
+                    nCount := MpSysExecScalar(cQryZ09ALL + " AND Z09.Z09_ACAOCS = '4' ", "OK")
+                CASE "_nSLA_" $ cVar1
+                    cVar1 := StrTran(cVar1, "_ALL", "") 
+                    cItem := Right(cVar1,1)
+                    If cItem == "1"
+                        nCount := MpSysExecScalar(cQryZ09ALL + " AND Z09.Z09_SLA IN(' ', '1') ", "OK")
+                    Else
+                        nCount := MpSysExecScalar(cQryZ09ALL + " AND Z09.Z09_SLA = '"+cItem+"' ", "OK")
+                    EndIf
+            END CASE
+
+            aCards[nI,6,nJ]:SetText( '<div>('+cValtoChar(nCount)+')</div>')
+
 
         Next nJ
     Next nI
@@ -493,7 +543,9 @@ Return
 Static Function GrvStatus(cStaZ09, cStaSC5, cPedido)
     local cChave  := Z09->(Z09_FILIAL + Z09_NUMPV)
     local aTrackS := {}
+    local aPVs    := {}
     local nZ09Rec := Z09->( Recno() )
+    local nI      := 0
 
     DO CASE
         CASE cStaZ09 == "1" //1=Em Liberação;
@@ -520,21 +572,36 @@ Static Function GrvStatus(cStaZ09, cStaSC5, cPedido)
     SC5->C5_MSEXP   :=   ""
     SC5->( MsUnLock() )
 
-    DbSelectAre("Z09")
-    Z09->( DbSetOrder(3) )
-    Z09->( DbSeek(Z09_FILIAL + Z09_NUMPV) )
-    While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
-   
-        aTrackS := Array( Len( Z09->( DbStruct() ) ) )
+    aAdd(aPVs, cChave) 
+    If !Empty(Z09->Z09_PVREME)
+        If Z09->Z09_NUMPV == Z09->Z09_PVREME
+            aAdd(aPVs, Z09->Z09_FILIAL + Z09->Z09_PVTRIA)
+        Else
+            aAdd(aPVs, Z09->Z09_FILIAL + Z09->Z09_PVREME)
+        EndIf
+    Endif
 
-        aTrackS[FieldPos("Z09_FILIAL")]  :=    Z09->Z09_FILIAL
-        aTrackS[FieldPos("Z09_NUMPV") ]  :=    Z09->Z09_NUMPV
-        aTrackS[FieldPos("Z09_STATUS")]  :=    cStaZ09
+    //-- Verifica se é triangular
+    For nI := 1 To Len(aPVs)
+        cChave := aPVs[nI]
 
-        u_TRK006S(aTrackS,"Ajuste Manual de Status")
+        DbSelectAre("Z09")
+        Z09->( DbSetOrder(3) )
+        Z09->( DbSeek(cChave) )
+        While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
+    
+            aTrackS := Array( Len( Z09->( DbStruct() ) ) )
 
-        Z09->( DbSkip() )
-    End
+            aTrackS[FieldPos("Z09_FILIAL")]  :=    Z09->Z09_FILIAL
+            aTrackS[FieldPos("Z09_NUMPV") ]  :=    Z09->Z09_NUMPV
+            aTrackS[FieldPos("Z09_ITEMPV")]  :=    Z09->Z09_ITEMPV
+            aTrackS[FieldPos("Z09_STATUS")]  :=    cStaZ09
+
+            u_TRK006S(aTrackS,"Ajuste Manual de Status")
+
+            Z09->( DbSkip() )
+        End
+    Next nI
 
     Z09->( DbGoto(nZ09Rec) )
 Return

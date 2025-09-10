@@ -469,27 +469,27 @@ If lContinua
 				CB8->(DbSetOrder(1))
 				CB8->(MsSeek(xFilial("CB8")+CB7->CB7_ORDSEP))
 				While !CB8->(Eof()) .And. CB8->CB8_ORDSEP == CB7->CB7_ORDSEP
-					nPos := aScan(aItensTrc,{|x| x[1]+x[2]+x[3]+x[5] == CB8->CB8_PEDIDO+CB8->CB8_ITEM+CB8->CB8_SEQUEN+CB8->CB8_LOTECT})
+					nPos := aScan(aItensTrc,{|x| x[1]+x[2] == CB8->CB8_PEDIDO+CB8->CB8_ITEM})
 				 	If nPos == 0
-				 		aAdd(aItensTrc, {CB8->CB8_PEDIDO, CB8->CB8_ITEM, CB8->CB8_SEQUEN, CB8->CB8_QTDORI, CB8->CB8_LOTECT, CB8->CB8_NUMLOT,CB8->CB8_PROD, CB8->CB8_LOCAL,{}})
-				 		nPos:=len(aItensTrc)
-						 nQtdSep += CB8->CB8_QTDORI
+				 		aAdd(aItensTrc, {CB8->CB8_PEDIDO, CB8->CB8_ITEM, CB8->CB8_SEQUEN, CB8->CB8_QTDORI, CB8->CB8_LOTECT, CB8->CB8_NUMLOT,CB8->CB8_PROD, CB8->CB8_LOCAL, {}})
+				 		nPos := len(aItensTrc)
+						nQtdSep += CB8->CB8_QTDORI
 				 	Else
-				 		aItensTrc[nPos][4] 	+= CB8->CB8_QTDORI
-				 		nQtdSep 			+= CB8->CB8_QTDORI
+				 		aItensTrc[nPos][4] += CB8->CB8_QTDORI
+				 		nQtdSep += CB8->CB8_QTDORI
 				 	EndIf
-				 	aAdd(aItensTrc[nPos,9],{CB8->CB8_LOTECT, ;                                                // 1
-                                       CB8->CB8_NUMLOT,;                                                // 2
-                                       CB8->CB8_LCALIZ, ;                                                // 3
-                                       CB8->CB8_NUMSER,;                                               // 4
-                                       CB8->CB8_QTDORI,;                                                // 5
-                                       ConvUM(CB8->CB8_PROD,CB8->CB8_QTDORI,0,2),;                        // 6
-                                       Posicione("SB8",3,xFilial("SB8")+CB8->CB8_PROD+CB8->CB8_LOCAL+CB8->CB8_LOTECT+CB8->CB8_NUMLOT,"B8_DTVALID"),; //7
-                                       ,;                                                                   // 8
-                                       ,;                                                                // 9
-                                       ,;                                                                 // 10
-                                       CB8->CB8_LOCAL,;                                                // 11
-                                       0})
+				 	aAdd(aItensTrc[nPos,9],	{	CB8->CB8_LOTECT,; // 1
+												CB8->CB8_NUMLOT,; // 2
+												CB8->CB8_LCALIZ,; // 3
+												CB8->CB8_NUMSER,; // 4
+												CB8->CB8_QTDORI,; // 5
+												ConvUM(CB8->CB8_PROD,CB8->CB8_QTDORI,0,2),; // 6
+												Posicione("SB8",3,xFilial("SB8")+CB8->CB8_PROD+CB8->CB8_LOCAL+CB8->CB8_LOTECT+CB8->CB8_NUMLOT,"B8_DTVALID"),; // 7
+												,; // 8
+												,; // 9
+												,; // 10
+												CB8->CB8_LOCAL,; // 11
+												0})
  					CB8->(DbSkip())
 				EndDo
 	
@@ -689,7 +689,7 @@ User Function ETACDA100(cAlias,nReg,nOpcx, lAuto)
 Local oDlg
 Local oGet
 Local cSeekCB8 := xFilial("CB8") + CB7->CB7_ORDSEP
-Local nI
+Local nI,nJ
 Local nOpca := 0
 Local lContinua := .T.
 
@@ -702,6 +702,8 @@ Local nPosItPed  := 0
 Local nPosSeqPed := 0
 Local cMsgAlert  := "" 
 Local cItemAnt   := ""
+Local aPVs       := {}
+Local cChave     := ""
 
 Private Altera  := .F.
 Private Inclui  := .F.
@@ -937,16 +939,25 @@ If nOpca == 1 .Or. l100Auto
 	//³ Exclui linha da tabela CB7 ³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
+	aAdd(aPVs, CB7->( CB7_FILIAL + CB7_PEDIDO ))
+	If !Empty(CB7->CB7_XPVTRI)
+		aAdd(aPVs, CB7->( CB7_FILIAL + CB7_XPVTRI ))
+	Endif
+
 	CB7->(RecLock("CB7", .F.))
 	CB7->(dbDelete())
 	CB7->(MsUnlock())
 
-	For nI := 1 to Len(aCols)
-		If cItemAnt != aCols[nI,nPosPed]+aCols[nI,nPosItPed]
-			SetTraking("5", aCols[nI,nPosPed], aCols[nI,nPosItPed], Nil, "Estorno total PV-Item: " + AllTrim(aCols[nI,nPosPed]) + "-" + AllTrim(aCols[nI,nPosItPed]), "Estorno " + If(nOSOpc == 1, "Vld.Fisica", "OS"))
-		EndIf
-		cItemAnt := aCols[nI,nPosPed]+aCols[nI,nPosItPed]
-	Next nI
+	For nJ := 1 To Len(aPVs)
+		cChave := aPVs[nJ]
+
+		For nI := 1 to Len(aCols)
+			If cItemAnt != aCols[nI,nPosPed]+aCols[nI,nPosItPed]
+				SetTraking("5", cChave, aCols[nI,nPosItPed], Nil, "Estorno total PV-Item: " + AllTrim(aCols[nI,nPosPed]) + "-" + AllTrim(aCols[nI,nPosItPed]), "Estorno " + If(nOSOpc == 1, "Vld.Fisica", "OS"))
+			EndIf
+			cItemAnt := aCols[nI,nPosPed]+aCols[nI,nPosItPed]
+		Next nI
+	Next nJ
 
 	End Transaction
 
@@ -1112,7 +1123,8 @@ If nOrigExp == 1 .And. l100Auto
 	cCondicao += 'DTOS(C9_DATALIB)>="'+DTOS(aSav102[8])+'".And.DTOS(C9_DATALIB)<="'+DTOS(aSav102[9])+'".And.'
 	cCondicao += 'Empty(C9_ORDSEP) .And.'
 	cCondicao += 'C9_FILIAL = xFilial("SC9") .And.'
-	cCondicao += 'Empty( C9_BLEST + C9_BLCRED )'
+	cCondicao += 'Empty( C9_BLEST + C9_BLCRED ) .And.'
+	cCondicao += '!Empty( C9_LOTECTL )'
 
 	cBrwAlias	:= 'SC9'
 	cBrwCpMark	:= 'C9_OK'
@@ -1133,7 +1145,8 @@ ElseIf nOrigExp == 1 .And. !l100Auto
 		cCondicao += 'C9_LOJA    >="'+mv_par05+'".And.C9_LOJA   <="'+mv_par07+'".And.'
 		cCondicao += 'DTOS(C9_DATALIB)>="'+DTOS(mv_par08)+'".And.DTOS(C9_DATALIB)<="'+DTOS(mv_par09)+'".And.'
 		cCondicao += 'Empty(C9_ORDSEP) .And.'
-		cCondicao += ' C9_FILIAL = xFilial("SC9") .And. '
+		cCondicao += ' C9_FILIAL = xFilial("SC9") .And.'
+		cCondicao += '!Empty( C9_LOTECTL ) .And.'
 		cCondicao += cFilSC9
 		
 		cBrwAlias	:= 'SC9'
@@ -1334,8 +1347,8 @@ Local cCliente	:= Space(Tamsx3("C6_CLI")[1])
 Local cLoja		:= Space(Tamsx3("C6_LOJA")[1])
 Local cCondPag	:= Space(Tamsx3("C5_CONDPAG")[1])
 Local cLojaEnt	:= Space(Tamsx3("C5_LOJAENT")[1])
-Local cAgreg		:= Space(Tamsx3("C9_AGREG")[1])
-Local cOrdSep		:= Space(Tamsx3("CB7_ORDSEP")[1])
+Local cAgreg	:= Space(Tamsx3("C9_AGREG")[1])
+Local cOrdSep	:= Space(Tamsx3("CB7_ORDSEP")[1])
 Local cForn		:= ""
 Local cLojaForn	:= ""
 
@@ -1364,6 +1377,9 @@ Local lCB8Priore:= CB8->(FieldPos("CB8_PRIOR") > 0 )
 Local oSDCQry   := Nil
 Local cSDCQry   := ""
 Local cTblTmp   := ""
+Local cRemessa  := ""
+Local cCliRem   := ""
+Local cLojaRem  := ""
 
 Private aLogOS	:= {}
 Default oBrwMrk	:= Nil
@@ -1464,6 +1480,14 @@ While !SC9->(Eof())
 		IncProc()
 		Loop
 	EndIf
+
+	//-- Verifica se tem remessa
+	cRemessa := ChkRemessa(xFilial("SC5"), SC9->C9_PEDIDO)
+	If !Empty(cRemessa)
+		cCliRem  := SC5->C5_CLIENTE
+		cLojaRem := SC5->C5_LOJACLI
+	EndIf
+
 	If ! SC6->(DbSeek(xFilial("SC6")+SC9->C9_PEDIDO+SC9->C9_ITEM+SC9->C9_PRODUTO))
 		// neste caso a base tem sc9,sc5 e nao tem sc6,, problema de incosistencia de base
 		//Grava o historico das geracoes:
@@ -1604,6 +1628,18 @@ For nInd := 1 To Len( aItens )
                         CB7->CB7_XSTATU := CB7_STATUS
                     EndIf
 
+                    If CB7->(FieldPos("CB7_XPVTRI") > 0) .And. !Empty(cRemessa)
+                        CB7->CB7_XPVTRI := cRemessa
+                    EndIf
+
+                    If CB7->(FieldPos("CB7_XCLIRE") > 0) .And. !Empty(cCliRem)
+                        CB7->CB7_XCLIRE := cCliRem
+                    EndIf
+
+                    If CB7->(FieldPos("CB7_XLJREM") > 0) .And. !Empty(cLojaRem)
+                        CB7->CB7_XLJREM := cLojaRem
+                    EndIf
+
 					If	lA100CABE
 						ExecBlock("A100CABE",.F.,.F.)
 					EndIf
@@ -1621,7 +1657,7 @@ For nInd := 1 To Len( aItens )
 			If Localiza(SC9->C9_PRODUTO)
 				If oSDCQry == Nil
 					//-- Query para localizar os enderecos condiderando sua prioridade
-					cSDCQry :=	" SELECT SDC.DC_PRODUTO, SDC.DC_LOCAL, SDC.DC_ORIGEM,SDC.DC_PEDIDO, SDC.DC_ITEM, SDC.DC_SEQ, SDC.DC_QUANT, SDC.DC_LOCALIZ, SDC.DC_NUMSERI, SBE.BE_PRIOR " + ;
+					cSDCQry :=	" SELECT SDC.DC_PRODUTO, SDC.DC_LOCAL, SDC.DC_ORIGEM,SDC.DC_PEDIDO, SDC.DC_ITEM, SDC.DC_SEQ, SDC.DC_QUANT, SDC.DC_LOCALIZ, SDC.DC_NUMSERI, SBE.BE_PRIOR, SB1.B1_XCODSIM " + ;
 								" FROM " + RetSqlName('SDC') + " SDC " + ;
 								" RIGHT JOIN " + RetSQLName("SB1") + " SB1 " + ;
 								" ON SB1.B1_FILIAL = ? " + ;
@@ -1700,6 +1736,14 @@ For nInd := 1 To Len( aItens )
                     If CB8->(FieldPos("CB8_XSALDO") > 0)
                         CB8->CB8_XSALDO := (cTblTmp)->DC_QUANT
                     EndIf
+
+                    If CB8->(FieldPos("B1_XCODSIM") > 0)
+                        CB8->B1_XCODSIM := (cTblTmp)->B1_XCODSIM
+                    EndIf
+
+                    If CB8->(FieldPos("CB8_XLOTFO") > 0)
+                        CB8->CB8_XLOTFO := Posicione("SB8",3,xFilial("SB8")+(cTblTmp)->DC_PRODUTO+(cTblTmp)->DC_LOCAL+SC9->C9_LOTECTL+SC9->C9_LOTECTL, "B8_LOTEFOR")
+                    EndIf					
 
 					If	lACD100GI
 						ExecBlock("ACD100GI",.F.,.F.)
@@ -5832,7 +5876,7 @@ Static Function GrvEstZ12(nQtde, nSldQtdDev)
 			EndIf
 			
 			If !DevItemCB8(nDevQtd)
-				VTAlert("Item de valicacao nao localizado!","Aviso",.T.,4000,3)
+				VTAlert("Item de validacao nao localizado!","Aviso",.T.,4000,3)
 				Z12->(DbSetOrder(12))
 				Z12->(DbSeek(xFilial("Z12")+cOrdSep))
 				Return
@@ -5927,7 +5971,7 @@ Static Function GrvEstCB9(nQtde, nSldQtdDev)
 			EndIf
 			
 			If !DevItemCB8(nDevQtd)
-				VTAlert("Item de valicacao nao localizado!","Aviso",.T.,4000,3)
+				VTAlert("Item de validacao nao localizado!","Aviso",.T.,4000,3)
 				CB9->(DbSetOrder(12))
 				CB9->(DbSeek(xFilial("CB9")+cOrdSep))
 				Return
@@ -6066,12 +6110,11 @@ Return .T.
 
 
 //--
-Static Function SetTraking(cOpc, cPedido, cItem, cMotivo, cObs, cTitLog)
+Static Function SetTraking(cOpc, cChave, cItem, cMotivo, cObs, cTitLog)
     local aArea   := GetArea()
 	local aASC5   := SC5->( GetArea() )
     local aTrackS := {}
 	local nRecPos := CB7->( Recno() )
-	local cChave  := CB7->( CB7_FILIAL + CB7_PEDIDO )
 	local cAuxObs := ""
 
 	dbSelectArea("SC5")
@@ -6082,8 +6125,8 @@ Static Function SetTraking(cOpc, cPedido, cItem, cMotivo, cObs, cTitLog)
 				SC5->C5_X4SSTAT := "A" // Em Validacao Fisica
 			ElseIf cOpc == "4"
 				SC5->C5_X4SSTAT := "8" // Em Agendamento
-			ElseIf cOpc == "5"
-				SC5->C5_X4SSTAT := "9" // Em Validacao Fiscal
+			//ElseIf cOpc == "5"
+				//SC5->C5_X4SSTAT := "9" // Em Validacao Fiscal
 			EndIf
 
 			//Grava o campo C5_MSEXP para sinalizaro ao Scheduler
@@ -6093,33 +6136,33 @@ Static Function SetTraking(cOpc, cPedido, cItem, cMotivo, cObs, cTitLog)
 		dbSelectArea("Z09")
 		Z09->( dbSetOrder(3) )
 
-		If Z09->( dbSeek(xFilial() + cPedido + cItem) )
+		If Z09->( dbSeek(cChave + cItem) )
 			aTrackS := Array( Len( Z09->( DbStruct() ) ) )
 
 			aTrackS[Z09->(FieldPos("Z09_FILIAL"))]  := Z09->Z09_FILIAL
 			aTrackS[Z09->(FieldPos("Z09_NUMPV")) ]  := Z09->Z09_NUMPV                   // Pedido Venda
 			aTrackS[Z09->(FieldPos("Z09_ITEMPV"))]  := Z09->Z09_ITEMPV                  // Item PV
 			If cOpc == "1"
-				cAuxObs += "--[" + DTOS(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+				cAuxObs += "--[" + DTOC(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
 				cAuxObs += "De: Logistica" + chr(13)+chr(10)
-				cAuxObs += "Para: CS" + chr(13)+chr(10)
+				cAuxObs += "Para: Operações" + chr(13)+chr(10)
 				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
 				cAuxObs += "O que: "+ cObs + chr(13)+chr(10)
-				cAuxObs += Trim(Z09->Z09_DSMOTV) 
 
 				aTrackS[Z09->(FieldPos("Z09_ACAOCS"))]	:= "2"								// Acao CS
-				aTrackS[Z09->(FieldPos("Z09_DSMOTV")) ]	:= cAuxObs							// Detalhes do Motivo
+				aTrackS[Z09->(FieldPos("Z09_DSMOTV"))]	:= cAuxObs + Trim(Z09->Z09_DSMOTV) 	// Detalhes do Motivo
+            	aTrackS[Z09->(FieldPos("Z09_PENCS")) ]  := cAuxObs + Trim(Z09->Z09_PENCS)   // Pendencia CS
 				If !Empty(cMotivo)
 					aTrackS[Z09->(FieldPos("Z09_MOTIVO")) ]	:= cMotivo						// Observacao para CS
 				EndIf
 			ElseIf cOpc == "2"
-				cAuxObs += "--[" + DTOS(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+				cAuxObs += "--[" + DTOC(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
 				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
 				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
 
 				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs							// Obs.Logistic para a alteracao do empenho
 			ElseIf cOpc == "3"
-				cAuxObs += "--[" + DTOS(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+				cAuxObs += "--[" + DTOC(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
 				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
 				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
 
@@ -6133,7 +6176,7 @@ Static Function SetTraking(cOpc, cPedido, cItem, cMotivo, cObs, cTitLog)
 				aTrackS[Z09->(FieldPos("Z09_UVFISI"))]  := Space(15)
 				aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "3"							    // Status "Em Validacao Fisica"
 			ElseIf cOpc == "4"
-				cAuxObs += "--[" + DTOS(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+				cAuxObs += "--[" + DTOC(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
 				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
 				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
 
@@ -6142,12 +6185,12 @@ Static Function SetTraking(cOpc, cPedido, cItem, cMotivo, cObs, cTitLog)
 				aTrackS[Z09->(FieldPos("Z09_HREXPE"))]  := Space(5)
 				aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "4"							    // Status "Em Agendamento"
 			ElseIf cOpc == "5"
-				cAuxObs += "--[" + DTOS(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+				cAuxObs += "--[" + DTOC(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
 				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
 				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
 
 				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs							// Obs.Logistic para a Desfaz Separacao
-				aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "2"							    // Status "Em Validacao Fiscal"
+				//aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "2"							    // Status "Em Validacao Fiscal"
 			EndIf
 
 			u_TRK006S(aTrackS, cTitLog)
@@ -6162,3 +6205,23 @@ Static Function SetTraking(cOpc, cPedido, cItem, cMotivo, cObs, cTitLog)
     RestArea(aArea)
 
 Return
+
+
+//--
+Static Function ChkRemessa(cXFilial, cXPedido)
+	Local aAreaAnt := GetArea()
+	Local aAreaSC5 := SC5->(GetArea())
+	Local cRemessa := ""
+
+	SC5->(dbSetOrder(1))
+	If SC5->(dbSeek(cXFilial + cXPedido))
+		//-- Verificar se e operacao remessa
+		If !Empty(SC5->C5_XPEDWEB)
+			cRemessa := MpSysExecScalar("SELECT Coalesce(C5_NUM, '"+Space(TamSX3('C5_NUM')[1])+"') AS PEDIDO FROM " + RetSQLName("SC5") + " SC5 WHERE SC5.C5_FILIAL = '" + xFilial("SC5") + "' AND SC5.D_E_L_E_T_= ' ' AND C5_XPEDORI = '"+SC5->C5_XPEDWEB+"'", "PEDIDO")
+		EndIf
+	EndIf
+
+	RestArea(aAreaSC5)
+	RestArea(aAreaAnt)
+
+Return cRemessa

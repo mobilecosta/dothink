@@ -27,18 +27,18 @@ aTela := VtSave()
 VTCLear()
 If lVT100B // GetMv("MV_RF4X20")
 	@ 0,0 VTSAY "Embarque" + ' Selecione:'//"Embarque"
-	nOpc:=VTaChoice(2,0,3,VTMaxCol(),{"Ordem de separação","Pedido de vendas","Nota Fiscal"})
+	nOpc:=VTaChoice(2,0,3,VTMaxCol(),{"Ordem de separação","Pedido de vendas"})
 ElseIf Vtmodelo()=="RF"
 	@ 0,0 VTSAY "Embarque" //"Embarque" 
 	@ 1,0 VTSay 'Selecione:' 
-	nOpc:=VTaChoice(3,0,6,VTMaxCol(),{"Ordem de separação","Pedido de vendas","Nota Fiscal"})
+	nOpc:=VTaChoice(3,0,6,VTMaxCol(),{"Ordem de separação","Pedido de vendas"})
 ElseIf VtModelo()=="MT44"
 	@ 0,0 VTSAY "Embarque" //"Embarque" 
 	@ 1,0 VTSay 'Selecione:'
-	nOpc:=VTaChoice(0,20,1,39,{"Ordem de separação","Pedido de vendas","Nota Fiscal"})
+	nOpc:=VTaChoice(0,20,1,39,{"Ordem de separação","Pedido de vendas"})
 ElseIf VtModelo()=="MT16"
 	@ 0,0 VTSAY "Embarque Selecione"
-	nOpc:=VTaChoice(1,0,1,19,{"Ordem de separação","Pedido de vendas","Nota Fiscal"})
+	nOpc:=VTaChoice(1,0,1,19,{"Ordem de separação","Pedido de vendas"})
 EndIf	
 
 VtRestore(,,,,aTela)
@@ -77,6 +77,8 @@ Local ckey09       := VTDescKey(09)
 Local ckey24       := VTDescKey(24)
 Local bkey09       := VTSetKey(09)
 Local bkey24       := VTSetKey(24)
+Local cQryCS	   := ""
+Local cQryCSCancel := ""
 
 Private cTranspConf
 Private cDesTra
@@ -106,11 +108,27 @@ VTClear()
 If VtModelo()=="RF" .or. lVT100B
 	@ 0,0 VtSay  "Embarque"
 EndIf
-If ! CBSolCB7(nOpc,{|| VldCodSep()})
+If ! U_CBSolCB7(nOpc,{|| VldCodSep()})
    Return 10
-EndIf   
+EndIf 
 
-If CB7->CB7_STATUS == "9" .And. MpSysExecScalar("SELECT SUM(CB9_QTEEBQ) AS QTDEMB FROM " + RetSQLName("CB9") + " CB9 WHERE CB9.CB9_FILIAL = '" + CB7->CB7_FILIAL + "' AND CB9.D_E_L_E_T_= ' ' ", "QTDEMB") > 0
+
+cQryCS 		:= "SELECT COUNT(1) AS OK FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.Z09_ACAOCS = '2' AND Z09.Z09_NUMPV = '" + CB7->CB7_PEDIDO + "' AND Z09.D_E_L_E_T_= ' ' " 
+cQryCSCancel:= "SELECT COUNT(1) AS OK FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.Z09_ACAOCS = '4' AND Z09.Z09_NUMPV = '" + CB7->CB7_PEDIDO + "' AND Z09.D_E_L_E_T_= ' ' " 
+
+//-- Verifica se algum item tem acao pendendo com o CS
+If MpSysExecScalar(cQryCS, "OK") > 0
+	VTAlert("Processo aguardando acao do CS!","Aviso",.t.,4000,3)
+	Return
+EndIf
+
+//-- Verifica se algum item tem acao para cancelamento com o CS
+If MpSysExecScalar(cQryCSCancel, "OK") > 0
+	VTAlert("Solicitacao de cancelamento CS!","Aviso",.t.,4000,3)
+	Return
+EndIf
+
+If CB7->CB7_STATUS == "9" .And. MpSysExecScalar("SELECT SUM(CB9_QTEEBQ) AS QTEEBQ FROM " + RetSQLName("CB9") + " CB9 WHERE CB9.CB9_FILIAL = '" + CB7->CB7_FILIAL + "' AND CB9.CB9_PEDIDO = '" + CB7->CB7_PEDIDO + "' AND CB9.D_E_L_E_T_= ' ' ", "QTEEBQ") > 0
    VTAlert("Processo de embarque finalizado","Aviso",.t.,4000) 
    If VTYesNo("Deseja estornar os produtos embarcados ?","Atencao",.T.)
 	   VTSetKey(09,{|| Informa()},"Informacoes")
@@ -119,6 +137,13 @@ If CB7->CB7_STATUS == "9" .And. MpSysExecScalar("SELECT SUM(CB9_QTEEBQ) AS QTDEM
 	   Return FimEmbarq()
 	Endif			   			
 EndIf   
+
+If !Empty(CB7->CB7_XPVTRI)
+	If MpSysExecScalar("SELECT COUNT(Z09_PVREME) AS QTEFAT FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + CB7->CB7_FILIAL + "' AND Z09.Z09_PVREME = '" + CB7->CB7_XPVTRI + "' AND Z09.Z09_NF <> ' ' AND Z09.D_E_L_E_T_= ' ' ", "QTEFAT") == 0
+		VTAlert("NF de remessa nao faturada","Aviso",.t.,4000)
+		Return 10
+	EndIf
+EndIf	
 
 IniProcesso()
 
@@ -261,7 +286,7 @@ Static Function IniProcesso()
 		CB7->CB7_STATPA := " "    //tira pausa
 
 		If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
-			SetTraking("1", "Em Embarque")
+			SetTraking("1", "Em Embarque (Inicio)")
 		EndIf
 	CB7->(MsUnlock())
 Return
@@ -449,6 +474,11 @@ If !CB9->(DbSeek(xFilial("CB9")+CB7->CB7_ORDSEP+"1")) .AND. ;
 	!CB9->(DbSeek(xFilial("CB9")+CB7->CB7_ORDSEP+"2")) 
    _cStatus := "9"	//Embarque finalizado
    _cPausa  := " "   //Sem pausa
+
+	If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
+		SetTraking("3", "Embarque Finalizado")
+	EndIf
+
    VTAlert("Processo de embarque finalizado","Aviso",.t.,4000) 
 ElseIf CB9->(DbSeek(xFilial("CB9")+CB7->CB7_ORDSEP+"3")) .AND.;
 		(CB9->(DbSeek(xFilial("CB9")+CB7->CB7_ORDSEP+"1")) .OR. ;
@@ -460,9 +490,9 @@ Else
 	_cStatus :=  CBAntProc(CB7->CB7_TIPEXP,"06*")
 	_cPausa  := "1"  //Pausada
 
-	If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
+	/*If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
 		SetTraking("2", "Em Faturamento")
-	EndIf
+	EndIf*/
 EndIf
 
 RecLock("CB7",.F.)
@@ -1238,6 +1268,10 @@ While .t.
 	//de separacao aborta estorno
 	CB9->(DbSetOrder(5))
 	If ! CB9->(DbSeek(xFilial("CB9")+CB7->CB7_ORDSEP+"3"))
+		//-- Quando finalizar o embarque totalment, retorna o STATUS para embarque
+		If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
+			SetTraking("4", "Em Embarque (Fim)")
+		EndIf
 		Exit
 	EndIF
 EndDo
@@ -1282,65 +1316,69 @@ Static Function SetTraking(cOpc, cTitLog)
 	local aASC5   := SC5->( GetArea() )
     local aTrackS := {}
     local nRecPos := CB7->( Recno() )
-    local cChave  := CB7->( CB7_FILIAL + CB7_PEDIDO )
-	//local cTransp := ""
-	//local cEmail  := ""
+    local cChave  := ""
+	local aPvs	  := {}
+	local nI	  := 0
+
+	aadd(aPVs, CB7->( CB7_FILIAL + CB7_PEDIDO ))
+	If !Empty(CB7->CB7_XPVTRI)
+		aadd(aPVs, CB7->( CB7_FILIAL + CB7_XPVTRI ))
+	Endif	
 
 	DbSelectArea("SC5")
 	SC5->( DbSetOrder(1) )
-    If SC5->( DbSeek( cChave ) )
-		RecLock("SC5", .f.)
-		If cOpc == "1"
-			SC5->C5_X4SSTAT := "4" // Em Transito
-		ElseIf cOpc == "2"
-			SC5->C5_X4SSTAT := "2" // Em Faturamento
+	For nI:=1 To Len(aPvs)
+		cChave := aPvs[nI]
+
+		If SC5->( DbSeek( cChave ) )
+			RecLock("SC5", .f.)
+			If cOpc $ "1/3"
+				SC5->C5_X4SSTAT := "4" // Em Transito
+			ElseIf cOpc == "2"
+				SC5->C5_X4SSTAT := "2" // Em Faturamento
+			ElseIf cOpc == "4"
+				SC5->C5_X4SSTAT := "B" // Em Embarque
+			EndIf
+
+			//Grava o campo C5_MSEXP para sinalizaro ao Scheduler
+			SC5->C5_MSEXP:=   ""  //DToS(dDataBase)
+			SC5->( MsUnLock() )
+
+			DbSelectAre("Z09")
+			Z09->( DbSetOrder(3) )
+
+			If Z09->( DbSeek(cChave) )
+				aTrackS := Array( Len( Z09->( DbStruct() ) ) )
+
+				//Atualiza, também, no alias temporário para atualização do status
+				While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
+
+					aTrackS[Z09->(FieldPos("Z09_FILIAL"))]  := xFilial("SC5")
+					aTrackS[Z09->(FieldPos("Z09_NUMPV")) ]  := Z09->Z09_NUMPV                   // Pedido Venda
+					aTrackS[Z09->(FieldPos("Z09_ITEMPV"))]  := Z09->Z09_ITEMPV                  // Item PV
+					If cOpc $ "1/3"
+						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "8"							// Status "Em Transito"
+						aTrackS[Z09->(FieldPos("Z09_DTPEMB"))]  := dDataBase	
+						aTrackS[Z09->(FieldPos("Z09_HRPEMB"))]  := Time()
+					ElseIf cOpc == "2"
+						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "6"							// Status "Em Faturamento"
+						aTrackS[Z09->(FieldPos("Z09_DTPEMB"))]  := CTOD("")	
+						aTrackS[Z09->(FieldPos("Z09_HRPEMB"))]  := Space(5)
+					ElseIf cOpc == "4"
+						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "7"							// Status "Em Embarque"
+						aTrackS[Z09->(FieldPos("Z09_DTPEMB"))]  := CTOD("")	
+						aTrackS[Z09->(FieldPos("Z09_HRPEMB"))]  := Space(5)
+					EndIf
+					
+					u_TRK006S(aTrackS, cTitLog)
+
+					Z09->( DbSkip() )
+				End
+			EndIf
+			
+			CB7->( DbGoto(nRecPos) )
 		EndIf
-
-		//Grava o campo C5_MSEXP para sinalizaro ao Scheduler
-		SC5->C5_MSEXP:=   ""  //DToS(dDataBase)
-		SC5->( MsUnLock() )
-
-		DbSelectAre("Z09")
-		Z09->( DbSetOrder(3) )
-
-		If Z09->( DbSeek(cChave) )
-			aTrackS := Array( Len( Z09->( DbStruct() ) ) )
-
-			//Atualiza, também, no alias temporário para atualização do status
-			While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
-
-				aTrackS[Z09->(FieldPos("Z09_FILIAL"))]  := xFilial("SC5")
-				aTrackS[Z09->(FieldPos("Z09_NUMPV")) ]  := Z09->Z09_NUMPV                   // Pedido Venda
-				aTrackS[Z09->(FieldPos("Z09_ITEMPV"))]  := Z09->Z09_ITEMPV                  // Item PV
-				If cOpc == "1"
-					aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "8"							// Status "Em Transito"
-					aTrackS[Z09->(FieldPos("Z09_DTPEMB"))]  := dDataBase	
-					aTrackS[Z09->(FieldPos("Z09_HRPEMB"))]  := Time()
-				ElseIf cOpc == "2"
-					aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "6"							// Status "Em Faturamento"
-					aTrackS[Z09->(FieldPos("Z09_DTPEMB"))]  := CTOD("")	
-					aTrackS[Z09->(FieldPos("Z09_HRPEMB"))]  := Space(5)
-				EndIf
-				
-				u_TRK006S(aTrackS, cTitLog)
-
-				Z09->( DbSkip() )
-			End
-		EndIf
-		
-		CB7->( DbGoto(nRecPos) )
-	EndIf
-
-	/*If !Empty(cTransp)
-		DbSelectAre("Z09")
-		Z09->( DbSetOrder(3) )
-
-		If Z09->( DbSeek(cChave) )
-			cEmail := Posicione("SA4", 1, FWxFilial('SA4') + cTransp, "A4_EMAIL")
-			cEmail := "erike.yuri@dothink.com.br;janine.duarte@barentz.com;"
-			u_TRK0012(cEmail, "Agendamento")
-		EndIf
-	EndIf*/
+	Next nI
 
 	RestArea(aASC5)
     RestArea(aArea)
