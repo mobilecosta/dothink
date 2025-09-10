@@ -88,7 +88,7 @@ static function TRK0005Brw(cTipoPedido as character)
         ,{"C6_ITEM"     , TamSX3("C6_ITEM")     , GetSX3Cache("C6_ITEM"     ,"X3_TITULO"), GetSX3Cache("C6_ITEM"    ,"X3_PICTURE"),"SC6.C6_ITEM"    };
         ,{"C5_CLIENTE"  , TamSX3("C5_CLIENTE")  , GetSX3Cache("C5_CLIENTE"  ,"X3_TITULO"), GetSX3Cache("C5_CLIENTE" ,"X3_PICTURE"),"SC5.C5_CLIENTE" };
         ,{"C5_LOJACLI"  , TamSX3("C5_LOJACLI")  , GetSX3Cache("C5_LOJACLI"  ,"X3_TITULO"), GetSX3Cache("C5_LOJACLI" ,"X3_PICTURE"),"SC5.C5_LOJACLI" };
-        ,{"A1_NOME"     , TamSX3("A1_NOME")     , GetSX3Cache("A1_NOME"     ,"X3_TITULO"), GetSX3Cache("A1_NOME"    ,"X3_PICTURE"),"CASE WHE C5_PEDIDO IN ('F', 'B') THEN SA2.A2_NOME ELSE SA1.A1_NOME END AS A1_NOME"    };
+        ,{"A1_NOME"     , TamSX3("A1_NOME")     , GetSX3Cache("A1_NOME"     ,"X3_TITULO"), GetSX3Cache("A1_NOME"    ,"X3_PICTURE"),"CASE WHEN C5_TIPO IN ('F', 'B') THEN SA2.A2_NOME ELSE SA1.A1_NOME END AS A1_NOME" };
         ,{"C6_PRODUTO"  , TamSX3("C6_PRODUTO")  , GetSX3Cache("C6_PRODUTO"  ,"X3_TITULO"), GetSX3Cache("C6_PRODUTO" ,"X3_PICTURE"),"SC6.C6_PRODUTO" };       
         ,{"B1_DESC"     , TamSX3("B1_DESC")     , GetSX3Cache("B1_DESC"     ,"X3_TITULO"), GetSX3Cache("B1_DESC"    ,"X3_PICTURE"),"SB1.B1_DESC"    };
         ,{"C6_LOCAL"    , TamSX3("C6_LOCAL")    , GetSX3Cache("C6_LOCAL"    ,"X3_TITULO"), GetSX3Cache("C6_LOCAL"   ,"X3_PICTURE"),"SC6.C6_LOCAL"   };         
@@ -171,7 +171,6 @@ static function TRK0005Brw(cTipoPedido as character)
         else
             aFWMBrwColumn[nField]:SetAlign("LEFT")
         endif
-        
 
         //Filters
         aAdd(aFilter, {aCustomFields[nField][1], aCustomFields[nField][3], aCustomFields[nField][2][3], aCustomFields[nField][2][1], aCustomFields[nField][2][2], aCustomFields[nField][4]} )
@@ -232,6 +231,7 @@ static function TRK0005Brw(cTipoPedido as character)
     cQuerySelect := StrTran(cQuerySelect, "SC5990"            , RetSQLName("SC5") )
     cQuerySelect := StrTran(cQuerySelect, "SC6990"            , RetSQLName("SC6") )
     cQuerySelect := StrTran(cQuerySelect, "SA1990"            , RetSQLName("SA1") )
+    cQuerySelect := StrTran(cQuerySelect, "SA2990"            , RetSQLName("SA2") )
     cQuerySelect := StrTran(cQuerySelect, "SB1990"            , RetSQLName("SB1") )
     cQuerySelect := StrTran(cQuerySelect, "SF4990"            , RetSQLName("SF4") )
     cQuerySelect := StrTran(cQuerySelect, "Z09990"            , RetSQLName("Z09") )
