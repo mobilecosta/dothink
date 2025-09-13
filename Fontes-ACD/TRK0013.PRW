@@ -2,7 +2,7 @@
 
 
 /*/{Protheus.doc} TRK0013
-Troca de transportadora - PL_010_v01.pdf
+Informacao CS
 @type function
 @version 1.0
 @author DO THINK

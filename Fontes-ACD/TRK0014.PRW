@@ -2,7 +2,7 @@
 #include 'FwMVCDef.ch'
 
 static cTitulo := "Troca de Transportadora"
-Static aFields := { "Z09_TRANSP", "Z09_NTRANS","Z09_REDESP", "Z09_NREDES", "Z09_REDICO","Z09_IDTRAC" }
+Static aFields := { "Z09_TRANSP", "Z09_NTRANS","Z09_ICOTER", "Z09_REDESP", "Z09_NREDES", "Z09_REDICO","Z09_IDTRAC" }
 
 
 /*/{Protheus.doc} TRK0014
@@ -33,8 +33,9 @@ Static Function ViewDef()
         cFields += aFields[nFields] + "|"
     Next
     
-    aFields := { "Z09_TRANSP"                   , "Z09_NTRANS","Z09_REDESP"                     , "Z09_NREDES", "Z09_REDICO"                    ,"Z09_IDTRAC" } 
-    aPos    := { Z09->(FieldPos("Z09_TRANSP"))  ,            0, Z09->(FieldPos("Z09_REDESP"))   ,            0, Z09->(FieldPos("Z09_REDESP"))   ,         0   }
+    aFields := { "Z09_TRANSP"                   , "Z09_NTRANS","Z09_ICOTER"                     , "Z09_REDESP"                  , "Z09_NREDES", "Z09_REDICO"                    ,"Z09_IDTRAC" }
+ 
+    aPos    := { Z09->(FieldPos("Z09_TRANSP"))  ,            0, Z09->(FieldPos("Z09_ICOTER"))   , Z09->(FieldPos("Z09_REDESP")) ,            0, Z09->(FieldPos("Z09_REDICO"))   ,         0   }
 
     U_TRK02FL(AClone(aFields), AClone(aPos), 'TRK0014', cTitulo)
 

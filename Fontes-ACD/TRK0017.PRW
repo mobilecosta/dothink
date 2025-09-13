@@ -86,3 +86,30 @@ Static Function ViewDef()
     oView:SetOwnerView("VIEW_Z15", "TELA")
 
 Return oView
+
+/*/{Protheus.doc} TRK0017S
+Atualizacao do SLA
+@type function
+@version 1.0
+@author fernando.muta@dothink.com.br
+@since  31/08/2025
+@return variant, Z09_DTSLA Z09_DPEMPV
+/*/
+User Function TRK0017S(cEstOrig, cEstDest, cMumDest, dEntrega)
+    local dRet 
+    local nSLAOutros := SuperGetMV("BA_SLAOPER",,1) 
+
+    DbSelectArea("Z15")
+    Z15->( DbSetOrder(1) )
+    //Z15_FILIAL+Z15_UFORIG+Z15_UFDEST+Z15_MUDEST
+    If Z15->( DbSeek(xFilial() + cEstOrig + cEstDest + cMumDest) )
+        dRet := dEntrega - (Z15->Z15_TRANSP + nSLAOutros)
+    Elseif Z15->( DbSeek(xFilial() + cEstOrig + cEstDest) )
+        dRet := dEntrega - (Z15->Z15_TRANSP + nSLAOutros)
+    Else
+        dRet := dEntrega
+    EndIf
+
+    dRet -= nSLAOutros
+
+Return dRet

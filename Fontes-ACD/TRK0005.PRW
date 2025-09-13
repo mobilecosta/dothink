@@ -1,6 +1,6 @@
 #include"totvs.ch"
+#include "topconn.ch"
 #include"dbstruct.ch"
-#include "TopConn.ch"
 
 static __cTitulo       := "Validação Fiscal"
 static aTiposDePedidos := {"1=Bloqueados", "2=Liberados", "3=Rejeitados", "4=Todos"}
@@ -52,16 +52,14 @@ static function TRK0005Brw(cTipoPedido as character)
     local aFWMBrwColumn      := Array(0)  as array
     local aFWMBrowseQryIndex := Array(0)  as array
     local aFWGetDialogSizeCoors           as array
+    local aDadosFil          := {}        as array
 
     local cAlias                          as character
     local cTitulo            := __cTitulo as character
-    local cINXBLFIS                       as character
-
+    
     local cQuerySelect                    as character
     local cQueryInsert                    as character
     local cQueryPutFields    := ""        as character
-    local cQueryGetFields    := ""        as character
-    local cQueryApto         := ""        as character
 
     local cTCSQLError                     as character
     local cRealTableName                  as character
@@ -76,57 +74,8 @@ static function TRK0005Brw(cTipoPedido as character)
     local oFWDialogModal                  as object
     local oFWTemporaryTable               as object
 
-    /* Define os Campos que irao aparecer no Browse
-        aCustomFields[n][1]=>Nome do Campo
-        aCustomFields[n][2]=>TamSX3=>{Size,Dec,Type}
-        aCustomFields[n][3]=>Titulo do Campo
-        aCustomFields[n][4]=>Picture do Campo
-        aCustomFields[n][5]=>Expressao SQL do Campo
-    */
-    aCustomFields:={;
-         {"C5_XBLFIS"   , TamSX3("C5_XBLFIS")   , GetSX3Cache("C5_XBLFIS"   ,"X3_TITULO"), GetSX3Cache("C5_XBLFIS"  ,"X3_PICTURE"),"C5_XBLFIS"      };
-        ,{"C5_NUM"      , TamSX3("C5_NUM")      , GetSX3Cache("C5_NUM"      ,"X3_TITULO"), GetSX3Cache("C5_NUM"     ,"X3_PICTURE"),"SC5.C5_NUM"     };
-        ,{"C6_ITEM"     , TamSX3("C6_ITEM")     , GetSX3Cache("C6_ITEM"     ,"X3_TITULO"), GetSX3Cache("C6_ITEM"    ,"X3_PICTURE"),"SC6.C6_ITEM"    };
-        ,{"C5_CLIENTE"  , TamSX3("C5_CLIENTE")  , GetSX3Cache("C5_CLIENTE"  ,"X3_TITULO"), GetSX3Cache("C5_CLIENTE" ,"X3_PICTURE"),"SC5.C5_CLIENTE" };
-        ,{"C5_LOJACLI"  , TamSX3("C5_LOJACLI")  , GetSX3Cache("C5_LOJACLI"  ,"X3_TITULO"), GetSX3Cache("C5_LOJACLI" ,"X3_PICTURE"),"SC5.C5_LOJACLI" };
-        ,{"A1_NOME"     , TamSX3("A1_NOME")     , GetSX3Cache("A1_NOME"     ,"X3_TITULO"), GetSX3Cache("A1_NOME"    ,"X3_PICTURE"),"CASE WHEN C5_TIPO IN ('F', 'B') THEN SA2.A2_NOME ELSE SA1.A1_NOME END AS A1_NOME" };
-        ,{"C6_PRODUTO"  , TamSX3("C6_PRODUTO")  , GetSX3Cache("C6_PRODUTO"  ,"X3_TITULO"), GetSX3Cache("C6_PRODUTO" ,"X3_PICTURE"),"SC6.C6_PRODUTO" };       
-        ,{"B1_DESC"     , TamSX3("B1_DESC")     , GetSX3Cache("B1_DESC"     ,"X3_TITULO"), GetSX3Cache("B1_DESC"    ,"X3_PICTURE"),"SB1.B1_DESC"    };
-        ,{"C6_LOCAL"    , TamSX3("C6_LOCAL")    , GetSX3Cache("C6_LOCAL"    ,"X3_TITULO"), GetSX3Cache("C6_LOCAL"   ,"X3_PICTURE"),"SC6.C6_LOCAL"   }; 
-        ,{"C6_CF"       , TamSX3("C6_CF")       , GetSX3Cache("C6_CF"       ,"X3_TITULO"), GetSX3Cache("C6_CF"      ,"X3_PICTURE"),"SC6.C6_CF"      };        
-        ,{"B1_POSIPI"   , TamSX3("B1_POSIPI")   , GetSX3Cache("B1_POSIPI"   ,"X3_TITULO"), GetSX3Cache("B1_POSIPI"  ,"X3_PICTURE"),"SB1.B1_POSIPI"  };
-        ,{"B1_ORIGEM"   , TamSX3("B1_ORIGEM")   , GetSX3Cache("B1_ORIGEM"   ,"X3_TITULO"), GetSX3Cache("B1_ORIGEM"  ,"X3_PICTURE"),"SB1.B1_ORIGEM"  };
-        ,{"F4_SITTRIB"  , TamSX3("F4_SITTRIB")  , GetSX3Cache("F4_SITTRIB"  ,"X3_TITULO"), GetSX3Cache("F4_SITTRIB" ,"X3_PICTURE"),"SF4.F4_SITTRIB" };
-        ,{"FT_BASEICM"  , TamSX3("FT_BASEICM")  , GetSX3Cache("FT_BASEICM"  ,"X3_TITULO"), GetSX3Cache("FT_BASEICM" ,"X3_PICTURE"),"0 AS FT_BASEICM"};
-        ,{"FT_ALIQICM"  , TamSX3("FT_ALIQICM")  , GetSX3Cache("FT_ALIQICM"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQICM" ,"X3_PICTURE"),"0 AS FT_ALIQICM"};
-        ,{"FT_VALICM"   , TamSX3("FT_VALICM")   , GetSX3Cache("FT_VALICM"   ,"X3_TITULO"), GetSX3Cache("FT_VALICM"  ,"X3_PICTURE"),"0 AS FT_VALICM" };
-        ,{"F4_CTIPI"    , TamSX3("F4_CTIPI")    , GetSX3Cache("F4_CTIPI"    ,"X3_TITULO"), GetSX3Cache("F4_CTIPI"   ,"X3_PICTURE"),"SF4.F4_CTIPI"   };
-        ,{"FT_BASEIPI"  , TamSX3("FT_BASEIPI")  , GetSX3Cache("FT_BASEIPI"  ,"X3_TITULO"), GetSX3Cache("FT_BASEIPI" ,"X3_PICTURE"),"0 AS FT_BASEIPI"};
-        ,{"FT_ALIQIPI"  , TamSX3("FT_ALIQIPI")  , GetSX3Cache("FT_ALIQIPI"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQIPI" ,"X3_PICTURE"),"0 AS FT_ALIQIPI"};
-        ,{"FT_VALIPI"   , TamSX3("FT_VALIPI")   , GetSX3Cache("FT_VALIPI"   ,"X3_TITULO"), GetSX3Cache("FT_VALIPI"  ,"X3_PICTURE"),"0 AS FT_VALIPI" };
-        ,{"F4_CSTPIS"   , TamSX3("F4_CSTPIS")   , GetSX3Cache("F4_CSTPIS"   ,"X3_TITULO"), GetSX3Cache("F4_CSTPIS"  ,"X3_PICTURE"),"SF4.F4_CSTPIS"  };
-        ,{"FT_BASEPIS"  , TamSX3("FT_BASEPIS")  , GetSX3Cache("FT_BASEPIS"  ,"X3_TITULO"), GetSX3Cache("FT_BASEPIS" ,"X3_PICTURE"),"0 AS FT_BASEPIS"};
-        ,{"FT_ALIQPIS"  , TamSX3("FT_ALIQPIS")  , GetSX3Cache("FT_ALIQPIS"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQPIS" ,"X3_PICTURE"),"0 AS FT_ALIQPIS"};
-        ,{"FT_VALPIS"   , TamSX3("FT_VALPIS")   , GetSX3Cache("FT_VALPIS"   ,"X3_TITULO"), GetSX3Cache("FT_VALPIS"  ,"X3_PICTURE"),"0 AS FT_VALPIS" };
-        ,{"F4_CSTCOF"   , TamSX3("F4_CSTCOF")   , GetSX3Cache("F4_CSTCOF"   ,"X3_TITULO"), GetSX3Cache("F4_CSTCOF"  ,"X3_PICTURE"),"SF4.F4_CSTCOF"  };
-        ,{"FT_BASECOF"  , TamSX3("FT_BASECOF")  , GetSX3Cache("FT_BASECOF"  ,"X3_TITULO"), GetSX3Cache("FT_BASECOF" ,"X3_PICTURE"),"0 AS FT_BASECOF"};
-        ,{"FT_ALIQCOF"  , TamSX3("FT_ALIQCOF")  , GetSX3Cache("FT_ALIQCOF"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQCOF" ,"X3_PICTURE"),"0 AS FT_ALIQCOF"};
-        ,{"FT_VALCOF"   , TamSX3("FT_VALCOF")   , GetSX3Cache("FT_VALCOF"   ,"X3_TITULO"), GetSX3Cache("FT_VALCOF"  ,"X3_PICTURE"),"0 AS FT_VALCOF" };
-        ,{"C5_XOBSVEN"  , TamSX3("C5_XOBSVEN")  , GetSX3Cache("C5_XOBSVEN"  ,"X3_TITULO"), GetSX3Cache("C5_XOBSVEN" ,"X3_PICTURE"),"SC5.C5_XOBSVEN" };
-        ,{"C5_XTOTAL"   , TamSX3("C5_XTOTAL")   , GetSX3Cache("C5_XTOTAL"   ,"X3_TITULO"), GetSX3Cache("C5_XTOTAL"  ,"X3_PICTURE"),"SC5.C5_XTOTAL"  }; 
-        ,{"C6_TES"      , TamSX3("C6_TES")      , GetSX3Cache("C6_TES"      ,"X3_TITULO"), GetSX3Cache("C6_TES"     ,"X3_PICTURE"),"SC6.C6_TES"     };       
-        ,{"C6_ENTREG"   , TamSX3("C6_ENTREG")   , GetSX3Cache("C6_ENTREG"   ,"X3_TITULO"), GetSX3Cache("C6_ENTREG"  ,"X3_PICTURE"),"SC6.C6_ENTREG"  };
-        ,{"C6_DATFAT"   , TamSX3("C6_DATFAT")   , "Faturamento"                          , GetSX3Cache("C6_DATFAT"  ,"X3_PICTURE"),"SC6.C6_DATFAT"  };  
-        ,{"Z09_BLFDI"   , TamSX3("Z09_BLFDI")   , GetSX3Cache("Z09_BLFDI"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFDI"  ,"X3_PICTURE"),"Z09.Z09_BLFDI"  };
-        ,{"Z09_BLFHI"   , TamSX3("Z09_BLFHI")   , GetSX3Cache("Z09_BLFHI"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFHI"  ,"X3_PICTURE"),"Z09.Z09_BLFHI"  };
-        ,{"Z09_BLFDF"   , TamSX3("Z09_BLFDF")   , GetSX3Cache("Z09_BLFDF"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFDF"  ,"X3_PICTURE"),"Z09.Z09_BLFDF"  };
-        ,{"Z09_BLFHF"   , TamSX3("Z09_BLFHF")   , GetSX3Cache("Z09_BLFHF"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFHF"  ,"X3_PICTURE"),"Z09.Z09_BLFHF"  };         
-        ,{"SC5RECNO"    , {18,0,"N"} , "RecNo SC5","@R 999999999999999999","SC5.R_E_C_N_O_ AS SC5RECNO"};
-        ,{"SC6RECNO"    , {18,0,"N"} , "RecNo SC6","@R 999999999999999999","SC6.R_E_C_N_O_ AS SC6RECNO"};
-        ,{"SB1RECNO"    , {18,0,"N"} , "RecNo SB1","@R 999999999999999999","SB1.R_E_C_N_O_ AS SB1RECNO"};
-        ,{"SA1RECNO"    , {18,0,"N"} , "RecNo SA1","@R 999999999999999999","SA1.R_E_C_N_O_ AS SA1RECNO"};
-        ,{"SF4RECNO"    , {18,0,"N"} , "RecNo SF4","@R 999999999999999999","SF4.R_E_C_N_O_ AS SF4RECNO"};
-    }
+    aCustomFields := GetFields()
+    cQuerySelect  := GetQuery(cTipoPedido)
 
     aFilter := {}
     nFields:=Len(aCustomFields)
@@ -141,10 +90,8 @@ static function TRK0005Brw(cTipoPedido as character)
 
         //Obtem os Campos para a Query
         cQueryPutFields += aCustomFields[nField][1]
-        cQueryGetFields += aCustomFields[nField][5]
         if (nField<nFields)
             cQueryPutFields += ","
-            cQueryGetFields += ","
         endif
 
         //Define o Campo como Filtravel
@@ -194,110 +141,6 @@ static function TRK0005Brw(cTipoPedido as character)
 
     oFWTemporaryTable:Create()
 
-    //Elabora a query dos pedidos
-    beginContent var cQuerySelect
-    SELECT
-        cQueryGetFields
-    FROM
-        SC5990 SC5
-        LEFT JOIN SA1990 SA1 ON SA1.D_E_L_E_T_ = ' '
-        AND SA1.A1_FILIAL = '__A1_FILIAL__'
-        AND SA1.A1_COD = SC5.C5_CLIENTE
-        AND SA1.A1_LOJA = SC5.C5_LOJACLI
-        LEFT JOIN SA2990 SA2 ON SA2.D_E_L_E_T_ = ' '
-        AND SA2.A2_FILIAL = '__A2_FILIAL__'
-        AND SA2.A2_COD = SC5.C5_CLIENTE
-        AND SA2.A2_LOJA = SC5.C5_LOJACLI
-        JOIN SC6990 SC6 ON SC6.D_E_L_E_T_ = ' '
-        AND SC6.C6_FILIAL = SC5.C5_FILIAL
-        AND SC6.C6_NUM = SC5.C5_NUM
-        JOIN SB1990 SB1 ON SB1.D_E_L_E_T_ = ' '
-        AND SB1.B1_FILIAL = '__B1_FILIAL__'
-        AND SB1.B1_COD = SC6.C6_PRODUTO
-        JOIN SF4990 SF4 ON SF4.D_E_L_E_T_ = ' '
-        AND SF4.F4_FILIAL = '__F4_FILIAL__'
-        AND SF4.F4_CODIGO = SC6.C6_TES
-        LEFT JOIN Z09990 Z09 ON Z09.D_E_L_E_T_ = ' '
-        AND Z09.Z09_FILIAL = SC5.C5_FILIAL
-        AND Z09.Z09_NUMPV = SC5.C5_NUM
-        AND Z09.Z09_ITEMPV = SC6.C6_ITEM
-    WHERE
-        SC5.D_E_L_E_T_ = ' '
-        AND SC5.C5_FILIAL = '__C5_FILIAL__'
-        AND SC5.C5_XBLQINI <> 'S'
-        AND SC5.C5_XBLRENT IN ('2', ' ')  
-        AND SC5.C5_BLQ = ' ' __XBLFIS
-    endContent
-
-    //Efetua a Substituicao das constantes por Valores Dinamicos
-    cQuerySelect := StrTran(cQuerySelect, "cQueryGetFields"   , cQueryGetFields   )
-    cQuerySelect := StrTran(cQuerySelect, "SC5990"            , RetSQLName("SC5") )
-    cQuerySelect := StrTran(cQuerySelect, "SC6990"            , RetSQLName("SC6") )
-    cQuerySelect := StrTran(cQuerySelect, "SA1990"            , RetSQLName("SA1") )
-    cQuerySelect := StrTran(cQuerySelect, "SA2990"            , RetSQLName("SA2") )
-    cQuerySelect := StrTran(cQuerySelect, "SB1990"            , RetSQLName("SB1") )
-    cQuerySelect := StrTran(cQuerySelect, "SF4990"            , RetSQLName("SF4") )
-    cQuerySelect := StrTran(cQuerySelect, "Z09990"            , RetSQLName("Z09") )
-    cQuerySelect := StrTran(cQuerySelect, "__A1_FILIAL__"     , FWXFilial("SA1")  )
-	cQuerySelect := StrTran(cQuerySelect, "__A2_FILIAL__"     , FWXFilial("SA2")  )
-    cQuerySelect := StrTran(cQuerySelect, "__B1_FILIAL__"     , FWXFilial("SB1")  )
-    cQuerySelect := StrTran(cQuerySelect, "__F4_FILIAL__"     , FWXFilial("SF4")  )
-    cQuerySelect := StrTran(cQuerySelect, "__C5_FILIAL__"     , FWXFilial("SC5")  )
-    cQuerySelect := StrTran(cQuerySelect, "__C6_FILIAL__"     , FWXFilial("SC6")  )
-
-    // https://centraldeatendimento.totvs.com/hc/pt-br/articles/
-    // 360017467652-Cross-Segmentos-BackOffice-Protheus-SIGAFAT-C%C3%B3digos-de-Bloqueio-gravados-na-tabela/
-    //-SC9-dos-Pedidos-de-Venda-Liberados
-
-    // Opção 1: Bloqueados  
-    // Serão listados somente os pedidos de vendas que estiverem liberados aptos a faturar, mas que esteja com 
-    // bloqueio de “Validação Fiscal”. 
-    // Opção 2: Liberados 
-    // Serão listados somente os pedidos que já foram liberados anteriormente, independente das regras de aptos a 
-    // faturar. 
-    // Opção 3: Rejeitados 
-    // Serão listados somente os pedidos que já foram rejeitados anteriormente, independente das regras de aptos 
-    // a faturar. 
-    // Opção 4: Todos 
-    // Serão listados todos os pedidos nas seguintes condições: o Pedidos Liberados e Rejeitados serão listados, 
-    // independentemente das regras de aptos a faturar; o Pedidos Bloqueados serão listados apenas os pedidos que 
-    // estejam de acordo com as regras de aptos a faturar;
-
-    cQueryApto += "  AND EXISTS ("
-    cQueryApto += "  SELECT 1"
-    cQueryApto += "  FROM " + RetSQLName("SC9") + " SC9"
-    cQueryApto += "  WHERE SC9.D_E_L_E_T_ = ' '"
-    cQueryApto += "    AND SC9.C9_FILIAL = SC6.C6_FILIAL"
-    cQueryApto += "    AND SC9.C9_PEDIDO = SC6.C6_NUM"
-    cQueryApto += "    AND SC9.C9_ITEM = SC6.C6_ITEM"
-	cQueryApto += "    )"
-
-	cQueryApto += "  AND NOT EXISTS ("
-	cQueryApto += "  SELECT 1"
-	cQueryApto += "  FROM " + RetSQLName("SC9") + " SC9_BLOQ"
-	cQueryApto += "  WHERE SC9_BLOQ.D_E_L_E_T_ = ' '"
-	cQueryApto += "    AND SC9_BLOQ.C9_FILIAL = SC6.C6_FILIAL"
-	cQueryApto += "    AND SC9_BLOQ.C9_PEDIDO = SC6.C6_NUM"
-	cQueryApto += "    AND (SC9_BLOQ.C9_BLEST <> ' ' "
-    cQueryApto += "    OR SC9_BLOQ.C9_BLCRED <> ' ')"
-    cQueryApto += "    ) "
-
-    DO CASE
-        CASE cTipoPedido == '2' .Or. cTipoPedido == '3'
-            cINXBLFIS := "AND SC5.C5_XBLFIS = '" + cTipoPedido + "' "
-        CASE cTipoPedido == '1'
-            cINXBLFIS := "AND SC5.C5_XBLFIS IN (' ','1') "
-            cINXBLFIS += cQueryApto
-        OTHERWISE
-	        cINXBLFIS := "AND (SC5.C5_XBLFIS IN('2','3') OR "
-            cINXBLFIS += "(CASE WHEN SC5.C5_XBLFIS IN (' ','1') "
-            cINXBLFIS += cQueryApto
-            cINXBLFIS += " THEN '0' ELSE '1' END) = '0'"
-            cINXBLFIS += ")"
-    END CASE
-
-    cQuerySelect := StrTran(cQuerySelect, "__XBLFIS", cINXBLFIS)
-
     cAlias          := oFWTemporaryTable:GetAlias()
     cRealTableName  := oFWTemporaryTable:getRealName()
 
@@ -311,12 +154,14 @@ static function TRK0005Brw(cTipoPedido as character)
 
     if (lQueryInsert)
 
+        fInfo(@aDadosFil)
+
         //Update de campos Fiscais
-        FWMsgRun(NIL, {|| TRK0005Fis(cAlias)    }, "Aguarde...", "Atualizando Informações Fiscais"  )
+        FWMsgRun(NIL, {|| TRK0005Fis(cAlias)            }, "Aguarde...", "Atualizando Informações Fiscais"  )
 
-        FWMsgRun(NIL, {|| AtuTracking(cAlias)   }, "Aguarde...", "Atualizando Tracking de Expedição")
+        FWMsgRun(NIL, {|| AtuTracking(cAlias, aDadosFil)}, "Aguarde...", "Atualizando Tracking de Expedição")
 
-        FWMsgRun(NIL, {|| Sleep(100)            }, "Aguarde...", "Elaborando a Interface de Dados"  )
+        FWMsgRun(NIL, {|| Sleep(100)                    }, "Aguarde...", "Elaborando a Interface de Dados"  )
 
         aFWGetDialogSizeCoors := FWGetDialogSize()
 
@@ -394,6 +239,202 @@ static function TRK0005Brw(cTipoPedido as character)
     DelClassIntF()
 
 return
+
+
+//--
+Static Function GetFields()
+    Local aFields := {}
+
+    /* Define os Campos que irao aparecer no Browse
+        aFields[n][1]=>Nome do Campo
+        aFields[n][2]=>TamSX3=>{Size,Dec,Type}
+        aFields[n][3]=>Titulo do Campo
+        aFields[n][4]=>Picture do Campo
+        aFields[n][5]=>Expressao SQL do Campo
+    */
+    aFields:={;
+            {"C5_XBLFIS"   , TamSX3("C5_XBLFIS")   , GetSX3Cache("C5_XBLFIS"   ,"X3_TITULO"), GetSX3Cache("C5_XBLFIS"  ,"X3_PICTURE"),"C5_XBLFIS"      };
+            ,{"C5_NUM"      , TamSX3("C5_NUM")      , GetSX3Cache("C5_NUM"      ,"X3_TITULO"), GetSX3Cache("C5_NUM"     ,"X3_PICTURE"),"SC5.C5_NUM"     };
+            ,{"C6_ITEM"     , TamSX3("C6_ITEM")     , GetSX3Cache("C6_ITEM"     ,"X3_TITULO"), GetSX3Cache("C6_ITEM"    ,"X3_PICTURE"),"SC6.C6_ITEM"    };
+            ,{"C5_CLIENTE"  , TamSX3("C5_CLIENTE")  , GetSX3Cache("C5_CLIENTE"  ,"X3_TITULO"), GetSX3Cache("C5_CLIENTE" ,"X3_PICTURE"),"SC5.C5_CLIENTE" };
+            ,{"C5_LOJACLI"  , TamSX3("C5_LOJACLI")  , GetSX3Cache("C5_LOJACLI"  ,"X3_TITULO"), GetSX3Cache("C5_LOJACLI" ,"X3_PICTURE"),"SC5.C5_LOJACLI" };
+            ,{"A1_NOME"     , TamSX3("A1_NOME")     , GetSX3Cache("A1_NOME"     ,"X3_TITULO"), GetSX3Cache("A1_NOME"    ,"X3_PICTURE"),"CASE WHEN C5_TIPO IN ('F', 'B') THEN SA2.A2_NOME ELSE SA1.A1_NOME END AS A1_NOME"    };
+            ,{"C6_PRODUTO"  , TamSX3("C6_PRODUTO")  , GetSX3Cache("C6_PRODUTO"  ,"X3_TITULO"), GetSX3Cache("C6_PRODUTO" ,"X3_PICTURE"),"SC6.C6_PRODUTO" };       
+            ,{"B1_DESC"     , TamSX3("B1_DESC")     , GetSX3Cache("B1_DESC"     ,"X3_TITULO"), GetSX3Cache("B1_DESC"    ,"X3_PICTURE"),"SB1.B1_DESC"    };
+            ,{"C6_LOCAL"    , TamSX3("C6_LOCAL")    , GetSX3Cache("C6_LOCAL"    ,"X3_TITULO"), GetSX3Cache("C6_LOCAL"   ,"X3_PICTURE"),"SC6.C6_LOCAL"   }; 
+            ,{"C6_CF"       , TamSX3("C6_CF")       , GetSX3Cache("C6_CF"       ,"X3_TITULO"), GetSX3Cache("C6_CF"      ,"X3_PICTURE"),"SC6.C6_CF"      };        
+            ,{"B1_POSIPI"   , TamSX3("B1_POSIPI")   , GetSX3Cache("B1_POSIPI"   ,"X3_TITULO"), GetSX3Cache("B1_POSIPI"  ,"X3_PICTURE"),"SB1.B1_POSIPI"  };
+            ,{"B1_ORIGEM"   , TamSX3("B1_ORIGEM")   , GetSX3Cache("B1_ORIGEM"   ,"X3_TITULO"), GetSX3Cache("B1_ORIGEM"  ,"X3_PICTURE"),"SB1.B1_ORIGEM"  };
+            ,{"F4_SITTRIB"  , TamSX3("F4_SITTRIB")  , GetSX3Cache("F4_SITTRIB"  ,"X3_TITULO"), GetSX3Cache("F4_SITTRIB" ,"X3_PICTURE"),"SF4.F4_SITTRIB" };
+            ,{"FT_BASEICM"  , TamSX3("FT_BASEICM")  , GetSX3Cache("FT_BASEICM"  ,"X3_TITULO"), GetSX3Cache("FT_BASEICM" ,"X3_PICTURE"),"0 AS FT_BASEICM"};
+            ,{"FT_ALIQICM"  , TamSX3("FT_ALIQICM")  , GetSX3Cache("FT_ALIQICM"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQICM" ,"X3_PICTURE"),"0 AS FT_ALIQICM"};
+            ,{"FT_VALICM"   , TamSX3("FT_VALICM")   , GetSX3Cache("FT_VALICM"   ,"X3_TITULO"), GetSX3Cache("FT_VALICM"  ,"X3_PICTURE"),"0 AS FT_VALICM" };
+            ,{"F4_CTIPI"    , TamSX3("F4_CTIPI")    , GetSX3Cache("F4_CTIPI"    ,"X3_TITULO"), GetSX3Cache("F4_CTIPI"   ,"X3_PICTURE"),"SF4.F4_CTIPI"   };
+            ,{"FT_BASEIPI"  , TamSX3("FT_BASEIPI")  , GetSX3Cache("FT_BASEIPI"  ,"X3_TITULO"), GetSX3Cache("FT_BASEIPI" ,"X3_PICTURE"),"0 AS FT_BASEIPI"};
+            ,{"FT_ALIQIPI"  , TamSX3("FT_ALIQIPI")  , GetSX3Cache("FT_ALIQIPI"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQIPI" ,"X3_PICTURE"),"0 AS FT_ALIQIPI"};
+            ,{"FT_VALIPI"   , TamSX3("FT_VALIPI")   , GetSX3Cache("FT_VALIPI"   ,"X3_TITULO"), GetSX3Cache("FT_VALIPI"  ,"X3_PICTURE"),"0 AS FT_VALIPI" };
+            ,{"F4_CSTPIS"   , TamSX3("F4_CSTPIS")   , GetSX3Cache("F4_CSTPIS"   ,"X3_TITULO"), GetSX3Cache("F4_CSTPIS"  ,"X3_PICTURE"),"SF4.F4_CSTPIS"  };
+            ,{"FT_BASEPIS"  , TamSX3("FT_BASEPIS")  , GetSX3Cache("FT_BASEPIS"  ,"X3_TITULO"), GetSX3Cache("FT_BASEPIS" ,"X3_PICTURE"),"0 AS FT_BASEPIS"};
+            ,{"FT_ALIQPIS"  , TamSX3("FT_ALIQPIS")  , GetSX3Cache("FT_ALIQPIS"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQPIS" ,"X3_PICTURE"),"0 AS FT_ALIQPIS"};
+            ,{"FT_VALPIS"   , TamSX3("FT_VALPIS")   , GetSX3Cache("FT_VALPIS"   ,"X3_TITULO"), GetSX3Cache("FT_VALPIS"  ,"X3_PICTURE"),"0 AS FT_VALPIS" };
+            ,{"F4_CSTCOF"   , TamSX3("F4_CSTCOF")   , GetSX3Cache("F4_CSTCOF"   ,"X3_TITULO"), GetSX3Cache("F4_CSTCOF"  ,"X3_PICTURE"),"SF4.F4_CSTCOF"  };
+            ,{"FT_BASECOF"  , TamSX3("FT_BASECOF")  , GetSX3Cache("FT_BASECOF"  ,"X3_TITULO"), GetSX3Cache("FT_BASECOF" ,"X3_PICTURE"),"0 AS FT_BASECOF"};
+            ,{"FT_ALIQCOF"  , TamSX3("FT_ALIQCOF")  , GetSX3Cache("FT_ALIQCOF"  ,"X3_TITULO"), GetSX3Cache("FT_ALIQCOF" ,"X3_PICTURE"),"0 AS FT_ALIQCOF"};
+            ,{"FT_VALCOF"   , TamSX3("FT_VALCOF")   , GetSX3Cache("FT_VALCOF"   ,"X3_TITULO"), GetSX3Cache("FT_VALCOF"  ,"X3_PICTURE"),"0 AS FT_VALCOF" };
+            ,{"C5_XOBSVEN"  , TamSX3("C5_XOBSVEN")  , GetSX3Cache("C5_XOBSVEN"  ,"X3_TITULO"), GetSX3Cache("C5_XOBSVEN" ,"X3_PICTURE"),"SC5.C5_XOBSVEN" };
+            ,{"C5_XTOTAL"   , TamSX3("C5_XTOTAL")   , GetSX3Cache("C5_XTOTAL"   ,"X3_TITULO"), GetSX3Cache("C5_XTOTAL"  ,"X3_PICTURE"),"SC5.C5_XTOTAL"  }; 
+            ,{"C6_TES"      , TamSX3("C6_TES")      , GetSX3Cache("C6_TES"      ,"X3_TITULO"), GetSX3Cache("C6_TES"     ,"X3_PICTURE"),"SC6.C6_TES"     };       
+            ,{"C6_ENTREG"   , TamSX3("C6_ENTREG")   , GetSX3Cache("C6_ENTREG"   ,"X3_TITULO"), GetSX3Cache("C6_ENTREG"  ,"X3_PICTURE"),"SC6.C6_ENTREG"  };
+            ,{"C6_DATFAT"   , TamSX3("C6_DATFAT")   , "Faturamento"                          , GetSX3Cache("C6_DATFAT"  ,"X3_PICTURE"),"SC6.C6_DATFAT"  };  
+            ,{"Z09_BLFDI"   , TamSX3("Z09_BLFDI")   , GetSX3Cache("Z09_BLFDI"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFDI"  ,"X3_PICTURE"),"Z09.Z09_BLFDI"  };
+            ,{"Z09_BLFHI"   , TamSX3("Z09_BLFHI")   , GetSX3Cache("Z09_BLFHI"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFHI"  ,"X3_PICTURE"),"Z09.Z09_BLFHI"  };
+            ,{"Z09_BLFDF"   , TamSX3("Z09_BLFDF")   , GetSX3Cache("Z09_BLFDF"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFDF"  ,"X3_PICTURE"),"Z09.Z09_BLFDF"  };
+            ,{"Z09_BLFHF"   , TamSX3("Z09_BLFHF")   , GetSX3Cache("Z09_BLFHF"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFHF"  ,"X3_PICTURE"),"Z09.Z09_BLFHF"  };         
+            ,{"SC5RECNO"    , {18,0,"N"} , "RecNo SC5","@R 999999999999999999","SC5.R_E_C_N_O_ AS SC5RECNO"};
+            ,{"SC6RECNO"    , {18,0,"N"} , "RecNo SC6","@R 999999999999999999","SC6.R_E_C_N_O_ AS SC6RECNO"};
+            ,{"SB1RECNO"    , {18,0,"N"} , "RecNo SB1","@R 999999999999999999","SB1.R_E_C_N_O_ AS SB1RECNO"};
+            ,{"SA1RECNO"    , {18,0,"N"} , "RecNo SA1","@R 999999999999999999","SA1.R_E_C_N_O_ AS SA1RECNO"};
+            ,{"SF4RECNO"    , {18,0,"N"} , "RecNo SF4","@R 999999999999999999","SF4.R_E_C_N_O_ AS SF4RECNO"};
+        }
+
+Return aFields
+
+
+//--
+Static Function GetQuery(cTipoPedido)
+    Local aFields         := GetFields()
+    Local cINXBLFIS       := ""
+    Local cQueryGetFields := ""
+    Local cQueryApto      := ""
+    Local cQuerySelect    := ""
+    Local nField          := 0
+    Local nFields         := 0
+
+    Default cTipoPedido := "4"
+
+    nFields := Len(aFields)
+    For nField := 1 To nFields
+        //Obtem os Campos para a Query
+        cQueryGetFields += aFields[nField][5]
+        If (nField<nFields)
+            cQueryGetFields += ","
+        EndIf
+    Next nField
+
+    //Elabora a query dos pedidos
+    beginContent var cQuerySelect
+        SELECT
+            cQueryGetFields
+        FROM
+            SC5990 SC5
+            LEFT JOIN SA1990 SA1 ON SA1.D_E_L_E_T_ = ' '
+            AND SA1.A1_FILIAL = '__A1_FILIAL__'
+            AND SA1.A1_COD = SC5.C5_CLIENTE
+            AND SA1.A1_LOJA = SC5.C5_LOJACLI
+            LEFT JOIN SA2990 SA2 ON SA2.D_E_L_E_T_ = ' '
+            AND SA2.A2_FILIAL = '__A2_FILIAL__'
+            AND SA2.A2_COD = SC5.C5_CLIENTE
+            AND SA2.A2_LOJA = SC5.C5_LOJACLI
+            JOIN SC6990 SC6 
+            ON SC6.D_E_L_E_T_ = ' '
+            AND SC6.C6_FILIAL = SC5.C5_FILIAL
+            AND SC6.C6_NUM = SC5.C5_NUM
+            AND SC6.C6_OPER <> '12'
+            JOIN SB1990 SB1 ON SB1.D_E_L_E_T_ = ' '
+            AND SB1.B1_FILIAL = '__B1_FILIAL__'
+            AND SB1.B1_COD = SC6.C6_PRODUTO
+            JOIN SF4990 SF4 
+            ON SF4.D_E_L_E_T_ = ' '
+            AND SF4.F4_FILIAL = '__F4_FILIAL__'
+            AND SF4.F4_CODIGO = SC6.C6_TES
+            LEFT JOIN Z09990 Z09 
+            ON Z09.D_E_L_E_T_ = ' '
+            AND Z09.Z09_FILIAL = SC5.C5_FILIAL
+            AND Z09.Z09_NUMPV = SC5.C5_NUM
+            AND Z09.Z09_ITEMPV = SC6.C6_ITEM
+        WHERE
+            SC5.D_E_L_E_T_ = ' '
+            AND SC5.C5_FILIAL = '__C5_FILIAL__'
+            AND SC5.C5_XBLQINI <> 'S'
+            AND SC5.C5_XBLFIS <> 'Z'
+            AND SC5.C5_XBLRENT IN ('2', ' ')  
+            AND SC5.C5_BLQ = ' ' __XBLFIS
+            AND (SELECT COUNT(QTDITSC9) QTDITSC9 FROM (SELECT C9_FILIAL, C9_PEDIDO, C9_ITEM, C9_PRODUTO, COUNT(1) QTDITSC9 FROM SC9990 SC9IT WHERE SC9IT.C9_FILIAL = SC6.C6_FILIAL AND SC9IT.C9_PEDIDO = SC6.C6_NUM  AND SC9IT.D_E_L_E_T_ = ' ' GROUP BY C9_FILIAL, C9_PEDIDO, C9_ITEM, C9_PRODUTO) TRBSC9) =
+            (SELECT COUNT(1) QTDITSC6 FROM SC6990 SC6IT WHERE SC6IT.C6_FILIAL = SC6.C6_FILIAL AND SC6IT.C6_NUM = SC6.C6_NUM AND SC6IT.D_E_L_E_T_ = ' ')
+    endContent
+
+    //Efetua a Substituicao das constantes por Valores Dinamicos
+    cQuerySelect := StrTran(cQuerySelect, "cQueryGetFields"   , cQueryGetFields   )
+    cQuerySelect := StrTran(cQuerySelect, "SC5990"            , RetSQLName("SC5") )
+    cQuerySelect := StrTran(cQuerySelect, "SC6990"            , RetSQLName("SC6") )
+    cQuerySelect := StrTran(cQuerySelect, "SC9990"            , RetSQLName("SC9") )
+    cQuerySelect := StrTran(cQuerySelect, "SA1990"            , RetSQLName("SA1") )
+    cQuerySelect := StrTran(cQuerySelect, "SA2990"            , RetSQLName("SA2") )
+    cQuerySelect := StrTran(cQuerySelect, "SB1990"            , RetSQLName("SB1") )
+    cQuerySelect := StrTran(cQuerySelect, "SF4990"            , RetSQLName("SF4") )
+    cQuerySelect := StrTran(cQuerySelect, "Z09990"            , RetSQLName("Z09") )
+    cQuerySelect := StrTran(cQuerySelect, "__A1_FILIAL__"     , FWXFilial("SA1")  )
+    cQuerySelect := StrTran(cQuerySelect, "__A2_FILIAL__"     , FWXFilial("SA2")  )
+    cQuerySelect := StrTran(cQuerySelect, "__B1_FILIAL__"     , FWXFilial("SB1")  )
+    cQuerySelect := StrTran(cQuerySelect, "__F4_FILIAL__"     , FWXFilial("SF4")  )
+    cQuerySelect := StrTran(cQuerySelect, "__C5_FILIAL__"     , FWXFilial("SC5")  )
+    cQuerySelect := StrTran(cQuerySelect, "__C6_FILIAL__"     , FWXFilial("SC6")  )
+    cQuerySelect := StrTran(cQuerySelect, "__C9_FILIAL__"     , FWXFilial("SC9")  )
+
+    // https://centraldeatendimento.totvs.com/hc/pt-br/articles/
+    // 360017467652-Cross-Segmentos-BackOffice-Protheus-SIGAFAT-C%C3%B3digos-de-Bloqueio-gravados-na-tabela/
+    //-SC9-dos-Pedidos-de-Venda-Liberados
+
+    // Opção 1: Bloqueados  
+    // Serão listados somente os pedidos de vendas que estiverem liberados aptos a faturar, mas que esteja com 
+    // bloqueio de “Validação Fiscal”. 
+    // Opção 2: Liberados 
+    // Serão listados somente os pedidos que já foram liberados anteriormente, independente das regras de aptos a 
+    // faturar. 
+    // Opção 3: Rejeitados 
+    // Serão listados somente os pedidos que já foram rejeitados anteriormente, independente das regras de aptos 
+    // a faturar. 
+    // Opção 4: Todos 
+    // Serão listados todos os pedidos nas seguintes condições: o Pedidos Liberados e Rejeitados serão listados, 
+    // independentemente das regras de aptos a faturar; o Pedidos Bloqueados serão listados apenas os pedidos que 
+    // estejam de acordo com as regras de aptos a faturar;
+
+    cQueryApto += "  AND EXISTS ("
+    cQueryApto += "  SELECT 1"
+    cQueryApto += "  FROM " + RetSQLName("SC9") + " SC9"
+    cQueryApto += "  WHERE SC9.D_E_L_E_T_ = ' '"
+    cQueryApto += "    AND SC9.C9_FILIAL = SC6.C6_FILIAL"
+    cQueryApto += "    AND SC9.C9_PEDIDO = SC6.C6_NUM"
+    cQueryApto += "    AND SC9.C9_ITEM = SC6.C6_ITEM"
+	cQueryApto += "    )"
+
+	cQueryApto += "  AND NOT EXISTS ("
+	cQueryApto += "  SELECT 1"
+	cQueryApto += "  FROM " + RetSQLName("SC9") + " SC9_BLOQ"
+	cQueryApto += "  WHERE SC9_BLOQ.D_E_L_E_T_ = ' '"
+	cQueryApto += "    AND SC9_BLOQ.C9_FILIAL = SC6.C6_FILIAL"
+	cQueryApto += "    AND SC9_BLOQ.C9_PEDIDO = SC6.C6_NUM"
+	cQueryApto += "    AND (SC9_BLOQ.C9_BLEST <> ' ' "
+    cQueryApto += "    OR SC9_BLOQ.C9_BLCRED <> ' ')"
+    cQueryApto += "    ) "
+
+    DO CASE
+        CASE cTipoPedido == '2' .Or. cTipoPedido == '3'
+            cINXBLFIS := "AND SC5.C5_XBLFIS = '" + cTipoPedido + "' "
+        CASE cTipoPedido == '1'
+            cINXBLFIS := "AND SC5.C5_XBLFIS IN (' ','1') "
+            cINXBLFIS += cQueryApto
+        OTHERWISE
+	        cINXBLFIS := "AND (SC5.C5_XBLFIS IN('2','3') OR "
+            cINXBLFIS += "(CASE WHEN SC5.C5_XBLFIS IN (' ','1') "
+            cINXBLFIS += cQueryApto
+            cINXBLFIS += " THEN '0' ELSE '1' END) = '0'"
+            cINXBLFIS += ")"
+    END CASE
+
+    cQuerySelect := StrTran(cQuerySelect, "__XBLFIS", cINXBLFIS)
+
+Return cQuerySelect
 
 /*/{Protheus.doc} TRK0005Leg
 Funcao de Legenda
@@ -903,7 +944,7 @@ Static Function TRK0005VPV(cAlias)
 Return
 
 
-static function AtuTracking(cAliasVldFis) 
+static function AtuTracking(cAliasVldFis, aDadosFil) 
     local cRespon   := ""
     local cNTransp  := ""
     local cNTRedesp := ""
@@ -928,7 +969,8 @@ static function AtuTracking(cAliasVldFis)
             (cAliasVldFis)->( MsUnLock() )
 
             SC5->( MsGoto( (cAliasVldFis)->SC5RECNO ) )
-            SC6->( MsGoto( (cAliasVldFis)->SC6RECNO  ) )
+            SC6->( MsGoto( (cAliasVldFis)->SC6RECNO ) )
+            SA1->( MsGoto( (cAliasVldFis)->SA1RECNO ) )
 
             RecLock("SC5", .F.)
             SC5->C5_XBLFIS := "1" //-- Bloqueado
@@ -975,7 +1017,19 @@ static function AtuTracking(cAliasVldFis)
             aTrackS[FieldPos("Z09_OBSPV")]  := SC5->C5_XOBSVEN              // Restricao do Cliente 
             aTrackS[FieldPos("Z09_BLFDI")]  := Date()                       // Dt.Inicio Bloq.Fiscal    
             aTrackS[FieldPos("Z09_BLFHI")]  := Time()                       // Hr.Inicio Bloq.Fiscal 
-             
+            aTrackS[FieldPos("Z09_DTSLA")]  := u_TRK0017S(aDadosFil[6], SA1->A1_EST, SA1->A1_COD_MUN, SC6->C6_ENTREG)
+
+            If Z09->(FieldPos("Z09_PROD") > 0)
+                aTrackS[FieldPos("Z09_PROD")] := SC6->C6_PRODUTO
+            EndIf
+
+            If Z09->(FieldPos("Z09_QTDPV") > 0)
+                aTrackS[FieldPos("Z09_QTDPV")] := SC6->C6_QTDVEN
+            EndIf
+
+            If Z09->(FieldPos("Z09_LOTECT") > 0)
+                aTrackS[FieldPos("Z09_LOTECT")] := SC6->C6_LOTECTL
+            EndIf
 
             u_TRK006S(aTrackS,"Em Validacao Fiscal")
 
@@ -1135,6 +1189,7 @@ Static Function EstornaOS(cPedido, cMsg)
     EndIf
 
     RestArea(aArea)
+
 Return lRet
 
 
@@ -1398,4 +1453,103 @@ Static Function ProcTotal(nCount)
 
         Z09->( DbSkip() )
     End
+Return
+
+
+//-- Rotina de atualizacao dos status dos pedidos
+User Function TRKVLFIS()
+
+    Processa({|| AtuStatus()}, "Aguarde...", "Atualizando status...")
+
+Return
+
+
+//--
+Static Function AtuStatus()
+    Local aAreaAnt := GetArea()
+    Local aAreaSC5 := SC5->(GetArea())
+    Local aAreaSC6 := SC6->(GetArea())
+    Local cQuery   := GetQuery("1")
+    Local cUpDate  := ""
+    Local nTotal   := 0
+    Local nAtual   := 0
+
+	dbSelectArea("SC5")
+	SC5->(dbSetOrder(1))
+
+	dbSelectArea("SC6")
+	SC6->(dbSetOrder(1))
+
+    dbSelectArea("Z09")
+    Z09->( dbSetOrder(3) )
+
+    If Select("_QRYFIS") > 0
+        _QRYFIS->(dbCloseArea())
+    EndIf
+
+    cQuery := ChangeQuery(cQuery)
+    TCQUERY cQuery New Alias "_QRYFIS"
+
+    //-- Conta quantos registros existem, e seta no tamanho da regua
+    Count To nTotal
+    ProcRegua(nTotal)
+
+    _QRYFIS->(dbGoTop())
+    While !_QRYFIS->(EoF())
+        //-- Incrementa a mensagem na regua
+        nAtual++
+        IncProc("Atualizando " + cValToChar(nAtual) + " de " + cValToChar(nTotal) + "...")
+
+        SC5->( MsGoto( _QRYFIS->SC5RECNO ) )
+        SC6->( MsGoto( _QRYFIS->SC6RECNO ) )
+
+        If Empty(_QRYFIS->C5_XBLFIS)
+            RecLock("SC5", .F.)
+                SC5->C5_XBLFIS  := "1" //-- Bloqueado
+                SC5->C5_X4SSTAT := "9" //-- Em Validacao Fiscal
+
+                //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
+                SC5->C5_MSEXP := ""  //DToS(dDataBase)
+            SC5->(MsUnLock())
+        ElseIf _QRYFIS->C5_XBLFIS == "1"
+            If Z09->(MsSeek(xFilial("Z09") + _QRYFIS->C5_NUM + _QRYFIS->C6_ITEM))
+                If !(Z09->Z09_PROD == SC6->C6_PRODUTO) .Or. (QtdComp(Z09->Z09_QTDPV) <> QtdComp(SC6->C6_QTDVEN)) .Or. !(Z09->Z09_LOTECT == SC6->C6_LOTECTL) .Or. !(Z09->Z09_ICOTER == SC5->C5_TPFRETE) .Or. !(Z09->Z09_TRANSP == SC5->C5_TRANSP) .Or. !(Z09->Z09_REDICO == SC5->C5_TFRDP1) .Or. !(Z09->Z09_REDESP == SC5->C5_REDESP) .Or.;
+                    (QtdComp(MpSysExecScalar("SELECT COUNT(1) AS QTDZ09 FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.Z09_NUMPV = '" + _QRYFIS->C5_NUM + "' AND Z09.D_E_L_E_T_= ' ' ", "QTDZ09")) <> QtdComp(MpSysExecScalar("SELECT COUNT(1) AS QTDSC6 FROM " + RetSQLName("SC6") + " SC6 WHERE SC6.C6_FILIAL = '" + xFilial("SC6") + "' AND SC6.C6_NUM = '" + _QRYFIS->C5_NUM + "' AND SC6.D_E_L_E_T_= ' ' ", "QTDSC6")))
+
+                    //-- Deleta Z11
+                    //cUpDate := " UPDATE " + RetSqlName("Z11") + " Z11 SET Z11.D_E_L_E_T_ = '*', Z11.R_E_C_D_E_L_ = Z11.R_E_C_N_O_ WHERE Z11_IDTRAC IN ('" + Z09->Z09_IDTRAC + "') AND Z11.D_E_L_E_T_ = ' ' "
+                    cUpDate := " DELETE " + RetSqlName("Z11") + " Z11 WHERE Z11_IDTRAC IN ('" + Z09->Z09_IDTRAC + "') "	
+                    If tcsqlexec(cUpdate)
+                        ConOut(tcsqlerror())
+                    EndIf
+
+                    //-- Deleta Z09
+                    //cUpDate := " UPDATE " + RetSqlName("Z09") + " Z09 SET D_E_L_E_T_ = '*', R_E_C_D_E_L_ = R_E_C_N_O_ WHERE Z09_FILIAL = '" + Z09->Z09_FILIAL + "' AND Z09_NUMPV = '" + _QRYFIS->C5_NUM  + "' AND D_E_L_E_T_ = ' ' "
+                    cUpDate := " DELETE " + RetSqlName("Z09") + " Z09 WHERE Z09_FILIAL = '" + Z09->Z09_FILIAL + "' AND Z09_NUMPV = '" + _QRYFIS->C5_NUM  + "' "	
+                    If tcsqlexec(cUpdate)
+                        ConOut(tcsqlerror())
+                    EndIf
+
+                    RecLock("SC5", .F.)
+                        SC5->C5_XBLFIS  := "1" //-- Bloqueado
+                        SC5->C5_X4SSTAT := "9" //-- Em Validacao Fiscal
+
+                        //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
+                        SC5->C5_MSEXP := ""  //DToS(dDataBase)
+                    SC5->(MsUnLock())
+                EndIf
+            EndIf
+        EndIf
+
+        _QRYFIS->(dbSkip())
+    EndDo
+
+    If Select("_QRYFIS") > 0
+        _QRYFIS->(dbCloseArea())
+    EndIf
+
+    RestArea(aAreaSC6)
+    RestArea(aAreaSC5)
+    RestArea(aAreaAnt)
+
 Return

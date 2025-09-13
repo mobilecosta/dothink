@@ -77,7 +77,7 @@ Static Function MenuDef()
     ADD OPTION aRot TITLE 'Legenda'                 ACTION 'u_TRK0002L'         OPERATION 6                         ACCESS 0 //OPERATION X
     ADD OPTION aRot TITLE 'Alterar'                 ACTION 'VIEWDEF.TRK0002'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 4
     ADD OPTION aRot TITLE 'Agendamento'             ACTION aAge                 OPERATION 9                         ACCESS 0 //OPERATION 9   
-    ADD OPTION aRot TITLE 'Registrar Atraso'        ACTION 'VIEWDEF.TRK0002A'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    ADD OPTION aRot TITLE 'Registrar Ocorrência'    ACTION 'VIEWDEF.TRK0002A'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
     ADD OPTION aRot TITLE 'Troca Transportadora'    ACTION 'U_TRK00014()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
     ADD OPTION aRot TITLE 'Email Transportadora'    ACTION 'U_TRK02Mtr()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
     ADD OPTION aRot TITLE 'Acao Operação (CS)'      ACTION 'VIEWDEF.TRK0002D'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
@@ -186,7 +186,7 @@ For nI := 1 To Len(aPVs)
         aTrackS[Z09->(FieldPos("Z09_ITEMPV"))] := Z09->Z09_ITEMPV   
 
         If cModel == 'TRK0002A'
-            cTitLog := "Registro de Atraso"
+            cTitLog := "Registro de Ocorrencia"
             oZ09:LoadValue(aFields[GetPCpo("Z09_DTATRS")], Date())
             oZ09:LoadValue(aFields[GetPCpo("Z09_HRATRS")], Left(Time(), 5))
 
@@ -203,7 +203,7 @@ For nI := 1 To Len(aPVs)
             oZ09:LoadValue(aFields[Len(aFields) - 1], Left(Time(), 5)   )
             oZ09:LoadValue(aFields[Len(aFields)]    , cUserName         )
             
-            If lPrivez
+            //If lPrivez
                 SC5->(DbSetOrder(1))
                 If  SC5->(DbSeek( cChave )) .And.;
                     SC5->(RecLock("SC5", .F.))
@@ -217,7 +217,7 @@ For nI := 1 To Len(aPVs)
                     SC5->(MsUnLock())
                 EndIf
                 lPrivez := .F.
-            EndIf
+            //EndIf
 
             aTrackS[Z09->(FieldPos("Z09_STATUS"))] := oZ09:GetValue("Z09_STATUS")
             For nPos := 1 To Len(aPos)

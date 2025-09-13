@@ -14,6 +14,7 @@ Embarque dos volumes
 User Function ACDVEX03()
 Local aTela
 Local nOpc 
+Private nOSOpc := 3
 
 IF !Type("lVT100B") == "L"
 	Private lVT100B := .F.

@@ -1,7 +1,7 @@
 #include "totvs.ch"
 #include 'FwMVCDef.ch'
 
-static cTitulo := "Registrar Atraso"
+static cTitulo := "Registrar Ocorrência"
 Static aFields := { "Z09_MOTIVO", "Z09_DCMOTV", "Z09_DSMOTV", "Z09_DTATRS", "Z09_HRATRS", "Z09_IDTRAC" }
 
 Static Function ViewDef()

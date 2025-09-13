@@ -3691,7 +3691,7 @@ If SC6->(dbSeek(xFilial("SC6") + GDFGet2("CB8_PEDIDO") + GDFGet2("CB8_ITEM") + G
 				"<font color='red'>Lote <strong>" + AllTrim(SC6->C6_LOTECTL) + "</strong> preenchido no pedido de venda pelo vendedor</font>", "Entre em contato com o Vendedor/Cliente para alteração de Lote.")
 	
 	If FWAlertNoYes("Deseja informar o CS que este lote [" + AllTrim(SC6->C6_LOTECTL) + "] não foi localizado?", "Informar CS")
-		SetTraking("1", SC6->C6_NUM, SC6->C6_ITEM, "Lote", "Lote não localizado: " + AllTrim(SC6->C6_LOTECTL), "Validação Fisica (Lote não localizado)")
+		SetTraking("1", SC6->(C6_FILIAL + C6_NUM), SC6->C6_ITEM, "Lote", "Lote não localizado: " + AllTrim(SC6->C6_LOTECTL), "Validação Fisica (Lote não localizado)")
 	EndIf
 	
 	aHeader := aClone(aHeaderAtu)

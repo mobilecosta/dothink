@@ -38,6 +38,8 @@ Local cItens	:= ""
 Local aDadosFil := {}
 Local cFile     := ""
 Local nTotal	:= 0
+Local cNomCliFor:= ""
+Local aEnd		:= {}
 
 Local cZ09_FILIAL := Z09->Z09_FILIAL
 Local cZ09_NUMPV  := Z09->Z09_NUMPV
@@ -95,8 +97,26 @@ SC5->( DbSeek(Z09->Z09_FILIAL + Z09->Z09_NUMPV) )
 
 nTotal := If(!Empty(Z09->Z09_TOTAL), Z09->Z09_TOTAL,If(!Empty(SC5->C5_XTOTAL),SC5->C5_XTOTAL, u_TRK0005A(Z09->Z09_NUMPV) ))
 
-SA1->( DbSetOrder(1) )
-SA1->( DbSeek(xFilial() + SC5->(C5_CLIENT + C5_LOJAENT)) )
+If SC5->C5_TIPO $ 'F|B'
+	SA2->( DbSetOrder(1) )
+	SA2->( DbSeek(xFilial() + SC5->(C5_CLIENT + C5_LOJAENT)) )
+	aadd(aEnd, SA2->A2_END		)
+	aadd(aEnd, SA2->A2_COMPLEM	)
+	aadd(aEnd, SA2->A2_BAIRRO	)
+	aadd(aEnd, SA2->A2_MUN		)
+	aadd(aEnd, SA2->A2_EST		)
+	cNomCliFor := " (Fornecedor: " + AllTrim(SA2->A2_NOME) + ")"
+Else
+	SA1->( DbSetOrder(1) )
+	SA1->( DbSeek(xFilial() + SC5->(C5_CLIENT + C5_LOJAENT)) )
+
+	aadd(aEnd, SA1->A1_END		)
+	aadd(aEnd, SA1->A1_COMPLEM	)
+	aadd(aEnd, SA1->A1_BAIRRO	)
+	aadd(aEnd, SA1->A1_MUN		)
+	aadd(aEnd, SA1->A1_EST		)
+	cNomCliFor := " (Cliente: " + AllTrim(SA1->A1_NOME) + ")"
+EndIf
 
 
 //-- Endereco de Origem
@@ -104,18 +124,18 @@ cEndOrig := AllTrim(aDadosFil[4]) + ", " + AllTrim(aDadosFil[14]) + ", " + AllTr
 
 If Empty(SC5->C5_REDESP)
 	//-- Endereco de Destino (Cliente de Entrega)
-	cEndDest := SA1->A1_END
-	If !Empty(SA1->A1_COMPLEM)
-		cEndDest += ", " + AllTrim(SA1->A1_COMPLEM)
+	cEndDest := aEnd[1]
+	If !Empty(aEnd[2])
+		cEndDest += ", " + AllTrim(aEnd[2])
 	EndIf
-	If !Empty(SA1->A1_BAIRRO)
-		cEndDest += ", " + AllTrim(SA1->A1_BAIRRO)
+	If !Empty(aEnd[3])
+		cEndDest += ", " + AllTrim(aEnd[3])
 	EndIf
-	If !Empty(SA1->A1_MUN)
-		cEndDest += ", " + AllTrim(SA1->A1_MUN)
+	If !Empty(aEnd[4])
+		cEndDest += ", " + AllTrim(aEnd[4])
 	EndIf
-	If !Empty(SA1->A1_EST)
-		cEndDest += ", " + AllTrim(SA1->A1_EST)
+	If !Empty(aEnd[5])
+		cEndDest += ", " + AllTrim(aEnd[5])
 	EndIf
 
 	cEndDest := "<strong>" + cEndDest + "</strong>"
@@ -203,7 +223,8 @@ oHTML:ValByName("DT_AGENDADA"	, cDtAgenda										)
 oHTML:ValByName("A4_NOME"		, SC5->C5_TRANSP + " - " + AllTrim(SA4->A4_NOME))
 oHTML:ValByName("DESTINO"		, cDestino										)
 
-cMsgIni := "Informamos que " + cTitOrig + ", esta disponível para coleta, no endereço: "
+cMsgIni := "Informamos que " + cTitOrig 
+cMsgIni += cNomCliFor + ", esta disponível para coleta, no endereço: "
 cMsgIni += "<strong>" + cEndOrig + "</strong>"
 cMsgIni += ", no dia <strong>" + cDtAgenda + "</strong>."
 
@@ -854,19 +875,11 @@ Return(cIdEnt)
 
 
 
-/*/{Protheus.doc} TRK0012
-Função de envio de email para transportadora - PL_012_v01.pdf
-@type function
-@version 1.0
-@author DO THINK
-@since 10/08/2025
-@return logical, Indica se conseguiu enviar e-mail
-/*/
-User Function TRK0012C(cEMail, cAssunto, cMsgFim)
+User Function TRK0012D(cEMail, cAssunto, cMsgFim)
 Local aArea		:= Z09->(GetArea())
 Local lRet      := .F.
 Local cPathHTML := "\workflow"
-Local cFileHTM  := cPathHTML + "\agentransp.html"
+Local cFileHTM  := cPathHTML + "\cancelagentransp.html"
 Local oHtml     := Nil
 Local cFileName := ""
 Local cTitOrig	:= ""
@@ -878,19 +891,10 @@ Local cDtAgenda := ""
 Local cEndOrig	:= ""
 Local cEndDest	:= ""
 Local cDestino	:= ""
-Local cB5_ONU   := ""
-Local cB5_ITEM	:= ""
-Local cB5_RISCO := ""
-Local cB5_CLASS := ""
-Local cControla := ""
-Local cXML      := ""
-Local cItens	:= ""
 Local aDadosFil := {}
-Local cFile     := ""
-
-Local cZ09_FILIAL := Z09->Z09_FILIAL
-Local cZ09_NUMPV  := Z09->Z09_NUMPV
-Local cZ09_ITEMPV := Z09->Z09_ITEMPV
+Local nTotal	:= 0
+Local cNomCliFor:= ""
+Local aEnd		:= {}
 
 Default cMsgFim := ""
 
@@ -917,17 +921,139 @@ If !fInfo(@aDadosFil, Z09->Z09_FILIAL)
 	Return
 EndIf
 
+If !Empty(Z09->Z09_DT1COL)
+	cDtAgenda := DTOC(Z09->Z09_DT1COL)
+EndIf
+
+If !Empty(Z09->Z09_DT2COL)
+	cDtAgenda := DTOC(Z09->Z09_DT2COL)
+EndIf
+
+If !Empty(Z09->Z09_DT3COL)
+	cDtAgenda := DTOC(Z09->Z09_DT3COL)
+EndIf
+
+
 //-- Ajusta assunto
 cAssunto += " Pedido " + Z09->Z09_NUMPV + " (Filial: " + AllTrim(aDadosFil[1]) + " - " + AllTrim(aDadosFil[2]) + ")"
 
+// Pedido de Vendas
+SC5->( DbSetOrder(1) )
+SC5->( DbSeek(Z09->Z09_FILIAL + Z09->Z09_NUMPV) )
+
+nTotal := If(!Empty(Z09->Z09_TOTAL), Z09->Z09_TOTAL,If(!Empty(SC5->C5_XTOTAL),SC5->C5_XTOTAL, u_TRK0005A(Z09->Z09_NUMPV) ))
+
+If SC5->C5_TIPO $ 'F|B'
+	SA2->( DbSetOrder(1) )
+	SA2->( DbSeek(xFilial() + SC5->(C5_CLIENT + C5_LOJAENT)) )
+	aadd(aEnd, SA2->A2_END		)
+	aadd(aEnd, SA2->A2_COMPLEM	)
+	aadd(aEnd, SA2->A2_BAIRRO	)
+	aadd(aEnd, SA2->A2_MUN		)
+	aadd(aEnd, SA2->A2_EST		)
+	cNomCliFor := " (Fornecedor: " + AllTrim(SA2->A2_NOME) + ")"
+Else
+	SA1->( DbSetOrder(1) )
+	SA1->( DbSeek(xFilial() + SC5->(C5_CLIENT + C5_LOJAENT)) )
+
+	aadd(aEnd, SA1->A1_END		)
+	aadd(aEnd, SA1->A1_COMPLEM	)
+	aadd(aEnd, SA1->A1_BAIRRO	)
+	aadd(aEnd, SA1->A1_MUN		)
+	aadd(aEnd, SA1->A1_EST		)
+	cNomCliFor := " (Cliente: " + AllTrim(SA1->A1_NOME) + ")"
+EndIf
+
+
 //-- Endereco de Origem
 cEndOrig := AllTrim(aDadosFil[4]) + ", " + AllTrim(aDadosFil[14]) + ", " + AllTrim(aDadosFil[13]) + ", " + AllTrim(aDadosFil[5]) + ", " + AllTrim(aDadosFil[6])
+
+If Empty(SC5->C5_REDESP)
+	//-- Endereco de Destino (Cliente de Entrega)
+	cEndDest := aEnd[1]
+	If !Empty(aEnd[2])
+		cEndDest += ", " + AllTrim(aEnd[2])
+	EndIf
+	If !Empty(aEnd[3])
+		cEndDest += ", " + AllTrim(aEnd[3])
+	EndIf
+	If !Empty(aEnd[4])
+		cEndDest += ", " + AllTrim(aEnd[4])
+	EndIf
+	If !Empty(aEnd[5])
+		cEndDest += ", " + AllTrim(aEnd[5])
+	EndIf
+
+	cEndDest := "<strong>" + cEndDest + "</strong>"
+	cDestino := "cliente"
+Else
+	//-- Endereco de Destino (Transportadaora Redespacho)
+	// Transportadora Redespacho
+	SA4->( DbSetOrder(1) )
+	SA4->( DbSeek(xFilial() + SC5->C5_REDESP) )	
+
+	cEndDest := SA4->A4_END
+	If !Empty(SA4->A4_COMPLEM)
+		cEndDest += ", " + AllTrim(SA4->A4_COMPLEM)
+	EndIf
+	If !Empty(SA4->A4_BAIRRO)
+		cEndDest += ", " + AllTrim(SA4->A4_BAIRRO)
+	EndIf
+	If !Empty(SA4->A4_MUN)
+		cEndDest += ", " + AllTrim(SA4->A4_MUN)
+	EndIf
+	If !Empty(SA4->A4_EST)
+		cEndDest += ", " + AllTrim(SA4->A4_EST)
+	EndIf
+
+	cEndDest := "<strong>" + cEndDest + "</strong>"
+
+	cDestino := "Transp.Redespacho"
+EndIf
 
 // Transportadora
 SA4->( DbSetOrder(1) )
 SA4->( DbSeek(xFilial() + Z09->Z09_TRANSP) )
 
 cTexto := "Informamos que foi cancelado o agendamento do pedido "+ Z09->Z09_NUMPV 
+oHtml := TWFHtml():New( cFileHTM )
+
+
+cTitOrig := If( Empty(Z09->Z09_NF), "o Pedido <strong>"+ Z09->Z09_NUMPV +"</strong>", "a NF <strong>"+ Z09->Z09_NF +"</strong>"  )
+
+oHTML:ValByName("INFO_PEDIDO"	, Substr(cTitOrig, 3)							)
+oHTML:ValByName("DT_AGENDADA"	, cDtAgenda										)
+oHTML:ValByName("A4_NOME"		, SC5->C5_TRANSP + " - " + AllTrim(SA4->A4_NOME))
+oHTML:ValByName("DESTINO"		, cDestino										)
+
+cMsgIni := "Informamos que foi cancelado o agendamento d" + cTitOrig 
+cMsgIni += cNomCliFor + ", que estava disponível para coleta, no endereço: "
+cMsgIni += "<strong>" + cEndOrig + "</strong>"
+cMsgIni += ", para o dia <strong>" + cDtAgenda + "</strong>."
+
+oHTML:ValByName("MSG_INI"	, cMsgIni									)
+
+If Empty(Z09->Z09_NF)
+	oHTML:ValByName("VLR_TOTAL"	, Trans(nTotal, "@E 999,999,999.99"))
+Else
+	SF2->(DbSetOrder(1))
+	SF2->(DbSeek(Z09->(Z09_FILIAL + Z09_NF)))
+	//oHTML:ValByName("MSG_INI"	, "Informamos que o Nota Fiscal  " + Z09->Z09_NF + ", esta disponível para coleta, a partir do dia " + cDtAgenda)
+	oHTML:ValByName("VLR_TOTAL"	, Trans(SF2->(F2_VALBRUT + F2_VALIPI), "@E 999,999,999.99"))
+EndIf
+
+oHTML:ValByName("C5_TPFRETE"	, U_DtCombo("Z09_ICOTER", SC5->C5_TPFRETE))
+oHTML:ValByName("END_ENTREGA"	, cEndDest)
+oHTML:ValByName("C5_PBRUTO"	, Trans(SC5->C5_PBRUTO	, "@E 999,999.9999"))
+oHTML:ValByName("MSG_FIM"	, cMsgFim									)
+
+cFileName := CriaTrab(NIL,.F.) + ".htm"
+cFileName := cPathHTML + "\" + cFileName 
+oHtml:SaveFile(cFileName)
+
+cTexto := StrTran(WFLoadFile(cFileName), Chr(13), "")
+cTexto := StrTran(cTexto, chr(10), "")
+cTexto := OemtoAnsi(cTexto)
 
 IF Empty(cEmail)
     If ! Isblind()

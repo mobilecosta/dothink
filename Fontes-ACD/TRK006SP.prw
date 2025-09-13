@@ -3,7 +3,7 @@
 
 
 /*/{Protheus.doc} TRK006SP
-Centralizacao dos pontos de de entrada na gravacao do item da nota de saida
+Centralizacao dos pontos de entrada na gravacao do item da nota de saida
 @type function
 @version 1.0
 @author fernando.muta@dothink.com.br

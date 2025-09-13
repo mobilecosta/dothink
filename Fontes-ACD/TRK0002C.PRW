@@ -277,8 +277,6 @@ For nI := 1 To Len(aPVs)
     Z09->( DbSetOrder(3) )
     Z09->( DbSeek(cChave) )
 
-    Z09->( DbSetOrder(3) )
-    Z09->( DbSeek(cChave) )
     While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
         aTrackS := Array( Len( Z09->( DbStruct() ) ) )
 
@@ -319,7 +317,7 @@ If SA4->( DbSeek(xFilial()+ cTransp) )
 
     cEmail := "erike.yuri@dothink.com.br;janine.duarte@barentz.com" // Alltrim(SA4->A4_EMAIL)
 
-    FWMsgRun(NIL,{|| U_TRK0012C(cEmail, "Cancelamento do Agendamento")}, "Aguarde...", "Enviando email para transportadora")
+    FWMsgRun(NIL,{|| U_TRK0012D(cEmail, "Cancelamento do Agendamento")}, "Aguarde...", "Enviando email para transportadora")
 EndIf
 
 RestArea(aArea)

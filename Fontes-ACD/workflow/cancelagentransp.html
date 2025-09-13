@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cancelamento de Agendamento de Coleta</title>
+</head>
+<body style="margin:0; padding:0; background-color:#ffffff; font-family:Arial, sans-serif; color:#000000;">
+
+  <!-- Container principal -->
+  <table width="600" align="center" cellpadding="0" cellspacing="0" border="0" 
+         style="border:1px solid #000000; background-color:#ffffff;">
+
+    <!-- Logo no topo -->
+    <tr>
+      <td align="left" style="padding:20px 15px;">
+        <img src="https://brasil.barentz.com/wp-content/uploads/2024/01/logo-barentz.png" alt="Logo Barentz" width="178" height="36" style="display:block;">
+      </td>
+    </tr>
+
+    <!-- Cabeçalho -->
+    <tr>
+      <td style="background-color:#D11040; padding:10px 15px;">
+        <h2 style="margin:0; color:#ffffff; font-size:18px;">Cancelamento de Agendamento de Coleta (!INFO_PEDIDO!)</h2>
+      </td>
+    </tr>
+
+    <!-- Saudação e informação do documento -->
+    <tr>
+      <td style="padding:15px;">
+        <p>Prezada transportadora <strong>!A4_NOME!</strong>,</p>
+        <p>!MSG_INI!</p>
+        <p>Tipo de Frete: <strong>!C5_TPFRETE!</strong></p>
+        <p>Endere&ccedil;o de entrega (!DESTINO!): <strong>!END_ENTREGA!</strong></p>
+        <p></p>
+      </td>
+    </tr>
+
+    <!-- Resumo e valor total -->
+    <tr>
+      <td style="padding:0 15px 15px 15px;">
+        <p>Valor aproximado total da mercadoria c/ IPI: <strong>R$ !VLR_TOTAL!</strong></p>
+        <p>Peso Bruto: <strong>!C5_PBRUTO!</strong> Kg</p>
+      </td>
+    </tr>
+
+    <!-- Mensagem final e rodapé -->
+    <tr>
+      <td style="padding:15px; background-color:#f2f2f2;">
+        <p>!MSG_FIM!</p>
+        <p style="margin-top:20px; font-size:12px; color:#555555;">
+          Este &eacute; um e-mail autom&aacute;tico. Por favor, n&atilde;o responda diretamente a ele.
+        </p>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

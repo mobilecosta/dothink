@@ -6032,6 +6032,15 @@ Return
 User Function CBSolCB7(nOpc,bBlcVld)
 	Local cPedido,cNota,cSerie
 	Local aTela:= VtSave()
+	Local cF3CB7 := ""
+
+	If nOSOpc == 1
+		cF3CB7 := "CB7VL"
+	ElseIf nOSOpc == 3
+		cF3CB7 := "CBL"
+	Else
+		cF3CB7 := "CB7OS"
+	EndIf
 
 	IF !Type("lVT100B") == "L"
 		Private lVT100B := .F.
@@ -6043,11 +6052,11 @@ User Function CBSolCB7(nOpc,bBlcVld)
 		cOrdSep := Space(TamSX3("CB7_ORDSEP")[1])       
 		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,2,0),0 VTSay "Informe o codigo:"  //"Informe o codigo:"
 		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,3,1),0 VTGet cOrdSep PICT "@!" F3 "CB7"  Valid Eval(bBlcVld)
-		VTRead                                                                        		
+		VTRead
 	ElseIf nOpc ==2 // por pedido
 		cPedido := Space(TamSX3("C6_NUM")[1])
 		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,2,0),0 VTSay "Informe o Pedido"  //"Informe o Pedido"
-		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,3,1),0 VTSay "de venda: " VTGet cPedido PICT "@!"  F3 "CBL"  Valid (VldGet(cPedido) .and. U_CBSelCB7(1,cPedido) .and. Eval(bBlcVld))//'de venda: '
+		@ If(VTModelo()=="RF" .or. lVT100B /*GetMv("MV_RF4X20")*/,3,1),0 VTSay "de venda: " VTGet cPedido PICT "@!"  F3 cF3CB7  Valid (VldGet(cPedido) .and. U_CBSelCB7(1,cPedido) .and. Eval(bBlcVld))//'de venda: '
 		VTRead                                                                        		
 	ElseIf nOpc ==3 // por Nota fiscal    
 		cNota  := Space(TamSx3("F2_DOC")[1])
