@@ -958,6 +958,8 @@ static function AtuTracking(cAliasVldFis, aDadosFil)
     local aArea     := GetArea()    
     local aTrackS   := {}
     local aX5T3     := {}
+    Local lZ09_OBSPV := Z09->(FieldPos("Z09_OBSPV")) > 0
+    Local lZ09_DTSLA := Z09->(FieldPos("Z09_DTSLA")) > 0
 
     DbSelectAre("Z09")
     Z09->( DbSetOrder(3) )
@@ -1020,10 +1022,14 @@ static function AtuTracking(cAliasVldFis, aDadosFil)
             aTrackS[FieldPos("Z09_DPEMPV")] := SC6->C6_ENTREG               // Previsao de Entrega PV
             aTrackS[FieldPos("Z09_DPFAPV")] := SC6->C6_DATFAT               // Previsao Faturamento PV 
             aTrackS[FieldPos("Z09_RESTR")]  := SC5->C5_XRESTR               // Restricao do Cliente 
-            aTrackS[FieldPos("Z09_OBSPV")]  := SC5->C5_XOBSVEN              // Observacao do Pedido de Vendas
+            If lZ09_OBSPV
+                aTrackS[FieldPos("Z09_OBSPV")]  := SC5->C5_XOBSVEN              // Observacao do Pedido de Vendas
+            EndIf
             aTrackS[FieldPos("Z09_BLFDI")]  := Date()                       // Dt.Inicio Bloq.Fiscal    
             aTrackS[FieldPos("Z09_BLFHI")]  := Time()                       // Hr.Inicio Bloq.Fiscal 
-            aTrackS[FieldPos("Z09_DTSLA")]  := u_TRK0017S(aDadosFil[6], SA1->A1_EST, SA1->A1_COD_MUN, SC6->C6_ENTREG)
+            If lZ09_DTSLA
+                aTrackS[FieldPos("Z09_DTSLA")]  := u_TRK0017S(aDadosFil[6], SA1->A1_EST, SA1->A1_COD_MUN, SC6->C6_ENTREG)
+            EndIf
 
             If Z09->(FieldPos("Z09_PROD") > 0)
                 aTrackS[FieldPos("Z09_PROD")] := SC6->C6_PRODUTO
