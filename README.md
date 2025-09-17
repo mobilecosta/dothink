@@ -23,11 +23,12 @@ http://85.209.92.195:61303/ - TCP: 61013 - Telnet: 61093 - DHDEV01COMP0301
 Ambientes: DHDEV01COMP0301 / DHDEV01COMP0302 / DHDEV01COMP0303 / DHDEV01COMP0304
 
 ## Link normal de acesso:
-https://barentzbrq148631.protheus.cloudtotvs.com.br:4010/webapp/ 
+https://barentzbrq148631.protheus.cloudtotvs.com.br:4010/webapp/ - Porta TCP: 7600
 
 Environment: erike
 
 usuário: erike.yuri@dothink.com.br 
 senha: a810511
+
 
 
