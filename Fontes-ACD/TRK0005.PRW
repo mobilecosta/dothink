@@ -307,16 +307,21 @@ Return aFields
 
 
 //--
-Static Function GetQuery(cTipoPedido)
+Static Function GetQuery(cTipoPedido, lAllFilial)
     Local aFields         := GetFields()
+    Local aFiliais        := {}
+    Local cInFilial       := ""
+    Local cFilTroca       := ""
     Local cINXBLFIS       := ""
     Local cQueryGetFields := ""
     Local cQueryApto      := ""
     Local cQuerySelect    := ""
     Local nField          := 0
     Local nFields         := 0
+    Local nI              := 0
 
-    Default cTipoPedido := "4"
+    Default cTipoPedido   := "4"
+    Default lAllFilial    := .F.
 
     nFields := Len(aFields)
     For nField := 1 To nFields
@@ -383,9 +388,31 @@ Static Function GetQuery(cTipoPedido)
     cQuerySelect := StrTran(cQuerySelect, "__A2_FILIAL__"     , FWXFilial("SA2")  )
     cQuerySelect := StrTran(cQuerySelect, "__B1_FILIAL__"     , FWXFilial("SB1")  )
     cQuerySelect := StrTran(cQuerySelect, "__F4_FILIAL__"     , FWXFilial("SF4")  )
-    cQuerySelect := StrTran(cQuerySelect, "__C5_FILIAL__"     , FWXFilial("SC5")  )
     cQuerySelect := StrTran(cQuerySelect, "__C6_FILIAL__"     , FWXFilial("SC6")  )
     cQuerySelect := StrTran(cQuerySelect, "__C9_FILIAL__"     , FWXFilial("SC9")  )
+
+    If lAllFilial
+        //Pegar todas as filiais da empresa Logada
+		aFiliais := FWAllFiliais()
+
+		//Busca todas as FILIAIS da empresa logada
+		For nI := 1 To Len(aFiliais)
+			If nI == Len(aFiliais)
+				cInFilial += "'" + AllTrim(aFiliais[nI]) + "'"
+			Else
+				cInFilial += "'" + AllTrim(aFiliais[nI]) + "', "
+			EndIf
+		Next nI
+
+		//cInFilial := Left(cInFilial,Len(cInFilial)-1)
+		//cInFilial := Right(cInFilial,Len(cInFilial)-1)
+
+        cFilTroca := "AND SC5.C5_FILIAL = '__C5_FILIAL__'"
+
+        cQuerySelect := StrTran(cQuerySelect, cFilTroca     , "AND SC5.C5_FILIAL IN("+cInFilial+")"  )
+    Else
+        cQuerySelect := StrTran(cQuerySelect, "__C5_FILIAL__"     , FWXFilial("SC5")  )
+    EndIf
 
     // https://centraldeatendimento.totvs.com/hc/pt-br/articles/
     // 360017467652-Cross-Segmentos-BackOffice-Protheus-SIGAFAT-C%C3%B3digos-de-Bloqueio-gravados-na-tabela/
@@ -626,6 +653,15 @@ static function TRK0005Lib(cTitulo,cAlias,oBrowse)
     if ((cAlias)->C5_XBLFIS=="1")
         cPedido := (cAlias)->C5_NUM
         SC5->(MsGoTo((cAlias)->SC5RECNO))
+
+        If SC5->C5_XBLFIS <> "1"
+            ApMsgInfo("O status deste pedido foi alterado por outra pessoa ou ação. Saia desta rotina e entre novamente para ver a fotografia atual.",cProcTitle)
+            FWRestArea(aAreaAlias)
+            FWFreeArray(@aAreaAlias)
+
+            FWRestArea(aArea)
+            FWFreeArray(@aArea)    
+        EndIf 
         
         //-- Analise de remessa/triangulacao
         If !ChkRemessa(cAlias, "2", @cPedido, @nRecRemess, @cRemessa, @cTriangular)
@@ -724,6 +760,15 @@ static function TRK0005Rej(cTitulo,cAlias,oBrowse)
     if ((cAlias)->C5_XBLFIS=="1")
 
         SC5->(MsGoTo((cAlias)->SC5RECNO))
+        
+        If SC5->C5_XBLFIS <> "1"
+            ApMsgInfo("O status deste pedido foi alterado por outra pessoa ou ação. Saia desta rotina e entre novamente para ver a fotografia atual.",cProcTitle)
+            FWRestArea(aAreaAlias)
+            FWFreeArray(@aAreaAlias)
+
+            FWRestArea(aArea)
+            FWFreeArray(@aArea)    
+        EndIf        
 
         //-- Analise de remessa/triangulacao
         If !ChkRemessa(cAlias, "3", @cPedido, @nRecRemess, @cRemessa, @cTriangular)
@@ -857,6 +902,15 @@ static function TRK0005Blq(cTitulo,cAlias,oBrowse)
         cPedido := (cAlias)->C5_NUM
         SC5->(MsGoTo((cAlias)->SC5RECNO))
 
+        If SC5->C5_XBLFIS == "1"
+            ApMsgInfo("O status deste pedido foi alterado por outra pessoa ou ação. Saia desta rotina e entre novamente para ver a fotografia atual.",cProcTitle)
+            FWRestArea(aAreaAlias)
+            FWFreeArray(@aAreaAlias)
+
+            FWRestArea(aArea)
+            FWFreeArray(@aArea)    
+        EndIf         
+
         //-- Analise de remessa/triangulacao
         If !ChkRemessa(cAlias, "1", @cPedido, @nRecRemess, @cRemessa, @cTriangular)
             FWRestArea(aAreaAlias)
@@ -958,8 +1012,6 @@ static function AtuTracking(cAliasVldFis, aDadosFil)
     local aArea     := GetArea()    
     local aTrackS   := {}
     local aX5T3     := {}
-    Local lZ09_OBSPV := Z09->(FieldPos("Z09_OBSPV")) > 0
-    Local lZ09_DTSLA := Z09->(FieldPos("Z09_DTSLA")) > 0
 
     DbSelectAre("Z09")
     Z09->( DbSetOrder(3) )
@@ -1022,14 +1074,10 @@ static function AtuTracking(cAliasVldFis, aDadosFil)
             aTrackS[FieldPos("Z09_DPEMPV")] := SC6->C6_ENTREG               // Previsao de Entrega PV
             aTrackS[FieldPos("Z09_DPFAPV")] := SC6->C6_DATFAT               // Previsao Faturamento PV 
             aTrackS[FieldPos("Z09_RESTR")]  := SC5->C5_XRESTR               // Restricao do Cliente 
-            If lZ09_OBSPV
-                aTrackS[FieldPos("Z09_OBSPV")]  := SC5->C5_XOBSVEN              // Observacao do Pedido de Vendas
-            EndIf
+            aTrackS[FieldPos("Z09_OBSPV")]  := SC5->C5_XOBSVEN              // Observacao do Pedido de Vendas
             aTrackS[FieldPos("Z09_BLFDI")]  := Date()                       // Dt.Inicio Bloq.Fiscal    
             aTrackS[FieldPos("Z09_BLFHI")]  := Time()                       // Hr.Inicio Bloq.Fiscal 
-            If lZ09_DTSLA
-                aTrackS[FieldPos("Z09_DTSLA")]  := u_TRK0017S(aDadosFil[6], SA1->A1_EST, SA1->A1_COD_MUN, SC6->C6_ENTREG)
-            EndIf
+            aTrackS[FieldPos("Z09_DTSLA")]  := u_TRK0017S(aDadosFil[6], SA1->A1_EST, SA1->A1_COD_MUN, SC6->C6_ENTREG)
 
             If Z09->(FieldPos("Z09_PROD") > 0)
                 aTrackS[FieldPos("Z09_PROD")] := SC6->C6_PRODUTO
@@ -1494,7 +1542,7 @@ Static Function AtuStatus()
     Local aAreaAnt := GetArea()
     Local aAreaSC5 := SC5->(GetArea())
     Local aAreaSC6 := SC6->(GetArea())
-    Local cQuery   := GetQuery("1")
+    Local cQuery   := GetQuery("1" , .T.)
     Local cUpDate  := ""
     Local nTotal   := 0
     Local nAtual   := 0
@@ -1537,7 +1585,7 @@ Static Function AtuStatus()
                 SC5->C5_MSEXP := ""  //DToS(dDataBase)
             SC5->(MsUnLock())
         ElseIf _QRYFIS->C5_XBLFIS == "1"
-            If Z09->(MsSeek(xFilial("Z09") + _QRYFIS->C5_NUM + _QRYFIS->C6_ITEM))
+            If Z09->(MsSeek(SC6->C6_FILIAL + SC6->C6_NUM + SC6->C6_ITEM))
                 If !(Z09->Z09_PROD == SC6->C6_PRODUTO) .Or. (QtdComp(Z09->Z09_QTDPV) <> QtdComp(SC6->C6_QTDVEN)) .Or. !(Z09->Z09_LOTECT == SC6->C6_LOTECTL) .Or. !(Z09->Z09_ICOTER == SC5->C5_TPFRETE) .Or. !(Z09->Z09_TRANSP == SC5->C5_TRANSP) .Or. !(Z09->Z09_REDICO == SC5->C5_TFRDP1) .Or. !(Z09->Z09_REDESP == SC5->C5_REDESP) .Or.;
                     (QtdComp(MpSysExecScalar("SELECT COUNT(1) AS QTDZ09 FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.Z09_NUMPV = '" + _QRYFIS->C5_NUM + "' AND Z09.D_E_L_E_T_= ' ' ", "QTDZ09")) <> QtdComp(MpSysExecScalar("SELECT COUNT(1) AS QTDSC6 FROM " + RetSQLName("SC6") + " SC6 WHERE SC6.C6_FILIAL = '" + xFilial("SC6") + "' AND SC6.C6_NUM = '" + _QRYFIS->C5_NUM + "' AND SC6.D_E_L_E_T_= ' ' ", "QTDSC6")))
 
