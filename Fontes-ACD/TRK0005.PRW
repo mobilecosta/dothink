@@ -648,6 +648,7 @@ static function TRK0005Lib(cTitulo,cAlias,oBrowse)
     local cTriangular:= ""
     local lErro      := .F.
     local nRecRemess := 0
+    Local nRecGrid   := (cAlias)->(Recno())
 
     //Verifica se o Item Está Bloqueado
     if ((cAlias)->C5_XBLFIS=="1")
@@ -708,6 +709,7 @@ static function TRK0005Lib(cTitulo,cAlias,oBrowse)
             EndIf
         EndIf
 
+        (cAlias)->( DbGoto(nRecGrid) )
         oBrowse:Refresh()
     else
         ApMsgInfo("O Pedido não está Bloqueado. Só é possível Liberar Pedidos Bloqueados.",cProcTitle)
