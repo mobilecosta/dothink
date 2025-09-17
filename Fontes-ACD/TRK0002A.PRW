@@ -2,8 +2,15 @@
 #include 'FwMVCDef.ch'
 
 static cTitulo := "Registrar Ocorrência"
-Static aFields := { "Z09_MOTIVO", "Z09_DCMOTV", "Z09_DSMOTV", "Z09_DTATRS", "Z09_HRATRS", "Z09_IDTRAC" }
+static aFields := { "Z09_MOTIVO", "Z09_DCMOTV", "Z09_DSMOTV", "Z09_DTATRS", "Z09_HRATRS", "Z09_IDTRAC" }
 
+/*/{Protheus.doc} ViewDef
+View para Registro de ocorrencia
+@type function
+@version 1.0
+@author erike.yuri@dothink.com.br
+@since 16/08/2025
+/*/
 Static Function ViewDef()
     Local oModel  := Nil
     Local oStZ09  := Nil
@@ -32,17 +39,12 @@ Static Function ViewDef()
     oView:SetModel(oModel)
 
 	oStZ09:SetProperty("Z09_IDTRAC",MODEL_FIELD_NOUPD,FwBuildFeature(STRUCT_FEATURE_WHEN,".F."))
-	//oStZ09:SetProperty("Z09_DTATRS",MODEL_FIELD_NOUPD,FwBuildFeature(STRUCT_FEATURE_WHEN,".F."))
-    //oStZ09:SetProperty("Z09_HRATRS",MODEL_FIELD_NOUPD,FwBuildFeature(STRUCT_FEATURE_WHEN,".F."))
 
     //Atribuindo formulários para interface
     oView:AddField("VIEW_Z09", oStZ09, "FORMZ09")
      
     //Criando um container com nome tela com 100%
     oView:CreateHorizontalBox("TELA",100)
-     
-    //Colocando título do formulário
-    //oView:EnableTitleView('VIEW_Z09', 'Registro do atraso' )  
      
     //Força o fechamento da janela na confirmação
     oView:SetCloseOnOk({||.T.})

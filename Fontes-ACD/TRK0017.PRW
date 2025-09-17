@@ -105,10 +105,6 @@ User Function TRK0017S(cEstOrig, cEstDest, cMumDest, dEntrega)
     local dRet 
     local nSLAOutros := SuperGetMV("BA_SLAOPER",,1) 
 
-    If ! AliasInDic("Z15")
-        Return dDataBase
-    EndIf
-
     DbSelectArea("Z15")
     Z15->( DbSetOrder(1) )
     //Z15_FILIAL+Z15_UFORIG+Z15_UFDEST+Z15_MUDEST

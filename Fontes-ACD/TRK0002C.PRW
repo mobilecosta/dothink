@@ -26,7 +26,7 @@ If Z09->Z09_ACAOCS == "4"
     Return
 EndIf
 
-If Z09->Z09_STATUS <> '4'
+If Z09->Z09_STATUS < '4'
     FWAlertWarning("Só é possível realizar agendamento estando na etapa [<strong>4="+ X3Combo("Z09_STATUS", "4") +"</strong>], e o registro posicionado esta na etapa [<strong>" + Z09->Z09_STATUS+ "="+ X3Combo("Z09_STATUS", Z09->Z09_STATUS) +"</strong>].", "Fora da Etapa de Agendamento")  
     Return
 EndIf
@@ -41,6 +41,15 @@ If !Empty(Z09->Z09_PVTRIA) .And. !Empty(Z09->Z09_PVREME)
         FWAlertWarning("Só é possível realizar agendamento, a partir do pedido de remessa [<strong>"+Z09->Z09_PVREME+"</strong>]. Favor verificar!", "Pedido Triangular")                
         Return
     EndIf
+EndIf
+
+If Z09->Z09_STATUS > '4'
+
+    If !Empty(Z09->Z09_DT1COL) .or. !Empty(Z09->Z09_DT2COL) .or. !Empty(Z09->Z09_DT3COL)
+        FWAlertWarning("Ja existe confirmação de coleta. Para prosseguir será necessário realizar o cancelamento da coleta antes, ou fazer uma confirmação de um 2o ou 3o agendamento caso não exista!", "Não Permitido Ajuste")  
+        Return
+    EndIf
+
 EndIf
 
 If ! lConf
@@ -78,7 +87,7 @@ If Z09->Z09_ACAOCS == "4"
     Return
 EndIf
 
-If Z09->Z09_STATUS <> '4'
+If Z09->Z09_STATUS < '4'
     FWAlertWarning("Só é possível realizar agendamento estando na etapa [<strong>4="+ X3Combo("Z09_STATUS", "4") +"</strong>], e o registro posicionado esta na etapa [<strong>" + Z09->Z09_STATUS+ "="+ X3Combo("Z09_STATUS", Z09->Z09_STATUS) +"</strong>].", "Fora da Etapa de Agendamento")  
     Return
 EndIf
@@ -103,6 +112,15 @@ EndIf
 If !Empty(Z09->Z09_DC1COL)
     ApMsgInfo("A segunda coleta só pode ser informada, se não for confirmada a primeira coleta !")
     Return
+EndIf
+
+If Z09->Z09_STATUS > '4'
+
+    If !Empty(Z09->Z09_DT2COL) .or. !Empty(Z09->Z09_DT3COL)
+        FWAlertWarning("Ja existe confirmação de coleta. Para prosseguir será necessário realizar o cancelamento da coleta antes, ou fazer uma confirmação de um 3o agendamento caso não exista!", "Não Permitido Ajuste")  
+        Return
+    EndIf
+
 EndIf
 
 If ! lConf
@@ -168,6 +186,15 @@ If !Empty(Z09->Z09_DC2COL)
     Return
 EndIf
 
+If Z09->Z09_STATUS > '4'
+
+    If !Empty(Z09->Z09_DT3COL)
+        FWAlertWarning("Ja existe confirmação de coleta. Para prosseguir será necessário realizar o cancelamento da coleta antes!", "Não Permitido Ajuste")  
+        Return
+    EndIf
+
+EndIf
+
 If ! lConf
     aFields := { "Z09_FILIAL", "Z09_IDTRAC", "Z09_RESTR", "Z09_OBSPV", "Z09_NUMPV", "Z09_ITEMPV", "Z09_STATUS",;
                  "Z09_TRANSP", "Z09_NTRANS", "Z09_DT3COL", "Z09_HR3COL", "Z09_US3COL" }
@@ -218,11 +245,6 @@ If Z09->Z09_ACAOCS == "2"
     Return
 EndIf
 
-If Z09->Z09_STATUS <> '4'
-    FWAlertWarning("Só é possível realizar cancelamento do agendamento estando na etapa [<strong>4="+ X3Combo("Z09_STATUS", "4") +"</strong>], e o registro posicionado esta na etapa [<strong>" + Z09->Z09_STATUS+ "="+ X3Combo("Z09_STATUS", Z09->Z09_STATUS) +"</strong>].", "Fora da Etapa de Agendamento")  
-    Return
-EndIf
-
 If !Empty(Z09->Z09_DT3COL)
     dDtAgen := Z09->Z09_DT3COL
 EndIf
@@ -251,6 +273,11 @@ If Empty(dDtAgen) .And. Empty(dDtConf)
     FWAlertWarning("Não é possível realizar cancelamento pois não existe agendamento", "Sem Agendamento")  
     Return
 Endif
+
+If Z09->Z09_STATUS > '7'
+    FWAlertWarning("Só é possível realizar cancelamento do agendamento estando na etapa [<strong>" + Z09->Z09_STATUS+ "="+ X3Combo("Z09_STATUS", Z09->Z09_STATUS) +"</strong>].", "Fora da Etapa de Cancelamento de Agendamento")
+    Return
+EndIf
 
 If !FwAlertYesNo("Deseja realizar o cancelamento do agendamento previsto para o dia ["+DtoC(dDtAgen)+"] confirmado para o dia ["+DtoC(dDtConf)+"] ?" , "Cancelamento do Agendamento")               
     Return .F.

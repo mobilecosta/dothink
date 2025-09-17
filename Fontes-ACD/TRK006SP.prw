@@ -518,7 +518,7 @@ Static Function SM460FIM(aParam)
         SF2->( DbSeek(xFilial() + cNumNFS + cSerieNFS + cClieFor + cLoja) )
     EndIf
 
-    If !(SF2->F2_TIPO == "N")
+    If !(SF2->F2_TIPO $ "BN")
         RestArea(aSF2)
         RestArea(aArea)
         Return

@@ -664,26 +664,18 @@ Endif
 
 Return lRet
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡…o    ³ETACDA100 ³ Autor ³ Eduardo Motta         ³ Data ³ 06/04/01 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡…o ³ Programa de estorno da Ordem de Separacao                  ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Sintaxe e ³ Void ETACDA100(ExpC1,ExpN1,ExpN2)                          ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Parametros³ ExpC1 = Alias do arquivo                                   ³±±
-±±³          ³ ExpN1 = Numero do registro                                 ³±±
-±±³          ³ ExpN2 = Numero da opcao selecionada                        ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ Generico                                                   ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
 
+/*/{Protheus.doc} ETACDA100
+Programa de estorno da Ordem de Separacao 
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 22/07/2025
+@param cAlias, character, Alias
+@param nReg, numeric, registro posicionado
+@param nOpcx, numeric, opcao de execucao
+@param lAuto, logical, indica se é rotina automática
+/*/
 User Function ETACDA100(cAlias,nReg,nOpcx, lAuto)
 
 Local oDlg
@@ -704,6 +696,7 @@ Local cMsgAlert  := ""
 Local cItemAnt   := ""
 Local aPVs       := {}
 Local cChave     := ""
+Local cTitRotina := ""
 
 Private Altera  := .F.
 Private Inclui  := .F.
@@ -717,6 +710,7 @@ Private l100Auto := lAuto
 
 CB8->(DbSetOrder(1)) // Forca a utilizacao do indice de ordem 1, pois o programa estava se perdendo (by Erike)
 If nOSOpc == 1
+	cTitRotina := "Validação Física"
     Z12->(DbSetOrder(1))
     If CB7->CB7_XSTATU == "9"
 		cMsgAlert := "Esta validacao fisica não pode ser estornada, pois a mesma já está Finalizada."
@@ -744,6 +738,7 @@ If nOSOpc == 1
 		Return
     EndIf
 Else
+	cTitRotina := "Ordem de Separação"
     CB9->(DbSetOrder(1))
     If CB7->CB7_STATUS == "9"
 		cMsgAlert := "Esta Ordem de separação não pode ser estornada, pois a mesma já está Finalizada."
@@ -853,111 +848,118 @@ dbSelectArea( cAlias )
 
 If nOpca == 1 .Or. l100Auto
 
+	If !l100Auto .And. !FWAlertNoYes("Deseja realmente estornar a <strong>" +cTitRotina+ "</strong>? Esta ação fará com que volte para etapa de validação fiscal!", "Confirma Estorno?")
+		Return
+	EndIf
+
 	If ExistBlock("ACD100ET")
     	ExecBlock("ACD100ET",.F.,.F.)
 	EndIf
 
 	Begin Transaction
 
-	SC9->(DbSetOrder(1))
-	CB8->(DbSetOrder(1))
-	dbSelectArea("CB7")
-	For nI := 1 to Len(aCols)
-		CB8->(DbGoto(aRecno[nI]))
-
-		If CB7->CB7_ORIGEM == "1"
-			SC9->(DbSetOrder(1))
-			SF2->(DbSetOrder(1))
-			SD2->(DbSetOrder(3))
-			If SC9->(MsSeek(xFilial("SC9")+aCols[nI,nPosPed]+aCols[nI,nPosItPed]+aCols[nI,nPosSeqPed])) //Limpa a informação do campo C9_ORDSEP, no estorno da Ordem de Separação
-				While SC9-> (!Eof() .And. C9_FILIAL+C9_PEDIDO+C9_ITEM+C9_SEQUEN == (xFilial("SC9")+aCols[nI,nPosPed]+aCols[nI,nPosItPed]+aCols[nI,nPosSeqPed]) )
-					SC9->(RecLock("SC9",.F.))
-					SC9->C9_ORDSEP := ""
-					SC9->(MsUnlock())
-					SC9->(DbSkip())
-				EndDo
-			EndIf
-			If SF2->(DBSeek(xFilial("SF2")+CB7->(CB7_NOTA+CB7_SERIE)))
-				If ! Empty(SF2->F2_ORDSEP)
-					SF2->(RecLock("SF2",.F.))
-					SF2->F2_ORDSEP := ""
-					SF2->(MsUnlock())
-				EndIf
-            EndIf
-			If SD2->( DBSeek( xFilial("SD2")+CB7->(CB7_NOTA+CB7_SERIE+CB7_CLIENTE+CB7_LOJA)+aCols[ni,GDFieldPos("CB8_PROD")]+aCols[ni,GDFieldPos("CB8_ITEM")] ) )
-				If !Empty(SD2->D2_ORDSEP)	
-					SD2->(RecLock("SD2",.F.))
-					SD2->D2_ORDSEP := ""
-					SD2->(MsUnlock())
-				EndIf
-            EndIf			
-		ElseIf CB7->CB7_ORIGEM == "2"
-			SF2->(DbSetOrder(1))
-			SD2->(DbSetOrder(3))
-			If SF2->(DBSeek(xFilial("SF2")+CB7->(CB7_NOTA+CB7_SERIE)))
-				If ! Empty(SF2->F2_ORDSEP)
-					SF2->(RecLock("SF2",.F.))
-					SF2->F2_ORDSEP := ""
-					SF2->(MsUnlock())
-				EndIf
-			EndIf
-			If SD2->( DBSeek( xFilial("SD2")+CB7->(CB7_NOTA+CB7_SERIE+CB7_CLIENTE+CB7_LOJA)+aCols[ni,GDFieldPos("CB8_PROD")]+aCols[ni,GDFieldPos("CB8_ITEM")] ) )
-				If !Empty(SD2->D2_ORDSEP)	
-					SD2->(RecLock("SD2",.F.))
-					SD2->D2_ORDSEP := ""
-					SD2->(MsUnlock())
-				EndIf
-            EndIf
-		ElseIf CB7->CB7_ORIGEM == "3"
-			SC2->(DbSetOrder(1))
-			If SC2->(DbSeek(xFilial("SC2")+CB8->CB8_OP))
-				If ! Empty(SC2->C2_ORDSEP)
-					SC2->(RecLock("SC2",.F.))
-					SC2->C2_ORDSEP := ""
-					SC2->(MsUnlock())
-				Endif
-			Endif
-		EndIf
-		CB8->(RecLock( "CB8",.F.))
-		CB8->(dbDelete())
-		CB8->(MsUnLock())
-
-		If	!Empty(CB7->CB7_PRESEP)
-			If	CB8->(DbSeek(xFilial("CB8")+CB7->CB7_PRESEP+CB8_ITEM+CB8_SEQUEN+CB8_PROD))
-				If	CB8->CB8_SLDPRE == 0
-					CB8->(RecLock( "CB8",.F.))
-					CB8->CB8_SLDPRE := CB8->CB8_QTDORI
-					CB8->(MsUnLock())
-					CB8->(DbSkip())
-				EndIf
-			EndIf
-		EndIf
-
-	Next nI
-
-	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³ Exclui linha da tabela CB7 ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-
-	aAdd(aPVs, CB7->( CB7_FILIAL + CB7_PEDIDO ))
-	If !Empty(CB7->CB7_XPVTRI)
-		aAdd(aPVs, CB7->( CB7_FILIAL + CB7_XPVTRI ))
-	Endif
-
-	CB7->(RecLock("CB7", .F.))
-	CB7->(dbDelete())
-	CB7->(MsUnlock())
-
-	For nJ := 1 To Len(aPVs)
-		cChave := aPVs[nJ]
-
+		SC9->(DbSetOrder(1))
+		CB8->(DbSetOrder(1))
+		dbSelectArea("CB7")
 		For nI := 1 to Len(aCols)
-			If cItemAnt != aCols[nI,nPosPed]+aCols[nI,nPosItPed]
-				SetTraking("5", cChave, aCols[nI,nPosItPed], Nil, "Estorno total PV-Item: " + AllTrim(aCols[nI,nPosPed]) + "-" + AllTrim(aCols[nI,nPosItPed]), "Estorno " + If(nOSOpc == 1, "Vld.Fisica", "OS"))
+			CB8->(DbGoto(aRecno[nI]))
+
+			If CB7->CB7_ORIGEM == "1"
+				SC9->(DbSetOrder(1))
+				SF2->(DbSetOrder(1))
+				SD2->(DbSetOrder(3))
+				If SC9->(MsSeek(xFilial("SC9")+aCols[nI,nPosPed]+aCols[nI,nPosItPed]+aCols[nI,nPosSeqPed])) //Limpa a informação do campo C9_ORDSEP, no estorno da Ordem de Separação
+					While SC9-> (!Eof() .And. C9_FILIAL+C9_PEDIDO+C9_ITEM+C9_SEQUEN == (xFilial("SC9")+aCols[nI,nPosPed]+aCols[nI,nPosItPed]+aCols[nI,nPosSeqPed]) )
+						SC9->(RecLock("SC9",.F.))
+						SC9->C9_ORDSEP := ""
+						SC9->(MsUnlock())
+						SC9->(DbSkip())
+					EndDo
+				EndIf
+				If SF2->(DBSeek(xFilial("SF2")+CB7->(CB7_NOTA+CB7_SERIE)))
+					If ! Empty(SF2->F2_ORDSEP)
+						SF2->(RecLock("SF2",.F.))
+						SF2->F2_ORDSEP := ""
+						SF2->(MsUnlock())
+					EndIf
+				EndIf
+				If SD2->( DBSeek( xFilial("SD2")+CB7->(CB7_NOTA+CB7_SERIE+CB7_CLIENTE+CB7_LOJA)+aCols[ni,GDFieldPos("CB8_PROD")]+aCols[ni,GDFieldPos("CB8_ITEM")] ) )
+					If !Empty(SD2->D2_ORDSEP)	
+						SD2->(RecLock("SD2",.F.))
+						SD2->D2_ORDSEP := ""
+						SD2->(MsUnlock())
+					EndIf
+				EndIf			
+			ElseIf CB7->CB7_ORIGEM == "2"
+				SF2->(DbSetOrder(1))
+				SD2->(DbSetOrder(3))
+				If SF2->(DBSeek(xFilial("SF2")+CB7->(CB7_NOTA+CB7_SERIE)))
+					If ! Empty(SF2->F2_ORDSEP)
+						SF2->(RecLock("SF2",.F.))
+						SF2->F2_ORDSEP := ""
+						SF2->(MsUnlock())
+					EndIf
+				EndIf
+				If SD2->( DBSeek( xFilial("SD2")+CB7->(CB7_NOTA+CB7_SERIE+CB7_CLIENTE+CB7_LOJA)+aCols[ni,GDFieldPos("CB8_PROD")]+aCols[ni,GDFieldPos("CB8_ITEM")] ) )
+					If !Empty(SD2->D2_ORDSEP)	
+						SD2->(RecLock("SD2",.F.))
+						SD2->D2_ORDSEP := ""
+						SD2->(MsUnlock())
+					EndIf
+				EndIf
+			ElseIf CB7->CB7_ORIGEM == "3"
+				SC2->(DbSetOrder(1))
+				If SC2->(DbSeek(xFilial("SC2")+CB8->CB8_OP))
+					If ! Empty(SC2->C2_ORDSEP)
+						SC2->(RecLock("SC2",.F.))
+						SC2->C2_ORDSEP := ""
+						SC2->(MsUnlock())
+					Endif
+				Endif
 			EndIf
-			cItemAnt := aCols[nI,nPosPed]+aCols[nI,nPosItPed]
+			CB8->(RecLock( "CB8",.F.))
+			CB8->(dbDelete())
+			CB8->(MsUnLock())
+
+			If	!Empty(CB7->CB7_PRESEP)
+				If	CB8->(DbSeek(xFilial("CB8")+CB7->CB7_PRESEP+CB8_ITEM+CB8_SEQUEN+CB8_PROD))
+					If	CB8->CB8_SLDPRE == 0
+						CB8->(RecLock( "CB8",.F.))
+						CB8->CB8_SLDPRE := CB8->CB8_QTDORI
+						CB8->(MsUnLock())
+						CB8->(DbSkip())
+					EndIf
+				EndIf
+			EndIf
+
 		Next nI
-	Next nJ
+
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Exclui linha da tabela CB7 ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+		aAdd(aPVs, CB7->( CB7_FILIAL + CB7_PEDIDO ))
+		If !Empty(CB7->CB7_XPVTRI)
+			aAdd(aPVs, CB7->( CB7_FILIAL + CB7_XPVTRI ))
+		Endif
+
+		CB7->(RecLock("CB7", .F.))
+		CB7->(dbDelete())
+		CB7->(MsUnlock())
+
+		If nOSOpc == 1
+			For nJ := 1 To Len(aPVs)
+				cChave	:= aPVs[nJ]
+				cItemAnt:= ""
+				//-- Estorna também a validacao Fiscal
+				For nI := 1 to Len(aCols)
+					If cItemAnt != aCols[nI,nPosPed]+aCols[nI,nPosItPed]
+						SetTraking("5", cChave, aCols[nI,nPosItPed], Nil, "Estorno total PV-Item: " + AllTrim(aCols[nI,nPosPed]) + "-" + AllTrim(aCols[nI,nPosItPed]), "Estorno " + If(nOSOpc == 1, "Vld.Fisica", "OS"))
+					EndIf
+					cItemAnt := aCols[nI,nPosPed]+aCols[nI,nPosItPed]
+				Next nI
+			Next nJ
+		EndIf
 
 	End Transaction
 
@@ -5078,18 +5080,15 @@ Static Function ACDLibVersion()
 
 Return cVersao
 
-/*/{Protheus.doc} Menudef
-	(long_description)
-	@type  Static Function
-	@author TOTVS
-	@since 21/02/2020
-	@version version
-	@param param_name, param_type, param_descr
-	@return return_var, return_type, return_description
-	@example
-	(examples)
-	@see (links_or_references)
-	/*/
+
+/*/{Protheus.doc} MenuDef
+Funcao padrao de chamada de menus
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 22/07/2025
+@return array, rotinas do menu / botoes
+/*/
 Static Function MenuDef()
 local cTxtEstorna := "Estornar " + If(nOSOpc == 1, "Vld.Fisica", "OS")
 Private aRotina := { } 
@@ -6125,8 +6124,9 @@ Static Function SetTraking(cOpc, cChave, cItem, cMotivo, cObs, cTitLog)
 				SC5->C5_X4SSTAT := "A" // Em Validacao Fisica
 			ElseIf cOpc == "4"
 				SC5->C5_X4SSTAT := "8" // Em Agendamento
-			//ElseIf cOpc == "5"
-				//SC5->C5_X4SSTAT := "9" // Em Validacao Fiscal
+			ElseIf cOpc == "5"
+				SC5->C5_X4SSTAT := "9" // Em Validacao Fiscal
+				SC5->C5_XBLFIS	:= "1"
 			EndIf
 
 			//Grava o campo C5_MSEXP para sinalizaro ao Scheduler
@@ -6190,7 +6190,7 @@ Static Function SetTraking(cOpc, cChave, cItem, cMotivo, cObs, cTitLog)
 				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
 
 				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs							// Obs.Logistic para a Desfaz Separacao
-				//aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "2"							    // Status "Em Validacao Fiscal"
+				aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "2"							    // Status "Em Validacao Fiscal"
 			EndIf
 
 			u_TRK006S(aTrackS, cTitLog)

@@ -17,6 +17,8 @@ User Function MT410CPY()
     //Zerando dados customizados no cabeçalho
     M->C5_X4SSTAT := ' '
     M->C5_XBLFIS  := ' '
+    M->C5_XPEDORI := ' '
+    M->C5_XPEDWEB := ' '
     
     RestArea(aArea)
 Return lRet

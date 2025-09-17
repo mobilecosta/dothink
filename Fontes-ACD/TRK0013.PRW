@@ -13,20 +13,26 @@ User Function TRK0013()
 Return
 
 
-
+/*/{Protheus.doc} TRK0013InfCS
+description
+@type function
+@version  
+@author erike
+@since 9/17/2025
+@param cTitulo, character, param_description
+@param cAlias, character, param_description
+@return variant, return_description
+/*/
 static function TRK0013InfCS(cTitulo,cAlias)
 
     local aArea      := FWGetArea()
     local aAreaAlias := (cAlias)->(FWGetArea())
     local aTrackS    := {}  as array
     local cChave     := ""  as character
-    //local cPedido    := ""  as character
-    //local cRemessa   := ""  as character
-    //local cTriangular:= ""  as character
     local cMotivo    := ""  as character
-    local cMotivoObs    := ""  as character
+    local cMotivoObs := ""  as character
     local cAuxObs    := ""  as character
-    local cProcTitle := cTitulo+" :: Informar Time de Operações"
+    local cProcTitle := cTitulo + " :: Informar Time de Operações" as character
     //local nRecRemess := 0   as numeric
     local nCodSiz    := 6   as numeric
     local nDesSiz    := 150 as numeric
@@ -57,8 +63,6 @@ static function TRK0013InfCS(cTitulo,cAlias)
         @ 005,090 SAY "BU:"  SIZE 45,08 OF oPanel PIXEL
         @ 005,105 SAY AllTrim(Z09->Z09_BU) +Space(5)+ "Responsável: " + AllTrim(Z09->Z09_RESPON)  SIZE 200,08 OF oPanel PIXEL
 
-        //@ 005,300 SAY "Responsável:"  SIZE 45,08 OF oPanel PIXEL
-        //@ 005,348 SAY AllTrim(Z09->Z09_BU)  SIZE 80,08 OF oPanel PIXEL     
         @ 015,005 SAY "Cliente:"  SIZE 45,08 OF oPanel PIXEL
         @ 015,048 SAY AllTrim(Z09->Z09_CLIENT)+ "-" + AllTrim(Z09->Z09_LOJA)+ " - " + AllTrim(Z09->Z09_NOMECL)  SIZE 250,08 OF oPanel PIXEL  
 
@@ -88,7 +92,7 @@ static function TRK0013InfCS(cTitulo,cAlias)
 
     ACTIVATE MSDIALOG oDlg CENTER ON INIT (oDlg:SetFocus())
 
-    if (lRet)
+    If (lRet)
         cAuxObs := ""
         dbSelectArea("Z09")
 		Z09->( dbSetOrder(3) )
@@ -119,15 +123,7 @@ static function TRK0013InfCS(cTitulo,cAlias)
             Z09->( DbSkip() )
         End
         
-        /*
-        SetTraking(cAlias, "3", cMotivo, FWGetSX5( "Z0", cMotivo)[1][4], cMotivoObs)
-
-        If nRecRemess > 0
-            (cAlias)->( DbGoto(nRecRemess) )
-            SetTraking(cAlias, "3", cMotivo, FWGetSX5( "Z0", cMotivo)[1][4], cMotivoObs)
-        EndIf
-        */
-    endif
+    Endif
 
     FreeObj(@oOk)
     FreeObj(@oDlg)
@@ -147,28 +143,39 @@ return()
 /*/{Protheus.doc} CodMtVld
 Valida e Normaliza o Codigo de Rejeição.
 @type function
-@version 1.0
-@author DoThink
+@author erike.yuri@dothink.com.br
+@since 22/07/2025
 @since 22/07/2025
 /*/
 static function CodMtVld(cMotivo as character,nCodSiz as numeric,oCodMot as object) as logical
-local aArea := GetArea()
-local lRet  := .F.
+    local aArea := GetArea()
+    local lRet  := .F.
 
-DbSelectArea("CB4")
-CB4->( DbSetOrder(1) )
+    DbSelectArea("CB4")
+    CB4->( DbSetOrder(1) )
 
-lRet := CB4->( DbSeek(xFilial() + cMotivo) )
+    lRet := CB4->( DbSeek(xFilial() + cMotivo) )
 
-If lRet
-    cDescMotivo:= CB4->CB4_DESCRI
-EndIf
+    If lRet
+        cDescMotivo:= CB4->CB4_DESCRI
+    EndIf
 
-oDecMot:Refresh()
+    oDecMot:Refresh()
 
-RestArea(aArea)
+    RestArea(aArea)
 return lRet
 
+/*/{Protheus.doc} VCloseDlgR
+Validacao ao fechar dialog
+@type function
+@version 1.0
+@author erike.yuri@dothink.com.br
+@since 22/07/2025
+@param cMotivo, character, codigo do motivo
+@param cMotivoObs, character, observacao do motivo
+@param cProcTitle, character, Titulo da mensagem
+@return logical, Indica se existem pendencias ou a tela pode ser encerrada
+/*/
 static function VCloseDlgR(cMotivo, cMotivoObs, cProcTitle)
     local lRet := .T.
 
@@ -185,4 +192,3 @@ static function VCloseDlgR(cMotivo, cMotivoObs, cProcTitle)
     EndIf
 
 return lRet
-

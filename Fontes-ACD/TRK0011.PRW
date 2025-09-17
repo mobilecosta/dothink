@@ -6,11 +6,13 @@
 #Include "FWPrintSetup.ch"
 #Include "PARMTYPE.CH"
 
-/*/{Protheus.doc} U_TRK0011
-   OD-27 - Check List de Expedição (PDF)
-   Ajustes de layout: alturas menores e assinatura garantindo espaço.
-   Includes e FWMSPrinter mantidos conforme seu padrão.
-*/
+/*/{Protheus.doc} TRK0011
+OD-27 - Check List de Expedição (PDF)
+@type function
+@version 1.0
+@author fernando.muta@dothink.com.br
+@since 11/08/2025
+/*/
 User Function TRK0011()
 
    // --- Locals
@@ -117,7 +119,7 @@ User Function TRK0011()
 
    oPrinter:Say( (_nLin - _nHl)+20, _nEsq+8, _cPed,  oFA10 )
    oPrinter:Say( (_nLin - _nHl)+20, _nEsq + Int((_nDir - _nEsq)*22/100) + 8, _cClie, oFA10 )
-oPrinter:Say( (_nLin - _nHl)+20, _nEsq+8, _cPed,  oFA10 )
+   oPrinter:Say( (_nLin - _nHl)+20, _nEsq+8, _cPed,  oFA10 )
    oPrinter:Say( (_nLin - _nHl)+20, _nEsq + Int((_nDir - _nEsq)*22/100) + 8, _cClie, oFA10 )
 // DATA DE EMISSÃO
    _nLin += Box1( oPrinter, _nLin, _nEsq, _nDir, _nHm, "DATA DE EMISSÃO:" )
