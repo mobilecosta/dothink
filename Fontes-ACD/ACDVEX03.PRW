@@ -1333,11 +1333,11 @@ Static Function SetTraking(cOpc, cTitLog)
 
 		If SC5->( DbSeek( cChave ) )
 			RecLock("SC5", .f.)
-			If cOpc $ "1/3"
+			If cOpc == "3"
 				SC5->C5_X4SSTAT := "4" // Em Transito
 			ElseIf cOpc == "2"
 				SC5->C5_X4SSTAT := "2" // Em Faturamento
-			ElseIf cOpc == "4"
+			ElseIf cOpc $ "1/4"
 				SC5->C5_X4SSTAT := "B" // Em Embarque
 			EndIf
 
@@ -1357,7 +1357,7 @@ Static Function SetTraking(cOpc, cTitLog)
 					aTrackS[Z09->(FieldPos("Z09_FILIAL"))]  := xFilial("SC5")
 					aTrackS[Z09->(FieldPos("Z09_NUMPV")) ]  := Z09->Z09_NUMPV                   // Pedido Venda
 					aTrackS[Z09->(FieldPos("Z09_ITEMPV"))]  := Z09->Z09_ITEMPV                  // Item PV
-					If cOpc $ "1/3"
+					If cOpc == "3"
 						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "8"							// Status "Em Transito"
 						aTrackS[Z09->(FieldPos("Z09_DTPEMB"))]  := dDataBase	
 						aTrackS[Z09->(FieldPos("Z09_HRPEMB"))]  := Time()
@@ -1365,7 +1365,7 @@ Static Function SetTraking(cOpc, cTitLog)
 						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "6"							// Status "Em Faturamento"
 						aTrackS[Z09->(FieldPos("Z09_DTPEMB"))]  := CTOD("")	
 						aTrackS[Z09->(FieldPos("Z09_HRPEMB"))]  := Space(5)
-					ElseIf cOpc == "4"
+					ElseIf cOpc $ "1/4"
 						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "7"							// Status "Em Embarque"
 						aTrackS[Z09->(FieldPos("Z09_DTPEMB"))]  := CTOD("")	
 						aTrackS[Z09->(FieldPos("Z09_HRPEMB"))]  := Space(5)

@@ -45,80 +45,6 @@ Ponto de entrada apos geracao da liberacao do pedido
 /*/
 Static Function sMTA440C9(lRet)
 local xRet      := lRet
-/*
-local aTrackS   := Array(66)
-local cNomClFo  := ""
-local cRespon   := ""
-local nValTot   := 0
-local dDtPreFat := nil
-local aX5T3     := {}
-local aArea     := GetArea()
-local aAreaSC6  := SC6->(GetArea())
-local aAreaSC9  := SC9->(GetArea())
-local aAreaSA1  := SA1->(GetArea())
-local aAreaSA2  := SA2->(GetArea())
-
-If Type("_cItS9Dp") == "U"
-    Public _cItS9Dp  := ""
-EndIf
-If  !SC9->C9_FILIAL+SC9->C9_PEDIDO+SC9->C9_ITEM $ _cItS9Dp // Para gravar somente 1x
-    If Empty(SC9->C9_BLEST) .AND. Empty(SC9->C9_BLCRED) 
-        // Busca o Cliente ou Fornecedor
-        SC5->(DbSetOrder(1))
-        If SC5->(DbSeek(SC9->C9_FILIAL+SC9->C9_PEDIDO))
-            If SC5->C5_TIPO $ "DB"
-                SA2->(DbSetOrder(1))
-                If SA2->(DbSeek(xFilial()+SC9->C9_CLIENTE+SC9->C9_LOJA))
-                    cNomClFo  := SA2->A2_NOME       // Nome Cliente  C [60 ][ 0 ] 17
-                EndIf
-            else
-                SA1->(DbSetOrder(1))
-                If SA1->(DbSeek(xFilial()+SC9->C9_CLIENTE+SC9->C9_LOJA))
-                    cNomClFo  := SA1->A1_NOME       // Nome Cliente  C [60 ][ 0 ] 17
-                EndIf
-            EndIf
-        EndIf
-        
-	    //-- Define o BU
-	    aX5T3 := FWGetSX5 ( "T3", SC5->C5_XATIVI1)
-	
-	    cRespon := Posicione("SA3", 1, xFilial("SA3") + SC5->C5_VEND1, "A3_NOME")        
-        
-        SC6->(DbSetOrder(1))
-        If SC6->(DbSeek(xFilial()+SC9->C9_PEDIDO+SC9->C9_ITEM+SC9->C9_PRODUTO ))
-            nValTot := SC6->C6_VALOR
-        EndIf
-        
-        
-
-        // Alimentacao das variaveis para gravacao
-        aTrackS[CZ09XFILIAL]  := SC9->C9_FILIAL	  // Filial        C [ 2 ][ 0 ] 01
-		If !Empty(aX5T3)
-		    aTrackS[CZ09XBU]      := aX5T3[1][4]
-		EndIf
-		aTrackS[CZ09XRESPON]  := cRespon 	      // Reponsavel    C [30 ][ 0 ] 04        
-        aTrackS[CZ09XNUMPV ]  := SC9->C9_PEDIDO	  // Pedido Venda  C [ 6 ][ 0 ] 05
-        aTrackS[CZ09XITEMPV]  := SC9->C9_ITEM     // Item PV       C [ 2 ][ 0 ] 06
-        aTrackS[CZ09XCLIENT]  := SC9->C9_CLIENTE // Cliente       C [ 6 ][ 0 ] 15
-        aTrackS[CZ09XLOJA  ]  := SC9->C9_LOJA    // Loja Cliente  C [ 2 ][ 0 ] 16
-        aTrackS[CZ09XNOMECL]  := cNomClFo       // Nome Cliente ou fornecedor  C [60 ][ 0 ] 17
-        aTrackS[NZ09XTOTAL ]  := nValTot             // Vlr. Total    N [16 ][ 2 ] 18
-        aTrackS[DZ09XDTEMPV] := Date()	          // Emissao PV    D [ 8 ][ 0 ] 07
-        aTrackS[CZ09XHREMPV] := Time()           // Hr.Emiss.PV   C [ 5 ][ 0 ] 08
-        // Gravacao do Tracker
-        u_TRK006S(aTrackS,"Liberação do pedido")
-        _cItS9Dp += SC9->C9_FILIAL+SC9->C9_PEDIDO+SC9->C9_ITEM + "|"
-    EndIf
-EndIf    
-
-
-// Restaurando ponteiros
-SC6->(RestArea(aAreaSC6))
-SC9->(RestArea(aAreaSC9))
-SC6->(RestArea(aAreaSA1))
-SA2->(RestArea(aAreaSA2))
-RestArea(aArea)
-*/
 Return xRet
 
 
@@ -177,7 +103,7 @@ Static Function sM410PVNF(nRecSC5)
     SC5->( DbGoto(nRecSC5) )
     
     //-- Avalia somente se o pedido possui itens que atualiza estoque
-    If u_Trk006ME(SC5->C5_NUM)
+    If u_Trk006ME(SC5->C5_FILIAL, SC5->C5_NUM)
 
         DbSelectArea("Z09")
         Z09->( DbSetOrder(3) )
@@ -236,17 +162,18 @@ Verifica se o pedido tem produto que movimenta estoque
 @version 1.0  
 @author erike.yuri@dothink.com.br
 @since 12/8/2025
+@param cFilPv, character, codigo da filial do pedido
 @param cPedido, character, codigo do pedido de vendas
 @return logical, Retorna se o pedido possui produtos que atualizam estoque
 /*/
-User Function Trk006ME(cPedido)
+User Function Trk006ME(cFilPv, cPedido)
     Local lRet  := .T.
     Local cQuery:= ""
     Local aArea := GetArea()
 
     cQuery := "SELECT COUNT(1) AS OK FROM " + RetSQLName("SC6") + " SC6 "
     cQuery += " INNER JOIN " + RetSQLName("SF4") + " SF4 ON SF4.F4_FILIAL = '" + xFilial("SF4") + "' AND SF4.F4_CODIGO= SC6.C6_TES AND SF4.F4_TIPO = 'S' AND SF4.F4_ESTOQUE = 'S' AND SF4.D_E_L_E_T_= ' ' "
-    cQuery += " WHERE SC6.C6_FILIAL = '" + xFilial("SC6") + "' AND SC6.D_E_L_E_T_= ' ' AND C6_NUM = '" + cPedido + "' "
+    cQuery += " WHERE SC6.C6_FILIAL = '" + cFilPv + "' AND SC6.D_E_L_E_T_= ' ' AND C6_NUM = '" + cPedido + "' AND C6_OPER <> '12' "
 
     lRet := MpSysExecScalar(cQuery, "OK") > 0
     RestArea(aArea)
@@ -498,7 +425,7 @@ Static Function SM460MARK(aParam)
     Local cSolucao := ""
     Local aArea    := GetArea()
 
-     If lRet
+     If lRet .And. u_Trk006ME(SC9->C9_FILIAL, SC9->C9_PEDIDO)
         DbSelectArea("Z09")
         Z09->( DbSetOrder(3) )
         If Z09->( DbSeek(SC9->C9_FILIAL + SC9->C9_PEDIDO) )
@@ -513,13 +440,45 @@ Static Function SM460MARK(aParam)
                 cMensag  := "O pedido ["+ SC9->C9_PEDIDO +"] esta em cancelamento, conforme acao do CS."
                 cSolucao := "Este pedido nao podera seguir, pois o CS solicitou cancelamento."
             EndIf
+
         EndIf
+
+        If lRet .And. !(SC9->C9_FILIAL + SC9->C9_PEDIDO == SC5->C5_FILIAL + SC5->C5_NUM)
+            DbSelectArea("SC5")
+            SC5->( DbSetOrder(1) )
+            SC5->( DbSeek(SC9->C9_FILIAL + SC9->C9_PEDIDO) )
+        EndIf
+
+        //-- Verifica se existe bloqueio fiscal
+        If lRet .And. SC5->C5_XBLFIS <> "2" 
+            lRet     := .F.
+            cMsgTit  := "Bloqueio Fiscal"
+            cMensag  := "O pedido ["+ SC5->C5_NUM +"] nao foi liberado na validacao fiscal."
+            cSolucao := "Verificar com o departamento fiscal o motivo."
+        EndIf
+
+        If lRet .And. SC5->C5_X4SSTAT == "A"
+            lRet     := .F.
+            cMsgTit  := "Em validacao fisica"
+            cMensag  := "O pedido ["+ SC5->C5_NUM +"] esta em validacao fisica."
+            cSolucao := "Aguarde a finalizacao do processo de validacao fisica."
+        EndIf
+
+        If lRet .And. SC5->C5_X4SSTAT == "8"
+            lRet     := .F.
+            cMsgTit  := "Em Agendamento"
+            cMensag  := "O pedido ["+ SC5->C5_NUM +"] esta em agendamento."
+            cSolucao := "Aguarde a finalizacao do processo de agendamento."
+        EndIf   
+
 
         If !lRet
             Help(NIL, NIL, cMsgTit, NIL, cMensag, 1, 0, NIL, NIL, NIL, NIL, NIL, {cSolucao})
         EndIf
 
     EndIf
+
+    
 
     If lRet
         //-- Essa chamda serve para fazer o preenchimento do campo C9_ORDSEP de todas as OS estao vazias e com OS existente
@@ -566,7 +525,7 @@ Static Function SM460FIM(aParam)
     EndIf
 
     SD2->( DbSetOrder(3) )
-    If SD2->( DbSeek(xFilial() + SF2->F2_DOC + SF2->F2_SERIE) ) .And. u_Trk006ME(SD2->D2_PEDIDO)
+    If SD2->( DbSeek(xFilial() + SF2->F2_DOC + SF2->F2_SERIE) ) .And. u_Trk006ME(SD2->D2_FILIAL, SD2->D2_PEDIDO)
         lAtuZ09 := .T.
 
         dbSelectArea("CB7")
@@ -601,8 +560,16 @@ Static Function SM460FIM(aParam)
 
         aTrackS := Array( nTamZ09 )
         cChave  := SD2->D2_FILIAL + SD2->D2_DOC + SD2->D2_SERIE 
+
         //-- Atualiza Z09
         DbSelectAre("Z09")
+        Z09->( DbSetOrder(3) )
+        //-- Caso não localize o Z09 nao processa, pois existe uma customização da Aceex que ajusto pedido incluindo mais linhas no pedido de vendas antes de faturar
+        If !Z09->( DbSeek( xFilial("SF2") + SD2->D2_PEDIDO + SD2->D2_ITEMPV) )
+            SD2->( DbSkip() )
+            Loop
+        EndIf
+
         aTrackS[FieldPos("Z09_FILIAL")] := xFilial("SF2")       // Filial
         aTrackS[FieldPos("Z09_NUMPV") ] := SD2->D2_PEDIDO       // Pedido Venda  C [ 6 ][ 0 ] 05
         aTrackS[FieldPos("Z09_ITEMPV")] := SD2->D2_ITEMPV       // Item PV       C [ 2 ][ 0 ] 06
@@ -644,6 +611,13 @@ Static Function SM460FIM(aParam)
                     aTrackS := Array( nTamZ09 )
                     //-- Atualiza Z09
                     DbSelectAre("Z09")
+                    Z09->( DbSetOrder(3) )
+                    //-- Caso não localize o Z09 nao processa, pois existe uma customização da Aceex que ajusto pedido incluindo mais linhas no pedido de vendas antes de faturar
+                    If !Z09->( DbSeek( xFilial("SF2") + SD2->D2_PEDIDO + SD2->D2_ITEMPV) )
+                        SD2->( DbSkip() )
+                        Loop
+                    EndIf
+
                     aTrackS[FieldPos("Z09_FILIAL")] := xFilial("SF2")       // Filial
                     aTrackS[FieldPos("Z09_NUMPV") ] := SD2->D2_PEDIDO       // Pedido Venda  C [ 6 ][ 0 ] 05
                     aTrackS[FieldPos("Z09_ITEMPV")] := SD2->D2_ITEMPV       // Item PV       C [ 2 ][ 0 ] 06
@@ -927,7 +901,7 @@ Static Function sSF2520E(aParam)
     nTamZ09 := Len( Z09->( dbStruct() ) )
     
     SD2->( DbSetOrder(3) )
-    If SD2->( DbSeek(xFilial() + SF2->F2_DOC + SF2->F2_SERIE + SF2->F2_CLIENTE + SF2->F2_LOJA) ) .And. u_Trk006ME(SD2->D2_PEDIDO)
+    If SD2->( DbSeek(xFilial() + SF2->F2_DOC + SF2->F2_SERIE + SF2->F2_CLIENTE + SF2->F2_LOJA) ) .And. u_Trk006ME(SD2->D2_FILIAL, SD2->D2_PEDIDO)
         lAtuZ09 := .T.
 
         DbSelectArea("SC5")

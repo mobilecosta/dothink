@@ -59,6 +59,7 @@ Monta tela do CockPit
 /*/
 Static Function MotaCockpit(nOpc as numeric)
     local lTelaG    as logical
+    local lSlaExp   as logical
     local cAliasTrk as character
     local cTitulo   as character
     local cFunExec  as character
@@ -89,6 +90,7 @@ Static Function MotaCockpit(nOpc as numeric)
     aCards      := Array( Len(aDbCards), 6)
     aSize       := FWGetDialogSize( oMainWnd )
     lTelaG      := (ASIZE[4] > 1580)
+    lSlaExp     := .T.
     nHDown      := 150
     cCadastro   := "Cockpit Logistico"
     cAliasTrk   := "Z09"
@@ -107,18 +109,24 @@ Static Function MotaCockpit(nOpc as numeric)
             aRelation := { { 'Z11_IDTRAC', 'Z10_IDTRAC' } }
             cAliasTrk := "Z10"
             cFunExec  := "TRK0003"
+            lSlaExp   := .F.
         CASE nOpc == 3
             cTitulo   := "Recebimento"
             cCadastro += "- Qualidade"
             aRelation := { { 'Z11_IDTRAC', 'Z10_IDTRAC' } }
             cAliasTrk := "Z10"
             cFunExec  := "TRK0003"
+            lSlaExp   := .F.
         CASE nOpc == 4
             cCadastro  += "- CS (Customer Service)"
         CASE nOpc == 5
             cCadastro  += "- Faturamento"
     END CASE
 
+    //-- Atualiza STATUS SLA
+    If lSlaExp
+        u_TRK0017A()
+    EndIf
 
     oDlgTrk := MSDialog():New( aSize[1], aSize[2], aSize[3], aSize[4], cCadastro, , , , nOr( WS_VISIBLE, WS_POPUP ), , , , , .T., , , , .F. ) 
 
@@ -540,6 +548,16 @@ Static Function TrataStatus()
 
 Return
 
+/*/{Protheus.doc} GrvStatus
+Atualização do Status das tabelas SC5 e Z09, conforme execucao do 
+@type function
+@version 1.0
+@author erike.yuri@dothink.com.br
+@since 30/07/2025
+@param cStaZ09, character, Status Tracking Expedicao
+@param cStaSC5, character, Status pedido de vendas
+@param cPedido, character, codigo do pedido de vendas
+/*/
 Static Function GrvStatus(cStaZ09, cStaSC5, cPedido)
     local cChave  := Z09->(Z09_FILIAL + Z09_NUMPV)
     local aTrackS := {}

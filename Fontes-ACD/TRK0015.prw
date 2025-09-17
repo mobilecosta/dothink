@@ -112,9 +112,9 @@ User Function TRK0015()
 				aTrackS[Z09->(FieldPos("Z09_NUMPV")) ] := Z09->Z09_NUMPV
 				aTrackS[Z09->(FieldPos("Z09_ITEMPV"))] := Z09->Z09_ITEMPV
 				aTrackS[Z09->(FieldPos("Z09_STATUS"))] := cZ09_STATUS
-				aTrackS[Z09->(FieldPos("Z09_MOTIVO")) ] := cZ09_MOTIVO
-				aTrackS[Z09->(FieldPos("Z09_DSMOTV")) ] := cZ09_DSMOTV
-				aTrackS[Z09->(FieldPos("Z09_ACAOCS")) ] := '2'
+				aTrackS[Z09->(FieldPos("Z09_MOTIVO"))] := cZ09_MOTIVO
+				aTrackS[Z09->(FieldPos("Z09_DSMOTV"))] := cZ09_DSMOTV
+				aTrackS[Z09->(FieldPos("Z09_ACAOCS"))] := '2'
 
 				// Chama rotina de gravação/histórico
 				u_TRK006S(aTrackS, cMessage)

@@ -3,7 +3,7 @@
 #include"dbstruct.ch"
 
 static __cTitulo       := "Validação Fiscal"
-static aTiposDePedidos := {"1=Bloqueados", "2=Liberados", "3=Rejeitados", "4=Todos"}
+static aTiposDePedidos := {"1=Bloqueado", "2=Liberado", "3=Rejeitado", "4=Todos"}
 
 /*/{Protheus.doc} TRK0005
 Parametros para Filtro do Browse
@@ -53,6 +53,7 @@ static function TRK0005Brw(cTipoPedido as character)
     local aFWMBrowseQryIndex := Array(0)  as array
     local aFWGetDialogSizeCoors           as array
     local aDadosFil          := {}        as array
+    local aOpcoesZ09         := {}        as array
 
     local cAlias                          as character
     local cTitulo            := __cTitulo as character
@@ -76,6 +77,8 @@ static function TRK0005Brw(cTipoPedido as character)
 
     aCustomFields := GetFields()
     cQuerySelect  := GetQuery(cTipoPedido)
+
+    aOpcoesZ09    := TkSX3Box("C5_XBLFIS ")
 
     aFilter := {}
     nFields:=Len(aCustomFields)
@@ -103,11 +106,14 @@ static function TRK0005Brw(cTipoPedido as character)
         //Monta as Colunas do Browse
         aAdd(aFWMBrwColumn, FWBrwColumn():New())
 
-        if (aCustomFields[nField][1]=="C5_XBLFIS")
+        If (aCustomFields[nField][1]=="C5_XBLFIS")
             aFWMBrwColumn[nField]:SetData(&("{|oSelf|u_TRK005Fld('" + aCustomFields[nField][1] + "'," + aCustomFields[nField][1] + ")}"))
-        else
+            If !Empty(aOpcoesZ09)
+                aFWMBrwColumn[nField]:SetOptions(aOpcoesZ09)
+            Endif            
+        Else
             aFWMBrwColumn[nField]:SetData(&("{|oSelf|" + aCustomFields[nField][1] + "}"))
-        endif
+        Endif
 
         aFWMBrwColumn[nField]:SetTitle(aCustomFields[nField][3])
         aFWMBrwColumn[nField]:SetPicture(aCustomFields[nField][4])
@@ -115,11 +121,11 @@ static function TRK0005Brw(cTipoPedido as character)
         aFWMBrwColumn[nField]:SetDecimal(aDbStruct[nField][DBS_DEC])
 
         //Define o Alinhamento dos Campos
-        if (aCustomFields[nField][2][3]=="N")
+        If (aCustomFields[nField][2][3]=="N")
             aFWMBrwColumn[nField]:SetAlign("RIGHT")
-        else
+        Else
             aFWMBrwColumn[nField]:SetAlign("LEFT")
-        endif
+        Endif
         
 
         //Filters
@@ -1014,7 +1020,7 @@ static function AtuTracking(cAliasVldFis, aDadosFil)
             aTrackS[FieldPos("Z09_DPEMPV")] := SC6->C6_ENTREG               // Previsao de Entrega PV
             aTrackS[FieldPos("Z09_DPFAPV")] := SC6->C6_DATFAT               // Previsao Faturamento PV 
             aTrackS[FieldPos("Z09_RESTR")]  := SC5->C5_XRESTR               // Restricao do Cliente 
-            aTrackS[FieldPos("Z09_OBSPV")]  := SC5->C5_XOBSVEN              // Restricao do Cliente 
+            aTrackS[FieldPos("Z09_OBSPV")]  := SC5->C5_XOBSVEN              // Observacao do Pedido de Vendas
             aTrackS[FieldPos("Z09_BLFDI")]  := Date()                       // Dt.Inicio Bloq.Fiscal    
             aTrackS[FieldPos("Z09_BLFHI")]  := Time()                       // Hr.Inicio Bloq.Fiscal 
             aTrackS[FieldPos("Z09_DTSLA")]  := u_TRK0017S(aDadosFil[6], SA1->A1_EST, SA1->A1_COD_MUN, SC6->C6_ENTREG)
@@ -1456,7 +1462,13 @@ Static Function ProcTotal(nCount)
 Return
 
 
-//-- Rotina de atualizacao dos status dos pedidos
+/*/{Protheus.doc} TRKVLFIS
+Rotina de atualizacao dos status dos pedidos
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 13/08/2025
+/*/
 User Function TRKVLFIS()
 
     Processa({|| AtuStatus()}, "Aguarde...", "Atualizando status...")
@@ -1464,7 +1476,14 @@ User Function TRKVLFIS()
 Return
 
 
-//--
+
+/*/{Protheus.doc} AtuStatus
+Rotina de atualizacao dos status dos pedidos
+@type function
+@version 1.0
+@author wagner.mobilie@dothink.com.br
+@since 13/08/2025
+/*/
 Static Function AtuStatus()
     Local aAreaAnt := GetArea()
     Local aAreaSC5 := SC5->(GetArea())
@@ -1517,14 +1536,12 @@ Static Function AtuStatus()
                     (QtdComp(MpSysExecScalar("SELECT COUNT(1) AS QTDZ09 FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.Z09_NUMPV = '" + _QRYFIS->C5_NUM + "' AND Z09.D_E_L_E_T_= ' ' ", "QTDZ09")) <> QtdComp(MpSysExecScalar("SELECT COUNT(1) AS QTDSC6 FROM " + RetSQLName("SC6") + " SC6 WHERE SC6.C6_FILIAL = '" + xFilial("SC6") + "' AND SC6.C6_NUM = '" + _QRYFIS->C5_NUM + "' AND SC6.D_E_L_E_T_= ' ' ", "QTDSC6")))
 
                     //-- Deleta Z11
-                    //cUpDate := " UPDATE " + RetSqlName("Z11") + " Z11 SET Z11.D_E_L_E_T_ = '*', Z11.R_E_C_D_E_L_ = Z11.R_E_C_N_O_ WHERE Z11_IDTRAC IN ('" + Z09->Z09_IDTRAC + "') AND Z11.D_E_L_E_T_ = ' ' "
                     cUpDate := " DELETE " + RetSqlName("Z11") + " Z11 WHERE Z11_IDTRAC IN ('" + Z09->Z09_IDTRAC + "') "	
                     If tcsqlexec(cUpdate)
                         ConOut(tcsqlerror())
                     EndIf
 
                     //-- Deleta Z09
-                    //cUpDate := " UPDATE " + RetSqlName("Z09") + " Z09 SET D_E_L_E_T_ = '*', R_E_C_D_E_L_ = R_E_C_N_O_ WHERE Z09_FILIAL = '" + Z09->Z09_FILIAL + "' AND Z09_NUMPV = '" + _QRYFIS->C5_NUM  + "' AND D_E_L_E_T_ = ' ' "
                     cUpDate := " DELETE " + RetSqlName("Z09") + " Z09 WHERE Z09_FILIAL = '" + Z09->Z09_FILIAL + "' AND Z09_NUMPV = '" + _QRYFIS->C5_NUM  + "' "	
                     If tcsqlexec(cUpdate)
                         ConOut(tcsqlerror())

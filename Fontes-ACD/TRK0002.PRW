@@ -240,21 +240,17 @@ For nI := 1 To Len(aPVs)
             aTrackS[Z09->(FieldPos("Z09_ACAOCS"))] := oZ09:GetValue("Z09_ACAOCS")      
             aTrackS[Z09->(FieldPos("Z09_OBSCS")) ] := oZ09:GetValue("Z09_OBSCS") 
         
-            //TRK02Grv(oZ09, aFields, aPos)
         ElseIf cModel == 'TRK0014'
             cTitLog := "Troca de Transportadora / Incoterm"
 
-            If lPrivez
-                SC5->( DbSetOrder(1) )
-                If  SC5->(DbSeek( cChave )) .And.;
-                    SC5->(RecLock("SC5", .F.))
-                    SC5->C5_TRANSP := oZ09:GetValue("Z09_TRANSP")
-                    SC5->C5_REDESP := oZ09:GetValue("Z09_REDESP")
-                    SC5->C5_TFRDP1 := oZ09:GetValue("Z09_REDICO")
-                    SC5->C5_MSEXP := ""
-                    SC5->(MsUnLock())
-                EndIf
-                lPrivez := .F.
+            SC5->( DbSetOrder(1) )
+            If  SC5->(DbSeek( cChave )) .And.;
+                SC5->(RecLock("SC5", .F.))
+                SC5->C5_TRANSP := oZ09:GetValue("Z09_TRANSP")
+                SC5->C5_REDESP := oZ09:GetValue("Z09_REDESP")
+                SC5->C5_TFRDP1 := oZ09:GetValue("Z09_REDICO")
+                SC5->C5_MSEXP := ""
+                SC5->(MsUnLock())
             EndIf
 
             aTrackS[Z09->(FieldPos("Z09_TRANSP"))] := oZ09:GetValue("Z09_TRANSP")
@@ -282,32 +278,7 @@ RestArea(aArea)
 
 Return .T.
 
-/*/{Protheus.doc} TRK02Mtr
-Envio de email para transportadora
-@type function
-@version 1.0
-@author erike.yuri@dothink.com.br
-@since 19/08/2025
-/*/
 
-Static Function TRK02Grv(oZ09, aFields, aPos)
-
-Local nPos := 1
-
-    // Realizar a gravaçaõ da Z09
-    While   Z09->(Z09_FILIAL + Z09_NUMPV + Z09_ITEMPV) == Z09->Z09_FILIAL +;
-            oZ09:GetValue("Z09_NUMPV") + oZ09:GetValue("Z09_ITEMPV")
-        // RecLock
-        Z09->(RecLock("Z09", .F.))
-        For nPos := 1 To Len(aPos)
-            If aPos[nPos] > 0
-                &("Z09->" + aFields[nPos]) := oZ09:GetValue(aFields[nPos])
-            EndIf
-        Next
-        Z09->(DbSkip())
-    EndDo
-
-Return
 
 /*/{Protheus.doc} TRK02Mtr
 Envio de email para transportadora

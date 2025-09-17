@@ -87,15 +87,21 @@ Static Function ViewDef()
 
 Return oView
 
+
 /*/{Protheus.doc} TRK0017S
-Atualizacao do SLA
+Atualizacao de data do SLA
 @type function
 @version 1.0
 @author fernando.muta@dothink.com.br
 @since  31/08/2025
-@return variant, Z09_DTSLA Z09_DPEMPV
+@param cEstOrig, character, estado origem (filial)
+@param cEstDest, character, estado destino
+@param cMumDest, character, codigo do municio de destino
+@param dEntrega, date, data de entrega prometida para o cliente
+@return date, data limite da operacao (Z09_DTSLA Z09_DPEMPV)
 /*/
 User Function TRK0017S(cEstOrig, cEstDest, cMumDest, dEntrega)
+    local aArea     := GetArea()
     local dRet 
     local nSLAOutros := SuperGetMV("BA_SLAOPER",,1) 
 
@@ -111,5 +117,78 @@ User Function TRK0017S(cEstOrig, cEstDest, cMumDest, dEntrega)
     EndIf
 
     dRet -= nSLAOutros
-
+    RestArea(aArea)
 Return dRet
+
+/*/{Protheus.doc} TRK0017A
+Processamento para atualização dos emogis dos SLA´s
+@type function
+@since  31/08/2025
+@author erike.yuri@dothink.com.br
+/*/
+User Function TRK0017A()
+
+    Processa({|| ProcUpdSLA()}, "Aguarde...", "Atualizando SLA...")
+
+Return
+
+/*/{Protheus.doc} ProcUpdSLA
+Atualizacao dos emogis dos SLAs
+@type function
+@version 1.0
+@author erike.yuri@dothink.com.br
+@since  31/08/2025
+/*/
+Static Function ProcUpdSLA()
+    Local cUpDate := ""
+    Local cHoje   := DTOS( Date() )
+
+    cUpDate := " UPDATE " + RetSqlName("Z09") 
+    cUpDate += " SET Z09_SLA = (CASE "
+    cUpDate += "    WHEN Z09_DTSLA > Z09_DPEMPV THEN '1' "
+    cUpDate += "    WHEN Z09_DTSLA = Z09_DPEMPV THEN '2' "
+    cUpDate += "    WHEN Z09_DTSLA < Z09_DPEMPV OR Z09_DTSLA < '" + cHoje + "' THEN '3' "
+    cUpDate += "  END), "
+    cUpDate += " Z09_DSLATM = '" + cHoje + "' "
+    cUpDate += " WHERE D_E_L_E_T_ = ' ' "
+    cUpDate += " AND Z09_STATUS < '8' "
+    cUpDate += " AND Z09_DSLATM < '" + cHoje + "' "
+    
+    If tcsqlexec(cUpDate)
+        ConOut(tcsqlerror())
+    EndIf 
+
+Return
+
+
+User Function xTstSLAD()
+     Processa({|| ProcIniSLA()}, "Aguarde...", "Atualizando SLA...")
+Return
+
+Static Function ProcIniSLA()
+    local aData := {}
+    local cFilInfo := ""
+
+    DbSelectArea("SA1")
+    SA1->( DbSetOrder(1) )
+
+    DbSelectArea("Z09")
+    Z09->( DbSetorder(1) )
+    Z09->( DbSeek("04") )
+    While Z09->( !Eof() )
+
+        If cFilInfo <> Z09->Z09_FILIAL
+            fInfo(@aData, Z09->Z09_FILIAL)
+            cFilInfo := Z09->Z09_FILIAL
+        EndIf
+
+        If SA1->( DbSeek(xFilial() + Z09->(Z09_CLIENT + Z09_LOJA) ) )        
+            
+            RecLock("Z09", .F.)
+            Z09->Z09_DTSLA := u_TRK0017S(aData[6], SA1->A1_EST, SA1->A1_COD_MUN, Z09->Z09_DPEMPV)
+            Z09->( MsUnLock() )
+        EndIf
+        Z09->( DbSkip() )
+    End
+
+Return
