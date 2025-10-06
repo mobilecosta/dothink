@@ -27,15 +27,13 @@ https://barentzbrq148631.protheus.cloudtotvs.com.br:4010/webapp/ - Porta TCP: 76
 
 Environment: erike
 
-usuário: erike.yuri@dothink.com.br 
-senha: a810511
-
-dothink.erike
-a810511
+usuário: dothink.alex
+senha: A810511
 
 ## U_TRK0098 - TIDEV
 
 ## PROD - https://barentzbrprd125162.protheus.cloudtotvs.com.br:4010/webapp/ - janine.duarte - "doce03"
+
 
 
 
