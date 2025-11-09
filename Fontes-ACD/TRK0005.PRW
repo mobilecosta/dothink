@@ -24,7 +24,7 @@ user function TRK0005() as logical
 
     SaveInter()
         
-        aAdd(aParamBox,{2,"Listar Pedidos",4,aTiposDePedidos,100,"",.T.})
+        aAdd(aParamBox,{2,"Listar Pedidos",1,aTiposDePedidos,100,"",.T.})
         if ParamBox(@aParamBox,"Selecione os Parametros",,NIL,NIL,.T.,NIL,NIL,NIL,NIL,.T.,.T.)
             if ValType(mv_par01) == "N"
                 mv_par01 := Str(mv_par01, 1)
@@ -52,7 +52,6 @@ static function TRK0005Brw(cTipoPedido as character)
     local aFWMBrwColumn      := Array(0)  as array
     local aFWMBrowseQryIndex := Array(0)  as array
     local aFWGetDialogSizeCoors           as array
-    local aDadosFil          := {}        as array
     local aOpcoesZ09         := {}        as array
 
     local cAlias                          as character
@@ -68,12 +67,15 @@ static function TRK0005Brw(cTipoPedido as character)
     local lQueryInsert                    as logical
 
     local nField                          as numeric
+    local nPos                            as numeric
     local nFields                         as numeric
 
     local oPanelMain                      as object
     local oBrowse                         as object
     local oFWDialogModal                  as object
     local oFWTemporaryTable               as object
+
+    private aDadosFil        := {}        as array
 
     aCustomFields := GetFields()
     cQuerySelect  := GetQuery(cTipoPedido)
@@ -83,13 +85,18 @@ static function TRK0005Brw(cTipoPedido as character)
     aFilter := {}
     nFields:=Len(aCustomFields)
     for nField:=1 to nFields
+        If Len(aCustomFields[nField]) == 0 .Or. Len(aCustomFields[nField][2]) == 0
+            Loop
+        EndIf
 
         //Carrega a Estrutura da Tabela Temporaria
         aAdd(aDbStruct,Array(DBS_ALEN))
-        aDbStruct[nField][DBS_NAME] := aCustomFields[nField][1]
-        aDbStruct[nField][DBS_TYPE] := aCustomFields[nField][2][3]
-        aDbStruct[nField][DBS_LEN]  := aCustomFields[nField][2][1]
-        aDbStruct[nField][DBS_DEC]  := aCustomFields[nField][2][2]
+        nPos := Len(aDbStruct)
+
+        aDbStruct[nPos][DBS_NAME] := aCustomFields[nField][1]
+        aDbStruct[nPos][DBS_TYPE] := aCustomFields[nField][2][3]
+        aDbStruct[nPos][DBS_LEN]  := aCustomFields[nField][2][1]
+        aDbStruct[nPos][DBS_DEC]  := aCustomFields[nField][2][2]
 
         //Obtem os Campos para a Query
         cQueryPutFields += aCustomFields[nField][1]
@@ -107,43 +114,45 @@ static function TRK0005Brw(cTipoPedido as character)
         aAdd(aFWMBrwColumn, FWBrwColumn():New())
 
         If (aCustomFields[nField][1]=="C5_XBLFIS")
-            aFWMBrwColumn[nField]:SetData(&("{|oSelf|u_TRK005Fld('" + aCustomFields[nField][1] + "'," + aCustomFields[nField][1] + ")}"))
+            aFWMBrwColumn[nPos]:SetData(&("{|oSelf|u_TRK005Fld('" + aCustomFields[nField][1] + "'," + aCustomFields[nField][1] + ")}"))
             If !Empty(aOpcoesZ09)
                 aFWMBrwColumn[nField]:SetOptions(aOpcoesZ09)
             Endif            
         Else
-            aFWMBrwColumn[nField]:SetData(&("{|oSelf|" + aCustomFields[nField][1] + "}"))
+            aFWMBrwColumn[nPos]:SetData(&("{|oSelf|" + aCustomFields[nField][1] + "}"))
         Endif
 
-        aFWMBrwColumn[nField]:SetTitle(aCustomFields[nField][3])
-        aFWMBrwColumn[nField]:SetPicture(aCustomFields[nField][4])
-        aFWMBrwColumn[nField]:SetSize(aDbStruct[nField][DBS_LEN])
-        aFWMBrwColumn[nField]:SetDecimal(aDbStruct[nField][DBS_DEC])
+        aFWMBrwColumn[nPos]:SetTitle(aCustomFields[nField][3])
+        aFWMBrwColumn[nPos]:SetPicture(aCustomFields[nField][4])
+        aFWMBrwColumn[nPos]:SetSize(aDbStruct[nPos][DBS_LEN])
+        aFWMBrwColumn[nPos]:SetDecimal(aDbStruct[nPos][DBS_DEC])
 
         //Define o Alinhamento dos Campos
         If (aCustomFields[nField][2][3]=="N")
-            aFWMBrwColumn[nField]:SetAlign("RIGHT")
+            aFWMBrwColumn[nPos]:SetAlign("RIGHT")
         Else
-            aFWMBrwColumn[nField]:SetAlign("LEFT")
+            aFWMBrwColumn[nPos]:SetAlign("LEFT")
         Endif
-        
 
         //Filters
         aAdd(aFilter, {aCustomFields[nField][1], aCustomFields[nField][3], aCustomFields[nField][2][3], aCustomFields[nField][2][1], aCustomFields[nField][2][2], aCustomFields[nField][4]} )
-
     next nField
 
     //https://tdn.totvs.com/display/public/framework/FWTemporaryTable
     oFWTemporaryTable:=FWTemporaryTable():New()
     oFWTemporaryTable:SetFields(aDbStruct)
-    oFWTemporaryTable:AddIndex("01",{"C5_NUM"       , "C6_ITEM" })
-    oFWTemporaryTable:AddIndex("02",{"C5_CLIENTE"   , "C5_NUM"  })
-    oFWTemporaryTable:AddIndex("03",{"C6_DATFAT"    , "C5_NUM"  , "C6_ITEM"})
-
+    oFWTemporaryTable:AddIndex("01",{"C5_NUM"       , "C6_ITEM"                     })
+    oFWTemporaryTable:AddIndex("02",{"C5_CLIENTE"   , "C5_NUM"                      })
 	Aadd( aFWMBrowseSeek, { "Pedido + Item"                 , RetFldIdx("C5_NUM+C6_ITEM")           , 1 } )
 	Aadd( aFWMBrowseSeek, { "Cliente + Pedido"              , RetFldIdx("C5_CLIENTE+C5_NUM")        , 1 } )
-    Aadd( aFWMBrowseSeek, { "Faturamento + Pedido + Item"   , RetFldIdx("C6_DATFAT+C5_NUM+C6_ITEM") , 1 } )
-    Aadd( aFWMBrowseSeek, { "Entrega + Dt.Fat + Dt.Ini.Blq.Fiscal"   , RetFldIdx("C6_ENTREG+C6_DATFAT+Z09_BLFDI") , 1 } )
+
+    If Z09->(FieldPos("Z09_DTSLA")) > 0
+        oFWTemporaryTable:AddIndex("03",{"Z09_DTSLA", "C5_NUM", "C6_ITEM"     })
+        oFWTemporaryTable:AddIndex("04",{"C6_ENTREG"    , "C6_DATFAT"   , "Z09_BLFDI"   })
+
+        Aadd( aFWMBrowseSeek, { "Data SLA + Pedido + Item"      , RetFldIdx("Z09_DTSLA+C5_NUM+C6_ITEM") , 1 } )
+        Aadd( aFWMBrowseSeek, { "Entrega + Dt.Fat + Dt.Ini.Blq.Fiscal"   , RetFldIdx("C6_ENTREG+C6_DATFAT+Z09_BLFDI") , 1 } )
+    EndIf
 
     oFWTemporaryTable:Create()
 
@@ -292,6 +301,7 @@ Static Function GetFields()
             ,{"C6_TES"      , TamSX3("C6_TES")      , GetSX3Cache("C6_TES"      ,"X3_TITULO"), GetSX3Cache("C6_TES"     ,"X3_PICTURE"),"SC6.C6_TES"     };       
             ,{"C6_ENTREG"   , TamSX3("C6_ENTREG")   , GetSX3Cache("C6_ENTREG"   ,"X3_TITULO"), GetSX3Cache("C6_ENTREG"  ,"X3_PICTURE"),"SC6.C6_ENTREG"  };
             ,{"C6_DATFAT"   , TamSX3("C6_DATFAT")   , "Faturamento"                          , GetSX3Cache("C6_DATFAT"  ,"X3_PICTURE"),"SC6.C6_DATFAT"  };  
+            ,{"Z09_DTSLA"   , TamSX3("Z09_DTSLA")   , GetSX3Cache("Z09_DTSLA"   ,"X3_TITULO"), GetSX3Cache("Z09_DTSLA"  ,"X3_PICTURE"),"Z09.Z09_DTSLA"  };
             ,{"Z09_BLFDI"   , TamSX3("Z09_BLFDI")   , GetSX3Cache("Z09_BLFDI"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFDI"  ,"X3_PICTURE"),"Z09.Z09_BLFDI"  };
             ,{"Z09_BLFHI"   , TamSX3("Z09_BLFHI")   , GetSX3Cache("Z09_BLFHI"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFHI"  ,"X3_PICTURE"),"Z09.Z09_BLFHI"  };
             ,{"Z09_BLFDF"   , TamSX3("Z09_BLFDF")   , GetSX3Cache("Z09_BLFDF"   ,"X3_TITULO"), GetSX3Cache("Z09_BLFDF"  ,"X3_PICTURE"),"Z09.Z09_BLFDF"  };
@@ -306,8 +316,18 @@ Static Function GetFields()
 Return aFields
 
 
-//--
-Static Function GetQuery(cTipoPedido, lAllFilial)
+/*/{Protheus.doc} GetQuery
+Gera a Query que sera utilizada em outros pontos, relacionado aos pedidos eletivos para validacao fiscal
+@type function
+@version 1.0
+@author wagner.mobile@dothink.com.br
+@since 22/07/2025
+@param cTipoPedido, character, Tipo de pedido 1=Bloqueado", "2=Liberado", "3=Rejeitado", "4=Todos
+@param lAllFilial, logical, Indica se sera executado para todas as filiais
+@param cPedido, character, codigo do pedido de vendas
+@return character, Retorna query para execucao
+/*/
+Static Function GetQuery(cTipoPedido, lAllFilial, cPedido)
     Local aFields         := GetFields()
     Local aFiliais        := {}
     Local cInFilial       := ""
@@ -322,10 +342,15 @@ Static Function GetQuery(cTipoPedido, lAllFilial)
 
     Default cTipoPedido   := "4"
     Default lAllFilial    := .F.
+    Default cPedido       := ""
 
     nFields := Len(aFields)
     For nField := 1 To nFields
         //Obtem os Campos para a Query
+        If Len(aFields[nField][2]) == 0
+            Loop
+        EndIf
+
         cQueryGetFields += aFields[nField][5]
         If (nField<nFields)
             cQueryGetFields += ","
@@ -368,7 +393,9 @@ Static Function GetQuery(cTipoPedido, lAllFilial)
             AND SC5.C5_FILIAL = '__C5_FILIAL__'
             AND SC5.C5_XBLQINI <> 'S'
             AND SC5.C5_XBLFIS <> 'Z'
+            AND SC5.C5_XBLSHLF = 'F'
             AND SC5.C5_XBLRENT IN ('2', ' ')  
+            AND SC5.C5_NOTA = ' '
             AND SC5.C5_BLQ = ' ' __XBLFIS
             AND (SELECT COUNT(QTDITSC9) QTDITSC9 FROM (SELECT C9_FILIAL, C9_PEDIDO, C9_ITEM, C9_PRODUTO, COUNT(1) QTDITSC9 FROM SC9990 SC9IT WHERE SC9IT.C9_FILIAL = SC6.C6_FILIAL AND SC9IT.C9_PEDIDO = SC6.C6_NUM  AND SC9IT.D_E_L_E_T_ = ' ' GROUP BY C9_FILIAL, C9_PEDIDO, C9_ITEM, C9_PRODUTO) TRBSC9) =
             (SELECT COUNT(1) QTDITSC6 FROM SC6990 SC6IT WHERE SC6IT.C6_FILIAL = SC6.C6_FILIAL AND SC6IT.C6_NUM = SC6.C6_NUM AND SC6IT.D_E_L_E_T_ = ' ')
@@ -391,7 +418,7 @@ Static Function GetQuery(cTipoPedido, lAllFilial)
     cQuerySelect := StrTran(cQuerySelect, "__C6_FILIAL__"     , FWXFilial("SC6")  )
     cQuerySelect := StrTran(cQuerySelect, "__C9_FILIAL__"     , FWXFilial("SC9")  )
 
-    If lAllFilial
+    If lAllFilial  //-- Trata todos os pedidos de todas as filiais
         //Pegar todas as filiais da empresa Logada
 		aFiliais := FWAllFiliais()
 
@@ -410,7 +437,14 @@ Static Function GetQuery(cTipoPedido, lAllFilial)
         cFilTroca := "AND SC5.C5_FILIAL = '__C5_FILIAL__'"
 
         cQuerySelect := StrTran(cQuerySelect, cFilTroca     , "AND SC5.C5_FILIAL IN("+cInFilial+")"  )
-    Else
+    
+    ElseIf !Empty(cPedido) //-- Trata somente um pedido da filial posicionada
+        cFilTroca := "AND SC5.C5_FILIAL = '__C5_FILIAL__'"
+
+        cQuerySelect := StrTran(cQuerySelect, cFilTroca     , "AND SC5.C5_FILIAL = '__C5_FILIAL__' AND SC5.C5_NUM = '" + cPedido + "'"  )
+        cQuerySelect := StrTran(cQuerySelect, "__C5_FILIAL__"     , FWXFilial("SC5")  )
+
+    Else //-- Trata todos os pedidos da filial posicionada
         cQuerySelect := StrTran(cQuerySelect, "__C5_FILIAL__"     , FWXFilial("SC5")  )
     EndIf
 
@@ -539,7 +573,6 @@ static function TRK0005Fis(cAlias)
     local aMaFisNFCabRet as array
     local aRecItens      as array
     local cPedido        as character
-    local nAT            as numeric
     local nItem          as numeric
     local nItems         as numeric
     local nNextRecNo     as numeric
@@ -582,39 +615,33 @@ static function TRK0005Fis(cAlias)
             nNextRecNo:=(cAlias)->(RecNo())
         end while
 
-        //Obter as informações Fiscais
-        aMaFisNFCabRet:=MaFisNFCab()
         //Atualizar as informações fiscais.
-        if ((!Empty(aMaFisNFCabRet)).and.(!Empty(aRecItens)))
+        if !Empty(aRecItens)
             nItems:=Len(aRecItens)
             //TODO: Rever a forma de Obter as informações de Impostos em: aRecItens
             for nItem:=1 to nItems
                 (cAlias)->(MsGoTo(aRecItens[nItem]))
                 if ((cAlias)->(RecLock(cAlias,.F.)))
-                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="ICM"})
-                    if (nAT>0)
-                        (cAlias)->FT_BASEICM:=aMaFisNFCabRet[nAT][3]
-                        (cAlias)->FT_ALIQICM:=aMaFisNFCabRet[nAT][4]
-                        (cAlias)->FT_VALICM:=aMaFisNFCabRet[nAT][5]
-                    endif
-                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="IPI"})
-                    if (nAT>0)
-                        (cAlias)->FT_BASEIPI:=aMaFisNFCabRet[nAT][3]
-                        (cAlias)->FT_ALIQIPI:=aMaFisNFCabRet[nAT][4]
-                        (cAlias)->FT_VALIPI:=aMaFisNFCabRet[nAT][5]
-                    endif
-                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="CF2"})
-                    if (nAT>0)
-                        (cAlias)->FT_BASEPIS:=aMaFisNFCabRet[nAT][3]
-                        (cAlias)->FT_ALIQPIS:=aMaFisNFCabRet[nAT][4]
-                        (cAlias)->FT_VALPIS:=aMaFisNFCabRet[nAT][5]
-                    endif
-                    nAT:=aScan(aMaFisNFCabRet,{|x|Upper(AllTrim(x[1]))=="PS2"})
-                    if (nAT>0)
-                        (cAlias)->FT_BASECOF:=aMaFisNFCabRet[nAT][3]
-                        (cAlias)->FT_ALIQCOF:=aMaFisNFCabRet[nAT][4]
-                        (cAlias)->FT_VALCOF:=aMaFisNFCabRet[nAT][5]
-                    endif
+                    // ICMS
+                    (cAlias)->FT_BASEICM:=MaFisRet(nItem, "IT_BASEICM")
+                    (cAlias)->FT_ALIQICM:=MaFisRet(nItem, "IT_ALIQICM")
+                    (cAlias)->FT_VALICM:=MaFisRet(nItem, "IT_VALICM")
+
+                    // IPI
+                    (cAlias)->FT_BASEIPI:=MaFisRet(nItem, "IT_BASEIPI")
+                    (cAlias)->FT_ALIQIPI:=MaFisRet(nItem, "IT_ALIQIPI")
+                    (cAlias)->FT_VALIPI:=MaFisRet(nItem, "IT_VALIPI")
+
+                    // PIS
+                    (cAlias)->FT_BASEPIS:=MaFisRet(nItem, "IT_BASEPIS")
+                    (cAlias)->FT_ALIQPIS:=MaFisRet(nItem, "IT_ALIQPIS")
+                    (cAlias)->FT_VALPIS:=MaFisRet(nItem, "IT_VALPIS")
+
+                    // COFINS
+                    (cAlias)->FT_BASECOF:=MaFisRet(nItem, "IT_BASECOF")
+                    (cAlias)->FT_ALIQCOF:=MaFisRet(nItem, "IT_ALIQCOF")
+                    (cAlias)->FT_VALCOF:=MaFisRet(nItem, "IT_VALCOF")
+
                     (cAlias)->(MsUnLock())
                 endif
             next nItem
@@ -648,12 +675,19 @@ static function TRK0005Lib(cTitulo,cAlias,oBrowse)
     local cTriangular:= ""
     local lErro      := .F.
     local nRecRemess := 0
-    Local nRecGrid   := (cAlias)->(Recno())
+    local nRecGrid   := (cAlias)->(Recno())
+    local dSLA       := (cAlias)->Z09_DTSLA
 
     //Verifica se o Item Está Bloqueado
     if ((cAlias)->C5_XBLFIS=="1")
         cPedido := (cAlias)->C5_NUM
         SC5->(MsGoTo((cAlias)->SC5RECNO))
+
+        If Empty(dSLA)
+            SC6->( MsGoto( (cAlias)->SC6RECNO ) )
+            SA1->( MsGoto( (cAlias)->SA1RECNO ) )
+            dSLA  := u_TRK0017S(aDadosFil[6], SA1->A1_EST, SA1->A1_COD_MUN, SC6->C6_ENTREG)
+        EndIf
 
         If SC5->C5_XBLFIS <> "1"
             ApMsgInfo("O status deste pedido foi alterado por outra pessoa ou ação. Saia desta rotina e entre novamente para ver a fotografia atual.",cProcTitle)
@@ -693,19 +727,18 @@ static function TRK0005Lib(cTitulo,cAlias,oBrowse)
                 SetTraking(cAlias, "2", "", "", "", cTriangular, cRemessa)
             EndIf
             
-            If !Empty(cRemessa)
-                SC5->(MsGoTo((cAlias)->SC5RECNO))
-
-                dbSelectArea("CB7")
-                CB7->(dbSetOrder(2)) //-- CB7_FILIAL+CB7_PEDIDO+CB7_LOCAL+CB7_STATUS+CB7_CLIENT+CB7_LOJA+CB7_COND+CB7_LOJENT+CB7_AGREG
-                If CB7->(dbSeek(xFilial("CB7") + cPedido))  
-                    RecLock("CB7", .F.)
+            dbSelectArea("CB7")
+            CB7->(dbSetOrder(2)) //-- CB7_FILIAL+CB7_PEDIDO+CB7_LOCAL+CB7_STATUS+CB7_CLIENT+CB7_LOJA+CB7_COND+CB7_LOJENT+CB7_AGREG
+            If CB7->(dbSeek(xFilial("CB7") + cPedido))  
+                RecLock("CB7", .F.)
+                CB7->CB7_XDTSLA := dSLA
+                If !Empty(cRemessa)
+                    SC5->(MsGoTo((cAlias)->SC5RECNO))
                     CB7->CB7_XPVTRI := cRemessa
                     CB7->CB7_XCLIRE := SC5->C5_CLIENTE
                     CB7->CB7_XLJREM := SC5->C5_LOJACLI
-                    CB7->( MsUnLock() )
-                    
-                EndIf 
+                EndIf                
+                CB7->( MsUnLock() )
             EndIf
         EndIf
 
@@ -1011,6 +1044,7 @@ static function AtuTracking(cAliasVldFis, aDadosFil)
     local cNTransp  := ""
     local cNTRedesp := ""
     local cChave    := ""
+    local dSLA      := date()
     local aArea     := GetArea()    
     local aTrackS   := {}
     local aX5T3     := {}
@@ -1023,12 +1057,8 @@ static function AtuTracking(cAliasVldFis, aDadosFil)
     (cAliasVldFis)->(dbSetOrder(1))
     while ((cAliasVldFis)->( !eof() ))
         cChave    := (cAliasVldFis)->( C5_NUM + C6_ITEM)
-
+        Z09->( DbSetOrder(3) )
         If !Z09->( DbSeek(xFilial() + cChave ) ) //Empty( (cAliasVldFis)->C5_XBLFIS )
-            //-- Atualiza temporario
-            RecLock(cAliasVldFis, .F.)
-                (cAliasVldFis)->C5_XBLFIS := "1"
-            (cAliasVldFis)->( MsUnLock() )
 
             SC5->( MsGoto( (cAliasVldFis)->SC5RECNO ) )
             SC6->( MsGoto( (cAliasVldFis)->SC6RECNO ) )
@@ -1048,6 +1078,9 @@ static function AtuTracking(cAliasVldFis, aDadosFil)
 
         	//-- Define o BU
 	        aX5T3 := FWGetSX5 ( "T3", SC5->C5_XATIVI1)
+
+            //-- Define data do SLA
+            dSLA  := u_TRK0017S(aDadosFil[6], SA1->A1_EST, SA1->A1_COD_MUN, SC6->C6_ENTREG)
             
             // Alimentacao das variaveis para gravacao
             DbSelectAre("Z09")
@@ -1065,7 +1098,7 @@ static function AtuTracking(cAliasVldFis, aDadosFil)
             aTrackS[FieldPos("Z09_DTEMPV")] := SC5->C5_EMISSAO              // Emissao PV    D [ 8 ][ 0 ] 07
             aTrackS[FieldPos("Z09_HREMPV")] := Time()                       // Hr.Emiss.PV   C [ 5 ][ 0 ] 08
             aTrackS[FieldPos("Z09_STATUS")] := "2"                          // Em Validação Fiscal
-            aTrackS[FieldPos("Z09_BLFIS") ] := (cAliasVldFis)->C5_XBLFIS    // Nasce como Bloqueado    
+            aTrackS[FieldPos("Z09_BLFIS") ] := "1"                          // Nasce como Bloqueado    
             aTrackS[FieldPos("Z09_ARMAZ") ] := SC6->C6_LOCAL                // Armazem
             aTrackS[FieldPos("Z09_ICOTER")] := SC5->C5_TPFRETE              // Icoterm  
             aTrackS[FieldPos("Z09_TRANSP")] := SC5->C5_TRANSP               // Transportadora
@@ -1079,7 +1112,8 @@ static function AtuTracking(cAliasVldFis, aDadosFil)
             aTrackS[FieldPos("Z09_OBSPV")]  := SC5->C5_XOBSVEN              // Observacao do Pedido de Vendas
             aTrackS[FieldPos("Z09_BLFDI")]  := Date()                       // Dt.Inicio Bloq.Fiscal    
             aTrackS[FieldPos("Z09_BLFHI")]  := Time()                       // Hr.Inicio Bloq.Fiscal 
-            aTrackS[FieldPos("Z09_DTSLA")]  := u_TRK0017S(aDadosFil[6], SA1->A1_EST, SA1->A1_COD_MUN, SC6->C6_ENTREG)
+            aTrackS[FieldPos("Z09_DTSLA")]  := dSLA
+            aTrackS[FieldPos("Z09_STAAGE")] := "1"
 
             If Z09->(FieldPos("Z09_PROD") > 0)
                 aTrackS[FieldPos("Z09_PROD")] := SC6->C6_PRODUTO
@@ -1095,6 +1129,12 @@ static function AtuTracking(cAliasVldFis, aDadosFil)
 
             u_TRK006S(aTrackS,"Em Validacao Fiscal")
 
+                        //-- Atualiza temporario
+            RecLock(cAliasVldFis, .F.)
+                (cAliasVldFis)->C5_XBLFIS := "1"
+                (cAliasVldFis)->Z09_DTSLA := dSLA
+            (cAliasVldFis)->( MsUnLock() )
+
         EndIf
 
         (cAliasVldFis)->( DbSkip() )
@@ -1109,6 +1149,7 @@ Static Function SetTraking(cAlias, cOpc, cMotivo, cDescMotivo, cObsMotivo, cTria
     local nRecPos       := (cAlias)->( Recno() )
     local cChave        := (cAlias)->C5_NUM
     local cAcao         := If(cOpc=="2","Liberacao", If(cOpc=="3","Rejeicao", "Bloqueio"))
+    local cQry          := ""
     default cMotivo     := ""
     default cDescMotivo := ""
     default cObsMotivo  := ""
@@ -1116,6 +1157,27 @@ Static Function SetTraking(cAlias, cOpc, cMotivo, cDescMotivo, cObsMotivo, cTria
     default cRemessa    := ""
 
     SC5->(MsGoTo((cAlias)->SC5RECNO))
+    
+    Z09->( DbSetOrder(3) )
+
+    If !Z09->( DbSeek(xFilial()+cChave) ) 
+        RestArea(aArea)
+        Return
+    EndIf
+
+    If cOpc == "1"
+        cQry := "SELECT COUNT(1) AS QTD FROM " + RetSQLName("Z12") + " Z12 "
+        cQry += " JOIN " + RetSQLName("CB7") + " CB7 ON CB7_FILIAL = Z12_FILIAL AND Z12_ORDSEP = CB7_ORDSEP AND CB7_PEDIDO = '"+ cChave +"' "
+        cQry += " WHERE Z12.D_E_L_E_T_ = ' ' AND Z12.Z12_FILIAL = '" + xFilial("Z12") + "' "
+        
+        If MpSysExecScalar(cQry, "QTD") > 0
+            FWAlertWarning("Já foi realizado ou esta em processo de validação fisica", "Não Possível Bloquear")
+            RestArea(aArea)
+            Return
+        EndIf
+
+    EndIf
+
 
     if (SC5->C5_XBLFIS!= cOpc)
         if ( SC5->( RecLock("SC5",.F.) ) )
@@ -1155,7 +1217,7 @@ Static Function SetTraking(cAlias, cOpc, cMotivo, cDescMotivo, cObsMotivo, cTria
         aTrackS[Z09->(FieldPos("Z09_CMTBLF"))]  := cMotivo                              // Motivo da Rejeicao
         aTrackS[Z09->(FieldPos("Z09_DMTBLF"))]  := cDescMotivo                          // Descricao da Rejeicao
         aTrackS[Z09->(FieldPos("Z09_OMTBLF"))]  := cObsMotivo                           // Observacao da Rejeicao
-        aTrackS[Z09->(FieldPos("Z09_UBLFIS"))]  := cUserName                            // Usuario da Validacao
+        aTrackS[Z09->(FieldPos("Z09_UBLFIS"))]  := Left(cUserName, 15)                            // Usuario da Validacao
         aTrackS[Z09->(FieldPos("Z09_BLFDF")) ]  := (cAlias)->Z09_BLFDF                  // Dt.Finalizacao Bloq.Fiscal    
         aTrackS[Z09->(FieldPos("Z09_BLFHF")) ]  := (cAlias)->Z09_BLFHF                  // Hr.Finalizacao Bloq.Fiscal    
         If !Empty(cTriangular)     
@@ -1525,9 +1587,14 @@ Rotina de atualizacao dos status dos pedidos
 @author dener.lemos@dothink.com.br
 @since 13/08/2025
 /*/
-User Function TRKVLFIS()
+User Function TRKVLFIS(lAllFiliais, cNumPV)
+    default lAllFiliais := .T.
 
-    Processa({|| AtuStatus()}, "Aguarde...", "Atualizando status...")
+    If ISINCALLSTACK('U_PRT0653') .And. !GetMv("BA_BFISATU", .F., .F.)
+        Return
+    EndIf
+
+    Processa({|| AtuStatus(lAllFiliais, cNumPV)}, "Aguarde...", "Atualizando status...")
 
 Return
 
@@ -1540,11 +1607,11 @@ Rotina de atualizacao dos status dos pedidos
 @author wagner.mobilie@dothink.com.br
 @since 13/08/2025
 /*/
-Static Function AtuStatus()
+Static Function AtuStatus(lAllFiliais, cNumPV)
     Local aAreaAnt := GetArea()
     Local aAreaSC5 := SC5->(GetArea())
     Local aAreaSC6 := SC6->(GetArea())
-    Local cQuery   := GetQuery("1" , .T.)
+    Local cQuery   := GetQuery("1" , lAllFiliais, cNumPV)
     Local cUpDate  := ""
     Local nTotal   := 0
     Local nAtual   := 0
@@ -1586,19 +1653,20 @@ Static Function AtuStatus()
                 //Grava o campo C5_MSEXP para sinalizaro ao Scheduler
                 SC5->C5_MSEXP := ""  //DToS(dDataBase)
             SC5->(MsUnLock())
+            
         ElseIf _QRYFIS->C5_XBLFIS == "1"
-            If Z09->(MsSeek(SC6->C6_FILIAL + SC6->C6_NUM + SC6->C6_ITEM))
+            If Z09->(MsSeek(SC6->C6_FILIAL + SC6->C6_NUM + SC6->C6_ITEM)) .And. Z09->Z09_STATUS < "3"
                 If !(Z09->Z09_PROD == SC6->C6_PRODUTO) .Or. (QtdComp(Z09->Z09_QTDPV) <> QtdComp(SC6->C6_QTDVEN)) .Or. !(Z09->Z09_LOTECT == SC6->C6_LOTECTL) .Or. !(Z09->Z09_ICOTER == SC5->C5_TPFRETE) .Or. !(Z09->Z09_TRANSP == SC5->C5_TRANSP) .Or. !(Z09->Z09_REDICO == SC5->C5_TFRDP1) .Or. !(Z09->Z09_REDESP == SC5->C5_REDESP) .Or.;
                     (QtdComp(MpSysExecScalar("SELECT COUNT(1) AS QTDZ09 FROM " + RetSQLName("Z09") + " Z09 WHERE Z09.Z09_FILIAL = '" + xFilial("Z09") + "' AND Z09.Z09_NUMPV = '" + _QRYFIS->C5_NUM + "' AND Z09.D_E_L_E_T_= ' ' ", "QTDZ09")) <> QtdComp(MpSysExecScalar("SELECT COUNT(1) AS QTDSC6 FROM " + RetSQLName("SC6") + " SC6 WHERE SC6.C6_FILIAL = '" + xFilial("SC6") + "' AND SC6.C6_NUM = '" + _QRYFIS->C5_NUM + "' AND SC6.D_E_L_E_T_= ' ' ", "QTDSC6")))
 
                     //-- Deleta Z11
-                    cUpDate := " DELETE " + RetSqlName("Z11") + " Z11 WHERE Z11_IDTRAC IN ('" + Z09->Z09_IDTRAC + "') "	
+                    cUpDate := " DELETE " + RetSqlName("Z11") + " WHERE Z11_IDTRAC IN ('" + Z09->Z09_IDTRAC + "') "	
                     If tcsqlexec(cUpdate)
                         ConOut(tcsqlerror())
                     EndIf
 
                     //-- Deleta Z09
-                    cUpDate := " DELETE " + RetSqlName("Z09") + " Z09 WHERE Z09_FILIAL = '" + Z09->Z09_FILIAL + "' AND Z09_NUMPV = '" + _QRYFIS->C5_NUM  + "' "	
+                    cUpDate := " DELETE " + RetSqlName("Z09") + " WHERE Z09_FILIAL = '" + Z09->Z09_FILIAL + "' AND Z09_NUMPV = '" + _QRYFIS->C5_NUM  + "' "	
                     If tcsqlexec(cUpdate)
                         ConOut(tcsqlerror())
                     EndIf

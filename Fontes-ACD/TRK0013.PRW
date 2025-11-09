@@ -28,12 +28,13 @@ static function TRK0013InfCS(cTitulo,cAlias)
     local aArea      := FWGetArea()
     local aAreaAlias := (cAlias)->(FWGetArea())
     local aTrackS    := {}  as array
+    local aPVs       := {}  as array
     local cChave     := ""  as character
     local cMotivo    := ""  as character
     local cMotivoObs := ""  as character
     local cAuxObs    := ""  as character
     local cProcTitle := cTitulo + " :: Informar Time de Operações" as character
-    //local nRecRemess := 0   as numeric
+    local nI         := 0   as numeric
     local nCodSiz    := 6   as numeric
     local nDesSiz    := 150 as numeric
     local lRet       := .F. as logical
@@ -52,25 +53,34 @@ static function TRK0013InfCS(cTitulo,cAlias)
     cMotivoObs := Space(50)
     cChave     := Z09->(Z09_FILIAL + Z09_NUMPV)
 
+    aAdd(aPVs, cChave)
+    If !Empty(Z09->Z09_PVREME)
+        If Z09->Z09_NUMPV == Z09->Z09_PVREME
+            aAdd(aPVs, Z09->Z09_FILIAL + Z09->Z09_PVTRIA)
+        Else
+            aAdd(aPVs, Z09->Z09_FILIAL + Z09->Z09_PVREME)
+        EndIf
+    Endif
+
     DEFINE MSDIALOG oDlg FROM 0,0 TO 375,600 TITLE cProcTitle PIXEL OF GetWNDDefault()
 
         @ 000,000 MSPANEL oPanel OF oDlg
         oPanel:Align:=CONTROL_ALIGN_ALLCLIENT
 
         @ 005,005 SAY "Pedido:"  SIZE 45,08 OF oPanel PIXEL
-        @ 005,048 SAY AllTrim(Z09->Z09_NUMPV)  SIZE 45,08 OF oPanel PIXEL
+        @ 005,048 SAY "<strong>"+AllTrim(Z09->Z09_NUMPV)+"</strong>"  SIZE 45,08 OF oPanel PIXEL
 
         @ 005,090 SAY "BU:"  SIZE 45,08 OF oPanel PIXEL
-        @ 005,105 SAY AllTrim(Z09->Z09_BU) +Space(5)+ "Responsável: " + AllTrim(Z09->Z09_RESPON)  SIZE 200,08 OF oPanel PIXEL
+        @ 005,105 SAY "<strong>"+AllTrim(Z09->Z09_BU) +"</strong>"+Space(5)+ "Responsável: <strong>" + AllTrim(Z09->Z09_RESPON)+"</strong>"  SIZE 200,08 OF oPanel PIXEL
 
         @ 015,005 SAY "Cliente:"  SIZE 45,08 OF oPanel PIXEL
-        @ 015,048 SAY AllTrim(Z09->Z09_CLIENT)+ "-" + AllTrim(Z09->Z09_LOJA)+ " - " + AllTrim(Z09->Z09_NOMECL)  SIZE 250,08 OF oPanel PIXEL  
+        @ 015,048 SAY "<strong>"+AllTrim(Z09->Z09_CLIENT)+ "-" + AllTrim(Z09->Z09_LOJA)+ " - " + AllTrim(Z09->Z09_NOMECL)+"</strong>"  SIZE 250,08 OF oPanel PIXEL  
 
         @ 025,005 SAY "Transportadora:"  SIZE 45,08 OF oPanel PIXEL
-        @ 025,048 SAY AllTrim(Z09->Z09_TRANSP) + " - " + AllTrim(Z09->Z09_NTRANS)  SIZE 200,08 OF oPanel PIXEL      
+        @ 025,048 SAY "<strong>"+AllTrim(Z09->Z09_TRANSP) + " - " + AllTrim(Z09->Z09_NTRANS)+"</strong>"  SIZE 200,08 OF oPanel PIXEL      
         
         @ 035,005 SAY "Tipo de Frete:"  SIZE 45,08 OF oPanel PIXEL
-        @ 035,048 SAY U_DtCombo("Z09_ICOTER", Z09->Z09_ICOTER)  SIZE 80,08 OF oPanel PIXEL      
+        @ 035,048 SAY "<strong>"+U_DtCombo("Z09_ICOTER", Z09->Z09_ICOTER)+"</strong>"  SIZE 80,08 OF oPanel PIXEL      
 
         @ 047,005 SAY "Código Motivo:" SIZE 45,08 OF oPanel PIXEL
         @ 045,048 MSGET oCodMot VAR cMotivo SIZE CalcFieldSize("C",nCodSiz,0,"@!",Replicate("W",nCodSiz)),08 OF oPanel PIXEL F3 "CB4" VALID CodMtVld(@cMotivo,nCodSiz,@oCodMot)
@@ -94,35 +104,39 @@ static function TRK0013InfCS(cTitulo,cAlias)
 
     If (lRet)
         cAuxObs := ""
-        dbSelectArea("Z09")
-		Z09->( dbSetOrder(3) )
-        Z09->( dbSeek( cChave ) )
-        
-        While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
-            cAuxObs := ""
-        	aTrackS := Array( Len( Z09->( DbStruct() ) ) )
 
-			aTrackS[Z09->(FieldPos("Z09_FILIAL"))]  := Z09->Z09_FILIAL
-			aTrackS[Z09->(FieldPos("Z09_NUMPV")) ]  := Z09->Z09_NUMPV                   // Pedido Venda
-			aTrackS[Z09->(FieldPos("Z09_ITEMPV"))]  := Z09->Z09_ITEMPV                  // Item PV
-            cAuxObs += "--[" + DTOC(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
-            cAuxObs += "Para: Operações" + chr(13)+chr(10)
-            cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
-            cAuxObs += "O que: "+ AllTrim(cDescMotivo) + chr(13)+chr(10)
-            cAuxObs += "Observação:" + chr(13)+chr(10)
-            cAuxObs += AllTrim(cMotivoObs)+ chr(13)+chr(10)+ chr(13)+chr(10)
-            aTrackS[Z09->(FieldPos("Z09_ACAOCS"))]	:= "2"								// Acao CS
-            aTrackS[Z09->(FieldPos("Z09_DSMOTV"))]	:= cAuxObs + Trim(Z09->Z09_DSMOTV) 	// Detalhes do Motivo
-            aTrackS[Z09->(FieldPos("Z09_PENCS")) ]  := cAuxObs + Trim(Z09->Z09_PENCS)   // Pendencia CS
-            If !Empty(cMotivo)
-                aTrackS[Z09->(FieldPos("Z09_MOTIVO")) ]	:= cMotivo						// Observacao para CS
-            EndIf
- 
-            u_TRK006S(aTrackS, "Informar Time Operacoes")
+        //-- Verifica se é triangular
+        For nI := 1 To Len(aPVs)
+            cChave := aPVs[nI]
+            dbSelectArea("Z09")
+            Z09->( dbSetOrder(3) )
+            Z09->( dbSeek( cChave ) )
+            
+            While Z09->( !Eof() .And. Z09_FILIAL + Z09_NUMPV == cChave)
+                cAuxObs := ""
+                aTrackS := Array( Len( Z09->( DbStruct() ) ) )
 
-            Z09->( DbSkip() )
-        End
-        
+                aTrackS[Z09->(FieldPos("Z09_FILIAL"))]  := Z09->Z09_FILIAL
+                aTrackS[Z09->(FieldPos("Z09_NUMPV")) ]  := Z09->Z09_NUMPV                   // Pedido Venda
+                aTrackS[Z09->(FieldPos("Z09_ITEMPV"))]  := Z09->Z09_ITEMPV                  // Item PV
+                cAuxObs += "--[" + DTOC(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+                cAuxObs += "Para: Operações" + chr(13)+chr(10)
+                cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
+                cAuxObs += "O que: "+ AllTrim(cDescMotivo) + chr(13)+chr(10)
+                cAuxObs += "Observação:" + chr(13)+chr(10)
+                cAuxObs += AllTrim(cMotivoObs)+ chr(13)+chr(10)+ chr(13)+chr(10)
+                aTrackS[Z09->(FieldPos("Z09_ACAOCS"))]	:= "2"								// Acao CS
+                aTrackS[Z09->(FieldPos("Z09_DSMOTV"))]	:= cAuxObs + Trim(Z09->Z09_DSMOTV) 	// Detalhes do Motivo
+                aTrackS[Z09->(FieldPos("Z09_PENCS")) ]  := cAuxObs + Trim(Z09->Z09_PENCS)   // Pendencia CS
+                If !Empty(cMotivo)
+                    aTrackS[Z09->(FieldPos("Z09_MOTIVO")) ]	:= cMotivo						// Observacao para CS
+                EndIf
+    
+                u_TRK006S(aTrackS, "Informar Time Operacoes")
+
+                Z09->( DbSkip() )
+            End
+        Next nI
     Endif
 
     FreeObj(@oOk)

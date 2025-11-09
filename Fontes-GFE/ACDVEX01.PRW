@@ -36,9 +36,12 @@ User Function ACDVEX01()
                 If VTYesNo("Deseja Gerar o Romaneio?", "ATENCAO")
                     cRet := u_GFEEX001(aDanfes)
 
-                    If !Empty(cRet)
+                    If !Empty(cRet) .And. !( "CALCULO DO ROMANEIO" $ Upper(cRet) )
                         VTAlert(cRet, "ERRO")
-                        Loop
+                        Exit
+                    Else
+                        aDanfes := {}
+                        Exit
                     EndIf
 
                 Else
@@ -98,6 +101,9 @@ Static Function VldDanfe()
     Local cCliente := ""
     Local cLoja    := ""
     Local cTpVeic  := ""
+    Local cNota    := ""
+    Local cSerie   := ""
+    Local cChvSF2  := ""
     Local nPos     := 0
     
     //-- Validacao inicial de conteudo da chave da danfe
@@ -112,14 +118,18 @@ Static Function VldDanfe()
 
     //-- Verifica se chave existe
     If !SF2->( DbSeek( xFilial() + cDanfe ) )
-		VTAlert("Chave da danfe nao localizada!", "Aviso", .T., 4000, 3)
+		VTAlert("Chave da danfe nao localizada !", "Aviso [SF2]", .T., 4000, 3)
         VTKeyBoard(chr(20))
 		Return .F.
     EndIf
 
     //-- Guarda dados do cliente
     cCliente := SF2->F2_CLIENTE
-    cLoja    := SF2->F2_LOJA   
+    cLoja    := SF2->F2_LOJA
+
+    cNota    := SF2->F2_DOC
+    cSerie   := SF2->F2_SERIE
+    cChvSF2  := SF2->F2_CHVNFE
          
     If !Empty(aDanfes)
         //-- Valida se é mesmo agrupador (cliente + loja)
@@ -141,6 +151,25 @@ Static Function VldDanfe()
     EndIf
 
     DbSelectArea("Z09")
+    Z09->( DbSetOrder(2) )
+    If !Z09->( DbSeek(xFilial() + cNota + cSerie) )
+        VTAlert("Nota nao localizada no Cockpit!", "Danfe Invalida", .T., 4000, 3)
+        VTKeyBoard(chr(20))
+        Return .F.        
+    EndIf
+
+
+    While Z09->( !Eof() .And. Z09_FILIAL + Z09_NF + Z09_SERIE == xFilial() + cNota + cSerie)
+        If Empty(Z09->Z09_CHVNFE)
+            RecLock("Z09", .F.)
+            Z09->Z09_CHVNFE := SF2->F2_CHVNFE
+            Z09->( MsUnLock() )
+        EndIf
+
+        Z09->( DbSkip() )
+    End
+
+
     Z09->( DbSetOrder(6) )
 
     If !Z09->( DbSeek(cDanfe) )
@@ -150,6 +179,12 @@ Static Function VldDanfe()
     EndIf
 
     
+    If !Z09->( DbSeek(cDanfe) )
+        VTAlert("Danfe nao localizada no Cockpit!", "Danfe Invalida", .T., 4000, 3)
+        VTKeyBoard(chr(20))
+        Return .F.
+    EndIf
+
     /*
     If Empty(Z09->Z09_CDTPVC)
         VTAlert("Tipo de veiculo nao informado no CockPit!", "Danfe Invalida", .T., 4000, 3)

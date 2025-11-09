@@ -129,7 +129,7 @@ For nI:=1 To nTCpos
 		Exit
 	EndIF
 
-	If !Empty( aTrackS[nI] )
+	If Valtype(aTrackS[nI]) <> "U"
 		DbSelectArea("Z09")
 		If !_lNew .And. TrkIsEq( Z09->(FieldGet(nI)), aTrackS[nI])
 				cLog += GetSX3Cache(Z09->(FieldName(nI)),"X3_TITULO") + ": Antes: "

@@ -2,7 +2,7 @@
 /*/{Protheus.doc} GFEA1185
 PE validacoes de CT-e para atribuir a situacao 'Erro Impeditivo'
 @type function
-@version 20250818
+@version 20250820
 @author luiz.favareto@dothink.com.br
 @since 29/06/2025
 @history 22/07/2025, luiz.favareto, posicionamento romaneio GWN antes da chamada da GFE050CALC
@@ -11,8 +11,13 @@ PE validacoes de CT-e para atribuir a situacao 'Erro Impeditivo'
 @history 13/08/2025, luiz.favareto, ajuste calculo romaneio somente uma vez apos todas danfes terem sido lidas, e rateio peso cubado todos itens de todas danfes
 @history 14/08/2025, luiz.favareto, controle filial do CTE emitente ou na devolucao destinatario
 @history 18/08/2025, luiz.favareto, Correcao posicionamento empresa/filial
+@history 20/08/2025, luiz.favareto, Teste final ok rateio volume pesos e importacao xml na filial correta
 @return logical, sempre .T.
 @obs Conforme Projeto Logico 001 do Projeto no. 20250528008v02 referente ao servico de Revitalizacao do Gestao de Frete Embarcador (SIGAGFE TOTVS Protheus) e Integracao com o SIGAACD (Automacao e Coleta de Dados)
+resumo dos parametros:
+    BA_GFA185L - ativar ou desativar log do PE GFEA1185
+    BA_GFA185A - ativar ou desativar a execucao da funcao de calculo no ponto de entrada GFEA1185
+    BA_GFA185C - ativar ou desativar peso cubado somente .T.=cubado .F.=todos pesos
 /*/
 User Function GFEA1185
     Local aArea      as array
@@ -29,12 +34,13 @@ User Function GFEA1185
     Local nGW8PESOX2 as numeric
     Local nSM0RECNO  as numeric
     Local nY         as numeric
+    LocaL lGW8Update as boolean
     LocaL lOnlyCubad as boolean
     Local aChaves    as array
     Local xInfDoc    as variant
     Local lRet       as boolean
-    Iif(lGFEA1185:=SuperGetMv("BA_GFA185L",,.T.),ConOut(ProcName()+" => INICIO"),)
-    If cTpCte=="0".And.(lContinua:=SuperGetMv("BA_GFA185A",,.T.))
+    Iif(lGFEA1185:=SuperGetMv("BA_GFA185L",,.T.),ConOut(ProcName()+" => INICIO"),) // ativar ou desativar log do PE GFEA1185
+    If cTpCte=="0".And.(lContinua:=SuperGetMv("BA_GFA185A",,.T.)) // ativar ou desativar a execucao da funcao de calculo no ponto de entrada GFEA1185
         oLocCte := PARAMIXB[1]
         If (.Not.XmlChildEx(oLocCte,"_INFCTE")==Nil).And. ;
            (.Not.XmlChildEx(oLocCte:_INFCTE,"_INFCTENORM")==Nil).And. ;
@@ -53,7 +59,7 @@ User Function GFEA1185
                 If lContinua
                     SM0->(DbGoTo(nSM0RECNO))
                     cFilBkp := cFilAnt
-                    cFilAnt := SM0->M0_CODFIL
+                    cFilAnt := Alltrim(SM0->M0_CODFIL)
                 Endif
             Endif
             If (lRet := lContinua)
@@ -81,18 +87,20 @@ User Function GFEA1185
                 lContinua := lContinua.And.(.Not.XmlChildEx(oLocCte:_INFCTE,"_INFCTENORM")==Nil)
                 lContinua := lContinua.And.(.Not.XmlChildEx(oLocCte:_INFCTE:_INFCTENORM,"_INFCARGA")==Nil)
                 lContinua := lContinua.And.(.Not.XmlChildEx(oLocCte:_INFCTE:_INFCTENORM:_INFCARGA,"_INFQ")==Nil)
-                lOnlyCubad := SuperGetMv("BA_GFA185C",,.T.) // peso cubado somente ?
+                lOnlyCubad := SuperGetMv("BA_GFA185C",,.T.) // ativar ou desativar peso cubado somente .T.=cubado .F.=todos pesos
                 lContinua := lContinua.And.(aGetInfQ:=GetInfQ(oLocCte))[3]>0.Or.(.Not.lOnlyCubad.And.aGetInfQ[2]>0) // peso cubado ou peso real
                 Begintran()
                     If lContinua
-                        nGW8PESOR := 0
-                        aVolumes  := {}
+                        lGW8Update := .F.
+                        nGW8PESOR  := 0
+                        aVolumes   := {}
                         For nY := 1 To Len(aChaves)
                             cChaveCte := aChaves[nY]
                             If GW1->(MsSeek(Padr(cChaveCte,GetSx3Cache("GW1_DANFE","X3_TAMANHO"))+xFilial("GW1")))
                                 GW8->(DbSetOrder(2)) // GW8_FILIAL+GW8_CDTPDC+GW8_EMISDC+GW8_SERDC+GW8_NRDC+GW8_SEQ
                                 GW8->(MsSeek((cChaveGW1:=GW1->(GW1_FILIAL+GW1_CDTPDC+GW1_EMISDC+GW1_SERDC+GW1_NRDC))+"0"))
                                 While cChaveGW1==GW8->(GW8_FILIAL+GW8_CDTPDC+GW8_EMISDC+GW8_SERDC+GW8_NRDC)
+                                    lGW8Update := lGW8Update.Or.Empty(GW8->GW8_VOLUME)
                                     nGW8PESOR += Iif(GW8->GW8_PESOR>0,GW8->GW8_PESOR,1)
                                     Aadd(aVolumes,GW8->(Recno()))
                                     GW8->(DbSkip())
@@ -101,19 +109,23 @@ User Function GFEA1185
                         Next
                     Endif
                     If lContinua.And.(.Not.Empty(GW1->(GW1_FILROM+GW1_NRROM)))
-                        nGW8PESOX1 := nGW8PESOR
-                        For nY := 1 To Len(aVolumes)
-                            GW8->(DbGoTo(aVolumes[nY]))
-                            RecLock("GW8",.F.)
-                            If nY=Len(aVolumes)
-                                nGW8PESOX2 := nGW8PESOX1
-                            Else
-                                nGW8PESOX2 := Round(Iif(aGetInfQ[3]>0,aGetInfQ[3],aGetInfQ[2])*GW8->GW8_PESOR/nGW8PESOR,GetSx3Cache("GW8_VOLUME","X3_DECIMAL"))
-                                nGW8PESOX1 -= nGW8PESOX2
-                            Endif
-                            GW8->GW8_VOLUME := Round(Iif(aGetInfQ[3]>0,aGetInfQ[3],aGetInfQ[2])*GW8->GW8_PESOR/nGW8PESOR,GetSx3Cache("GW8_VOLUME","X3_DECIMAL"))
-                            GW8->(MsUnLock())
-                        Next
+                        If lGW8Update
+                            nGW8PESOX1 := Iif(aGetInfQ[3]>0,aGetInfQ[3],aGetInfQ[2]) // volume total pendente rateio
+                            For nY := 1 To Len(aVolumes)
+                                GW8->(DbGoTo(aVolumes[nY]))
+                                RecLock("GW8",.F.)
+                                If nY=Len(aVolumes)
+                                    nGW8PESOX2 := nGW8PESOX1 // volume rateado
+                                Else
+                                    nGW8PESOX2 := Round(Iif(aGetInfQ[3]>0,aGetInfQ[3],aGetInfQ[2])*GW8->GW8_PESOR/nGW8PESOR,GetSx3Cache("GW8_VOLUME","X3_DECIMAL")) // volume rateado
+                                    nGW8PESOX1 -= nGW8PESOX2 // subtraio do volume total pendente rateio
+                                Endif
+                                If Empty(GW8->GW8_VOLUME)
+                                    GW8->GW8_VOLUME := nGW8PESOX2
+                                Endif
+                                GW8->(MsUnLock())
+                            Next
+                        Endif
                         GWN->(DbSetOrder(1)) // GWN_FILIAL+GWN_NRROM
                         If GWN->(MsSeek(GW1->(GW1_FILROM+GW1_NRROM)))
                             GFE050CALC()

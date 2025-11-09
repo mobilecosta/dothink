@@ -46,6 +46,13 @@ Static Function MenuDef()
  
 Return aRot
  
+/*/{Protheus.doc} ModelDef
+Modelo de visao
+@type function
+@version 1.0
+@author DO THINK - ERIKE YURI
+@since 30/06/2025
+/*/ 
 Static Function ModelDef()
     //Criação do objeto do modelo de dados
     Local oModel := Nil
@@ -70,6 +77,13 @@ Static Function ModelDef()
 Return oModel
  
 
+/*/{Protheus.doc} ViewDef
+Visao do Tracking
+@type function
+@version 1.0
+@author DO THINK - ERIKE YURI
+@since 30/06/2025
+/*/
 Static Function ViewDef()
     //Criação do objeto do modelo de dados da Interface do Cadastro de Autor/Interprete
     Local oModel := FWLoadModel("TRK0003")
@@ -108,7 +122,6 @@ Função para mostrar a legenda das rotinas MVC com grupo de produtos
     @example
     u_TRK0003L()
 /*/
- 
 User Function TRK0003L()
     Local aLegenda := {}
      
@@ -119,4 +132,3 @@ User Function TRK0003L()
     BrwLegenda("Tracking Reebimento", "Status", aLegenda)
 
 Return
-

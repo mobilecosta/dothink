@@ -34,12 +34,19 @@ Static Function MenuDef()
      
     //Adicionando opções
     ADD OPTION aRot TITLE 'Visualizar' ACTION 'VIEWDEF.TRK0004' OPERATION MODEL_OPERATION_VIEW      ACCESS 0 //OPERATION 1
-    ADD OPTION aRot TITLE 'Incluir'    ACTION 'VIEWDEF.TRK0004' OPERATION MODEL_OPERATION_INSERT    ACCESS 0 //OPERATION 3
-    ADD OPTION aRot TITLE 'Alterar'    ACTION 'VIEWDEF.TRK0004' OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 4
-    ADD OPTION aRot TITLE 'Excluir'    ACTION 'VIEWDEF.TRK0004' OPERATION MODEL_OPERATION_DELETE    ACCESS 0 //OPERATION 5
+    //ADD OPTION aRot TITLE 'Incluir'    ACTION 'VIEWDEF.TRK0004' OPERATION MODEL_OPERATION_INSERT    ACCESS 0 //OPERATION 3
+    //ADD OPTION aRot TITLE 'Alterar'    ACTION 'VIEWDEF.TRK0004' OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 4
+    //ADD OPTION aRot TITLE 'Excluir'    ACTION 'VIEWDEF.TRK0004' OPERATION MODEL_OPERATION_DELETE    ACCESS 0 //OPERATION 5
  
 Return aRot
  
+/*/{Protheus.doc} ModelDef
+Modelo do Log do Tracking
+@type function
+@version 1.0
+@author erike.yuri@dothink.com.br
+@since 30/06/2025
+/*/ 
 Static Function ModelDef()
     //Criação do objeto do modelo de dados
     Local oModel := Nil
@@ -64,6 +71,13 @@ Static Function ModelDef()
 Return oModel
  
 
+/*/{Protheus.doc} ViewDef
+View do Log de Tracking
+@type function
+@version 1.0
+@author erike.yuri@dothink.com.br
+@since 30/06/2025
+/*/
 Static Function ViewDef()
     //Criação do objeto do modelo de dados da Interface do Cadastro de Autor/Interprete
     Local oModel := FWLoadModel("TRK0004")

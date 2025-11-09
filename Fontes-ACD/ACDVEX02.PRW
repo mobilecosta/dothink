@@ -142,9 +142,8 @@ Static Function ACDV166X(nOpc)
 	__aOldTela := {}
 	__nSem     := 0 // variavel static do fonte para controle de semaforo
 
-    //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-    //³Validacoes                                                            ³
-    //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+    //--Validacoes--------------------
+
 	If Empty(cCodOpe)
 		VTAlert("Operador nao cadastrado","Aviso",.T.,4000,3) //"Operador nao cadastrado"###"Aviso"
 		Return 10 // valor necessario para finalizar o acv170
@@ -162,14 +161,13 @@ Static Function ACDV166X(nOpc)
 			//Nao eh necessario  liberar o semaforo pois ainda nao criou nada
 			Return 1
 		EndIf
-		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-		//³Ativa/Destativa a tecla avanca e retrocesa                            ³
-		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		
+		//-- Ativa/Destativa a tecla avanca e retrocesa
+		
 		A170ATVKeys(.t.,.f.)	 //Ativa tecla avanca e desativa tecla retrocede
 	ElseIf ACDGet170()
-		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-		//³Desativa as teclas de retrocede e avanca                              ³
-		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		
+		//-- Desativa as teclas de retrocede e avanca
 		A170ATVKeys(.f.,.f.)
 	EndIf
 
@@ -353,7 +351,7 @@ Static Function ACDV166X(nOpc)
 				EndIf
 			EndIf
 			
-			// Chama a função A166LimDivIt para os itens associados a uma divergência ao realizar a separação
+			// Chama a função A166LimDivIt para os itens associados a uma divergï¿½ncia ao realizar a separaï¿½ï¿½o
 			If nOSOpc == 1
 				If !Empty( CB8->CB8_XOCOSE ) .And. Alltrim( CB8->CB8_XOCOSE ) $ cDivItemPv 
 					If Ascan( aItemDv, {|x| x[1]+x[2]+x[3]+x[4]== CB8->( CB8_ORDSEP+CB8_PEDIDO+CB8_ITEM+CB8_SEQUEN )}) == 0
@@ -453,19 +451,16 @@ Return FimProcess(,cOrdSep)
 //============================================================================================
 // FUNCOES REVISADAS
 //============================================================================================
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    ³ Separou  ³ Autor ³ ACD                   ³ Data ³ 06/02/05      ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Verifica se todos os itens da Ordem de Separacao foram separados³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³SIGAACD                                                          ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+
+/*/{Protheus.doc} Separou
+Verifica se todos os itens da Ordem de Separacao foram separados
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 04/08/2025
+@param cOrdSep, character, codigo da ordem de separação
+@return logical, indica se conseguiu separar com sucesso
+/*/
 Static Function Separou(cOrdSep)
 	Local lRet:= .t.
 	Local lV166SPOK
@@ -504,21 +499,16 @@ Static Function Separou(cOrdSep)
 
 Return(lRet)
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    ³ IniProcesso³ Autor ³ ACD                 ³ Data ³ 03/02/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Expedicao                                                  ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+/*/{Protheus.doc} IniProcesso
+Inicia as variaveis e status de separacao / validação fiscal
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 04/08/2025
+/*/
 Static Function IniProcesso()
 	RecLock("CB7",.f.)
+	CB7->CB7_CODOPE := cCodOpe
 
 	If nOSOpc == 1
 		// AJUSTE DO STATUS
@@ -538,31 +528,22 @@ Static Function IniProcesso()
 		EndIf
 		CB7->CB7_STATPA := " "  // se estiver pausado tira o STATUS  de pausa
 	EndIf
-
-	CB7->CB7_CODOPE := cCodOpe
 	CB7->(MsUnlock())
 	CB7->(SimpleLock())
 Return
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    ³ FimProcesso³ Autor ³ ACD                 ³ Data ³ 03/02/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Finaliza o processo de separacao                           ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Parametro ³ lApp      = Meu Coletor de Dados                           ³±±
-±±³          ³ cOrdSep   = Cod. Ordem de Separação                        ³±±
-±±³          ³ cAppLog   = variavel usada para retornar mensagem para app ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Retorno   ³ nSai - retorno ordem separação                             ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+
+/*/{Protheus.doc} FimProcess
+Finaliza o processo de separacao  
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 04/08/2025
+@param lApp, logical, indica se esta sendo execuado pelo app
+@param cOrdSep, character, codigo da ordem de separacao
+@param cAppLog, character, variavel de controle de log do ap
+@return numeric, codico de fim de processo
+/*/
 Static Function FimProcess(lApp,cOrdSep,cAppLog)
 	Local lDiverg := .f.
 	Local lRet    := .t.
@@ -786,19 +767,15 @@ Static Function FimProcess(lApp,cOrdSep,cAppLog)
 	EndIf
 Return nSai
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    ³ Endereco   ³ Autor ³ ACD                 ³ Data ³ 27/01/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Rotina de solicitacao do endereco                          ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+
+/*/{Protheus.doc} Endereco
+Rotina de solicitacao do endereco 
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 04/08/2025
+@return logical, indica se executou com sucesso
+/*/
 Static Function Endereco()
 	Local nTamArmz	:= 0
 	Local nTamEnd 	:= TamSX3("BF_LOCALIZ")[1]
@@ -929,19 +906,14 @@ Static Function Endereco()
 	EndDo
 Return .t.
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    ³ Tela       ³ Autor ³ ACD                 ³ Data ³ 27/01/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Somente monta a tela do respectivo produto a separar       ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+/*/{Protheus.doc} Tela
+Somente monta a tela do respectivo produto a separar
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 04/08/2025
+@return logical, Indica se validou
+/*/
 Static Function Tela()
 	Local aTam    := TamSx3("CB8_QTDORI")
 	Local cUnidade
@@ -981,9 +953,8 @@ Static Function Tela()
 		EndIf
 	EndIf
 
-    //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-    //³Ponto de Entrada na montagem da tela de separção de expedição.³
-    //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+    
+    //-- Ponto de Entrada na montagem da tela de separção de expedição.
 	If ExistBlock("A166TELA")
 		ExecBlock("A166TELA",.F.,.F.,{nQtdSep,aTam,cUnidade})
 	ElseIf lVT100B // GetMv("MV_RF4X20")//4x20
@@ -1055,20 +1026,21 @@ Static Function Tela()
 
 Return .T.
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    ³ AglutCB8   ³ Autor ³ ACD                 ³ Data ³ 27/01/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Funcao que retorna o valor aglutinado de um produto confor-³±±
-±±³          ³ parametros informados.                                     ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+/*/{Protheus.doc} AglutCB8
+Funcao que retorna o valor aglutinado de um produto confor parametros informados.
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 04/08/2025
+@param cOrdSep, character, codigo da ordem de separacao
+@param cArm, character, Armazem
+@param cEnd, character, codigo do endereco
+@param cProd, character, codigo do produto
+@param cLote, character, codigo do lote
+@param cSLote, character, codigo do sub-lote
+@param cNumSer, character, codigo do numero de serie
+@return numeric, codigo do retorno
+/*/
 Static Function AglutCB8(cOrdSep,cArm,cEnd,cProd,cLote,cSLote,cNumSer)
 	Local nRecnoCB8:= CB8->(Recno())
 	Local nSaldo:=0
@@ -1102,19 +1074,14 @@ Static Function AglutCB8(cOrdSep,cArm,cEnd,cProd,cLote,cSLote,cNumSer)
 	CB8->(DbGoto(nRecnoCB8))
 Return nSaldo
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    ³ EtiProduto ³ Autor ³ ACD                 ³ Data ³ 27/01/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Leitura da etiqueta                                        ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+/*/{Protheus.doc} EtiProduto
+Leitura da etiqueta 
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 04/08/2025
+@return logical, indica se leu corretamente a etiqueta
+/*/
 Static Function EtiProduto()
 	Local cEtiCB0 	:= Space(TamSx3("CB0_CODET2")[1])
 	Local cEtiProd 	:= IIf( FindFunction( 'AcdGTamETQ' ), AcdGTamETQ(), Space(48) )
@@ -1136,11 +1103,8 @@ Static Function EtiProduto()
 		If __PulaItem
 			Exit
 		EndIf
-    /*
-    ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-    Ponto de entrada permite que o usuário informe o valor da variável nQtde
-    ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-    */
+    	
+		//Ponto de entrada permite que o usuario informe o valor da variável nQtde
 		If lV166NQTDE
 			uRetQtde :=Execblock("V166NQTDE")
 			If(ValType(uRetQtde)=="N" .And. uRetQtde > 0)
@@ -1206,19 +1170,15 @@ Static Function EtiProduto()
 	lEtiProduto := .F.
 Return .t.
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    ³ EtiCaixa o ³ Autor ³ ACD                 ³ Data ³ 27/01/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Leitura da etiqueta da caixa qdo granel                    ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+
+/*/{Protheus.doc} EtiCaixa
+Leitura da etiqueta da caixa qdo granel 
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 04/08/2025
+@return logical, retorna se leu etiqueta corretamente
+/*/
 Static Function EtiCaixa()
 	Local cEtiqCaixa := Space(TamSx3("CB0_CODET2")[1])
 	Local bKey16 	:= VtSetKey(16)
@@ -1269,19 +1229,15 @@ Static Function EtiCaixa()
 	Enddo
 Return .t.
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    ³ EtiAvulsa  ³ Autor ³ ACD                 ³ Data ³ 27/01/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Leitura da etiqueta avulsa                                 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+
+/*/{Protheus.doc} EtiAvulsa
+Leitura da etiqueta avulsa  
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 04/08/2025
+@return logical, indica se leu corretamente a etiqueta
+/*/
 Static Function EtiAvulsa()
 	Local cEtiqAvulsa:= Space(TamSx3("CB0_CODET2")[1])
 	Local bKey16 	:= VtSetKey(16)
@@ -1333,19 +1289,32 @@ Static Function EtiAvulsa()
 Return .t.
 
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    ³ GravaCB8 ³ Autor ³ ACD                   ³ Data ³ 28/01/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Expedicao                                                  ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+
+/*/{Protheus.doc} GravaCB8
+Grava registro de itens da separacao
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 04/08/2025
+@param nQtde, numeric, quantidade
+@param cArm, character, armazem
+@param cEnd, character, endereco
+@param cProd, character, produto
+@param cLote, character, lote
+@param cSLote, character, sub-lote
+@param cLoteNew, character, codigo novo lote
+@param cSLoteNew, character, codigo novo sub-lote
+@param cNumSer, character, numero de serie
+@param cCodCB0, character, codigo CB0
+@param cNumSerNew, character, codigo novo numero de serie
+@param lApp, logical, usa app
+@param cItemSep, character, item da separacao
+@param cCodSep, character, codigo da separacao
+@param cType, character, tipo
+@param cDocument, character, documento
+@param cSequ, character, sequencia
+@return logical, indicase gravou corretamente
+/*/
 Static Function GravaCB8(nQtde, cArm, cEnd, cProd, cLote, cSLote, cLoteNew, cSLoteNew, cNumSer, cCodCB0, cNumSerNew, lApp, cItemSep, cCodSep, cType, cDocument, cSequ)
 	Local cEndNew		:= CriaVar("CB8_LCALIZ")
 	Local cSequen		:= ""
@@ -1448,7 +1417,7 @@ Static Function GravaCB8(nQtde, cArm, cEnd, cProd, cLote, cSLote, cLoteNew, cSLo
 						EndIf
 					EndIf
 					If !lRet
-						VtAlert("Endereco invalido" + " " + "O número de série não foi localizado na tabela de saldos","Aviso",.t.,4000,4) //"Endereco invalido" "O número de série não foi localizado na tabela de saldos"#"Aviso"
+						VtAlert("Endereco invalido" + " " + "O número de série não foi localizado na tabela de saldos","Aviso",.t.,4000,4) 
 						Exit
 					EndIf
 				EndIf
@@ -1630,19 +1599,23 @@ Static Function GravaCB8(nQtde, cArm, cEnd, cProd, cLote, cSLote, cLoteNew, cSLo
 Return lRet
 
 
-/*
-ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
-±±³Fun‡ao    ³ GravaCB9 ³ Autor ³ ACD                   ³ Data ³ 28/01/05 ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
-±±³Descri‡ao ³ Expedicao                                                  ³±±
-±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
-±±³ Uso      ³ SIGAACD                                                    ³±±
-±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
-±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
-ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
-*/
+
+/*/{Protheus.doc} GravaCB9
+Grava itens da separacao
+@type function
+@version 1.0
+@author dener.lemos@dothink.com.br
+@since 04/08/2025
+@param nQtde, numeric, quantidade
+@param cEndNew, character, novo endereco
+@param cLoteNew, character, novo lote
+@param cSLoteNew, character, novo sub-lote
+@param cCodCB0, character, codigo CB0
+@param cNumSerNew, character, novo numero de serie
+@param cSequen, character, codigo da sequencia
+@param lApp, logical, usa app
+@return logical, indica se gravou
+/*/
 Static Function GravaCB9(nQtde,cEndNew,cLoteNew,cSLoteNew,cCodCB0,cNumSerNew,cSequen,lApp)
 	Default cCodCB0 := Space(10)
 
@@ -2144,6 +2117,11 @@ Static Function VldCodSep()
 	If Empty(cOrdSep)
 		VtKeyBoard(chr(23))
 		Return .f.
+	EndIf
+
+	//-- Necessario para semaforo que esta ativo
+	If !MSCBFSem()
+		MSCBASem()
 	EndIf
 
 	CB7->(DbSetOrder(1))
@@ -5934,6 +5912,7 @@ Static Function SetTraking(cOpc, cTitLog)
 	local cEmail  := ""
 	local aPvs	  := {}
 	local nI	  := 0
+	local dDtAg	  := Date() + GetMV("BA_SLAOPER",.F.,2) 
 
 	aadd(aPVs, CB7->( CB7_FILIAL + CB7_PEDIDO ))
 	If !Empty(CB7->CB7_XPVTRI)
@@ -5987,8 +5966,13 @@ Static Function SetTraking(cOpc, cTitLog)
 						aTrackS[Z09->(FieldPos("Z09_DVFISI"))]  := dDataBase
 						aTrackS[Z09->(FieldPos("Z09_HVFISI"))]  := Time()
 						aTrackS[Z09->(FieldPos("Z09_UVFISI"))]  := cUserName
+						aTrackS[Z09->(FieldPos("Z09_STAAGE"))] := "1"
 						//-- Agendamento
-						aTrackS[Z09->(FieldPos("Z09_DT1COL"))]  := Z09->Z09_DPFAPV
+						If Z09->Z09_DTSLA > Date()
+							dDtAg := Z09->Z09_DTSLA
+						EndIf
+
+						aTrackS[Z09->(FieldPos("Z09_DT1COL"))]  := dDtAg
 						aTrackS[Z09->(FieldPos("Z09_HR1COL"))]  := Time()
 						aTrackS[Z09->(FieldPos("Z09_US1COL"))]  := "AUTOMATICO"
 						cTransp := Z09->Z09_TRANSP
@@ -5998,6 +5982,8 @@ Static Function SetTraking(cOpc, cTitLog)
 						aTrackS[Z09->(FieldPos("Z09_HREXPE"))]  := Time()
 					ElseIf cOpc == "4"
 						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := IIF(Empty(Z09->Z09_NF), "6"/*Em Faturamento*/, "7"/*Em Embarque*/)
+						aTrackS[Z09->(FieldPos("Z09_DFEXPE"))]	:= dDataBase
+						aTrackS[Z09->(FieldPos("Z09_HFEXPE"))]  := Time() 
 					EndIf
 					
 					u_TRK006S(aTrackS, cTitLog)
@@ -6010,13 +5996,21 @@ Static Function SetTraking(cOpc, cTitLog)
 		EndIf
 	Next nI
 
+	CB7->( DbGoto(nRecPos) )
+	If CB7->( RecLock("CB7", .F.) )
+		CB7->CB7_XDTAGE := dDtAg
+		CB7->( MsUnLock() )
+	EndIf
+
 	If !Empty(cTransp)
 		DbSelectAre("Z09")
 		Z09->( DbSetOrder(3) )
 		//-- Se for remessa irá sempre pagar o último cTransp e também o último cChave
 		If Z09->( DbSeek(cChave) )
 			cEmail := Posicione("SA4", 1, FWxFilial('SA4') + cTransp, "A4_EMAIL")
-			cEmail := "erike.yuri@dothink.com.br;janine.duarte@barentz.com;"
+
+			cEmail := u_GetAgEmail(cEmail)
+	
 			u_TRK0012(cEmail, "Agendamento")
 		EndIf
 	EndIf
@@ -6033,6 +6027,8 @@ User Function CBSolCB7(nOpc,bBlcVld)
 	Local cPedido,cNota,cSerie
 	Local aTela:= VtSave()
 	Local cF3CB7 := ""
+	
+	DbSelectArea("CB7")
 
 	If nOSOpc == 1
 		cF3CB7 := "CB7VL"
@@ -6229,12 +6225,22 @@ Static Function ChkPVTri(cChave)
 Return cNewChv
 
 
-
+/*/{Protheus.doc} GetInfoPv
+Funcao responsavel por trazer informacoes adicionais do produto CTRL+E
+@type function
+@version 1.0
+@author erike.yuri@dothink.com.br
+@since 9/25/2025
+/*/
 Static Function GetInfoPv()
 Local cAux	 := If(Empty(cRestricao), "Sem Restricao", cRestricao)
 
 If !Empty(CB8->CB8_XCODSI)
-	VtAlert("Codigo Similar: " + CB8->CB8_XCODSI,"PROD.SIMILAR",.t.)
+	VtAlert(CB8->CB8_XCODSI, "CODIGO SIMILAR",.t.)
+EndIf
+
+If !Empty(CB8->CB8_XLOTFO)
+	VtAlert(CB8->CB8_XLOTFO, "LOTE FORNECEDOR",.t.)
 EndIf
 
 VtAlert(cAux, "RESTRICAO:", .t.)

@@ -6,6 +6,10 @@
 #INCLUDE "TOTVS.CH"
 #INCLUDE "PARMTYPE.CH"
 #include 'topconn.ch'
+
+Static lEmExecucao := .F.
+Static _aImpres := {{"LD","0",.T.},{"OS","1",.T.},{"CL","2",.T.},{"DF","3",.T.}} // [1]=DF=Danfe;LD=Laudo;OS=Ordem de Separacao;CL=Check-List de Embarque [2]=Ordem de Impressao, [3]=Indica se Imprime
+
 /*
 1 Z13_FILIAL+Z13_DOC+Z13_SERIE+Z13_CLIENT+Z13_LOJA+Z13_ORDEM                                                                                                      
 2 Z13_FILIAL+Z13_DOC+Z13_SERIE+Z13_CLIENT+Z13_LOJA+Z13_IMPRES                                                                                                  
@@ -27,7 +31,7 @@ User Function TRK0010()
     Private aRotina		:= MenuDef()
 	Private aGetDados	:= {}
 	Private aColNaoOrd	:= {}
-	Private cAlias		:= "SZW"
+	Private cAlias		:= "Z13"
 	Private cCadastro	:= "Expedição - Impressão de Documentos"
 	Private c518Cli		:= ""
 	Private c518Loja	:= ""
@@ -35,7 +39,6 @@ User Function TRK0010()
 	Private nOrdena		:= 0
 	Private oTimer
 	Private oBrowse
-	Private _aImpres := {{"LD","0",.T.},{"OS","1",.T.},{"CL","2",.T.},{"DF","3",.T.}} // [1]=DF=Danfe;LD=Laudo;OS=Ordem de Separacao;CL=Check-List de Embarque [2]=Ordem de Impressao, [3]=Indica se Imprime
 	
 	SX2->(DbSetOrder(1))
 	If !SX2->(DbSeek("Z13"))
@@ -43,15 +46,23 @@ User Function TRK0010()
 		Return
 	EndIf
 
+	ProcTm()
+
+	If MayIUseCode("TRK10JB"+FwCodFil()+dtos(date()))
+		FreeUsedCode()
+		StartJob( "U_TRK10JB", GetEnvServer(), .F., {cEmpAnt, cFilAnt})
+	EndIf
+	
 	// Determina a legenda das faturas
 	Aadd(aCores, {"Z13_STATUS=='0'", "BR_VERMELHO"	})	 // Nao Impresso
 	Aadd(aCores, {"Z13_STATUS=='1'", "BR_VERDE"})        // Impresso
-	ProcTm()
+	
+	
 	DbSelectArea("Z13")
 	DbGotop()
 
 	// Inicializa a MBrowse com os dados do cabeçalho do arquivo
-	oMBrowse := MBrowse(,,,, "Z13",,,,,, aCores,,,,{|| fRefresh()})
+	oMBrowse := MBrowse(,,,, "Z13",,,,,, aCores,,,,/*{|| fRefresh()}*/)
 
 	RestArea(aArea)
 
@@ -72,9 +83,22 @@ Local aRot	:= {}
 Aadd(aRot, { "Pesquisar"	, "AxPesqui"	, 0,  1, 0, .F. })
 Aadd(aRot, { "Visualizar"	, "AXVISUAL"	, 0,  2, 0, Nil })
 Aadd(aRot, { "Imprimir"     , "U_TRK10IMP"	, 0,  3, 0, Nil }) 
+Aadd(aRot, { "Atualiza"     , "U_TRK10REF"	, 0,  4, 0, Nil }) 
 Aadd(aRot, { "Legenda"	    , "U_TRK10LEG"	, 0,  9, 0, Nil })
 
 Return aClone(aRot)
+
+/*/{Protheus.doc} TRK10REF
+Funcao de atualizacao de tela
+@type function
+@version  20250807
+@author fernando.muta@dothink.com.br
+@since 07/08/2025
+/*/
+User Function TRK10REF()
+	ProcTm()
+Return
+
 
 
 /*/{Protheus.doc} TRK10LEG
@@ -107,8 +131,9 @@ User Function TRK10IMP()
 local _lOkImp := .T.
 local _aVarBkp
 local cLog := ""
-
-oTimer:Deactivate()
+If !oTimer == NIL
+	oTimer:Deactivate()
+EndIf	
 
 DbSelectArea("CB7")
 CB7->( DbSetOrder(2) )
@@ -138,6 +163,11 @@ While !TRBZ13IMP->(Eof())
 		ElseIf  TRBZ13IMP->Z13_IMPRES == 'LD'             // LD=Laudo
 			TRK10LD()
 		ElseIf  TRBZ13IMP->Z13_IMPRES == 'OS'             // OS=Ordem de Separacao
+			If !Empty(TRBZ13IMP->Z13_PVREM)
+				CB7->(DbOrderNickName("CB7REMESSA"))
+			Else
+				CB7->( DbSetOrder(2))
+			EndIf
 			If CB7->( DbSeek( TRBZ13IMP->Z13_FILIAL + TRBZ13IMP->Z13_PEDIDO ) )
 				TRK10OS()
 			Else
@@ -168,15 +198,16 @@ While !TRBZ13IMP->(Eof())
 		FWAlertError(cLog, "Falha")
 	EndIf
 End
-
-oTimer:Activate()
+If !oTimer == NIL
+	oTimer:Activate()
+EndIf	
 
 TRBZ13IMP->(DbCloseArea())
 
 Return
 
 /*/{Protheus.doc} TRK10DF
-description
+Impressao da Danfe
 @type function
 @version  20250807
 @author fernando.muta@dothink.com.br
@@ -195,6 +226,8 @@ If !SF2->(DbSeek(TRBZ13IMP->Z13_FILIAL+TRBZ13IMP->Z13_DOC+TRBZ13IMP->Z13_SERIE+T
 	Alert("Erro fatal speddanfe SF2! ")
 	Return
 EndIf	
+Sleep(100)
+
 Pergunte(cPergSX1,.F.)
 MV_PAR01 := TRBZ13IMP->Z13_DOC
 MV_PAR02 := TRBZ13IMP->Z13_DOC
@@ -206,15 +239,17 @@ SetMVValue(cPergSX1, "MV_PAR02", TRBZ13IMP->Z13_DOC    , .F.)
 SetMVValue(cPergSX1, "MV_PAR03", TRBZ13IMP->Z13_SERIE  , .F.)
 SetMVValue(cPergSX1, "MV_PAR04", 2                     , .F.)
 SetMVValue(cPergSX1, "MV_PAR05", 2                     , .F.)
+SetMVValue(cPergSX1, "MV_PAR06", 2                     , .F.)
 SetMVValue(cPergSX1, "MV_PAR07", ctod("  /  /  ")	   , .F.)
 SetMVValue(cPergSX1, "MV_PAR08", date()+10			   , .F.)
 
+Pergunte(cPergSX1,.F.)
+Sleep(1000)
 
 _cIdEnt := GetIdEnt(lUsaColab)
 nFlags := PD_ISTOTVSPRINTER + PD_DISABLEPAPERSIZE + PD_DISABLEPREVIEW + PD_DISABLEMARGIN
 oSetup := FWPrintSetup():New(nFlags, "DANFE")
 oSetup:aOptions[PD_VALUETYPE]:=cPathDest
-//oSetup:Activate()
 
 oDanfe:= FWMSPrinter():New(cFilePrint, IMP_PDF, .F., cPathDest, .T.)
 oDanfe:nDevice  := IMP_PDF
@@ -298,7 +333,6 @@ If !lUsaColab
 	
 else
 	if !( ColCheckUpd() )
-		//Aviso("SPED","UPDATE do TOTVS Colaboração 3.0 não aplicado. Desativado o uso do TOTVS Colaboração 3.0","totvscolab",3)
 		msginfo("UPDATE NAO APLICADO...")
 	else
 		cIdEnt := "000000"
@@ -313,7 +347,7 @@ Return(cIdEnt)
 
 
 /*/{Protheus.doc} IsReady
-description
+Verificando se a esta somente como leitura para parametros
 @type function
 @version  20250807
 @author fernando.muta@dothink.com.br
@@ -322,7 +356,7 @@ description
 @param nTipo, numeric, Tipo
 @param lHelp, logical, indica se tera help
 @param lUsaColab, logical, indica se usa totvs colavoracao
-@return logical, return_description
+@return logical, retorno logico
 /*/
 Static Function IsReady(cURL,nTipo,lHelp,lUsaColab)
 Local oWS
@@ -443,10 +477,18 @@ Static Function TRK010TM(_lReguaTm)
 local _iK
 local _cQry    := ""
 local _aRecZ13 := Z13->(GetArea())
-
+local _cDocum  := ""
+local _cSerie  := ""
+local _cCliente:= ""
+local _cLoja   := ""
+local _cPVREM  := ""
+local nDiasRetr:= 5
+/*
 If !oTimer == NIL
 	oTimer:Deactivate()
 EndIf	
+*/
+lEmExecucao := .T.
 
 _cQry := " SELECT F2_FILIAL,F2_SERIE, F2_DOC,F2_CLIENTE,F2_LOJA,F2_EMISSAO,SF2.F2_CARGA, SF2.R_E_C_N_O_ NRECNO,D2_PEDIDO,MAX(B1_DESC) B1_DESC "
 _cQry += " FROM " + RetSqlName("SF2") + " SF2 "                   
@@ -457,7 +499,7 @@ _cQry += " WHERE F2_FILIAL = '" + xFilial("SF2") + "' "
 _cQry += " AND   F2_FIMP in('T','S') " // Somente se a nota foi autorizada
 _cQry += " AND   F2_ESPECIE = 'SPED' "
 _cQry += " AND   F2_TIPO = 'N' "
-_cQry += " AND   F2_EMISSAO = '" +dtos(ddatabase) + "' "
+_cQry += " AND   F2_EMISSAO >= '" +dtos(ddatabase - nDiasRetr) + "' "
 _cQry += " AND   SF2.D_E_L_E_T_ = ' ' "  
 _cQry += " AND   NOT EXISTS (SELECT * FROM " + RetSqlName("Z13") +  " Z13 " "
 _cQry += "                  WHERE F2_FILIAL = Z13_FILIAL "  
@@ -483,20 +525,44 @@ While !TRBF2IMP->(Eof())
 	If _lReguaTm
 		IncProc("Gerando registros para impressao")
 	EndIf	
+	_cQry := " SELECT SD2.D2_DOC, SD2.D2_SERIE, SD2.D2_CLIENTE, SD2.D2_LOJA,CB7_XPVTRI FROM "+RetSqlName("CB7")+" CB7A "
+	_cQry += " INNER JOIN "+RetSqlName("SD2")+" SD2 ON CB7A.CB7_FILIAL=D2_FILIAL AND CB7A.CB7_XPVTRI=D2_PEDIDO AND SD2.D_E_L_E_T_ = ' ' "
+	_cQry += " WHERE CB7A.CB7_FILIAL = '"+TRBF2IMP->F2_FILIAL+"' "
+	_cQry += " AND   CB7A.CB7_PEDIDO = '"+TRBF2IMP->D2_PEDIDO+"' "	
+    _cQry += " AND   CB7A.CB7_XPVTRI <> ' ' "
+	_cQry += " AND   CB7A.D_E_L_E_T_ = ' ' "	
+	TCQUERY _cQry New Alias "TRBCBA"
+	If !TRBCBA->(Eof())
+		_cDocum     := TRBCBA->D2_DOC
+		_cSerie     := TRBCBA->D2_SERIE
+		_cCliente   := TRBCBA->D2_CLIENTE
+		_cLoja      := TRBCBA->D2_LOJA
+		_cPVREM     := TRBCBA->CB7_XPVTRI
+		_cPedido    :=TRBCBA->CB7_XPVTRI
+	Else
+		_cDocum     := TRBF2IMP->F2_DOC
+		_cSerie     := TRBF2IMP->F2_SERIE
+		_cCliente   := TRBF2IMP->F2_CLIENTE
+		_cLoja      := TRBF2IMP->F2_LOJA
+		_cPedido    := TRBF2IMP->D2_PEDIDO		
+		_cPVREM     := Space(6)
+	EndIf
+	TRBCBA->(DbCloseArea())
 	For _iK:=1 To len(_aImpres)
 		Z13->(DbSetOrder(2))
-		_lNewZ13 := !Z13->(DbSeek( TRBF2IMP->(F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA)+_aImpres[_iK][1] ))
+		_lNewZ13 := !Z13->(DbSeek( TRBF2IMP->F2_FILIAL+_cDocum+_cSerie+_cCliente+_cLoja+_aImpres[_iK][1]) )
 		If _lNewZ13 .AND. _aImpres[_iK][3]
 			RecLock("Z13",_lNewZ13)
 			Z13->Z13_FILIAL  := TRBF2IMP->F2_FILIAL
 			Z13->Z13_STATUS  := "0"
 			Z13->Z13_IMPRES  := _aImpres[_iK][1]
 			Z13->Z13_ORDEM   := _aImpres[_iK][2]
-			Z13->Z13_DOC     := TRBF2IMP->F2_DOC
-			Z13->Z13_SERIE   := TRBF2IMP->F2_SERIE
-			Z13->Z13_CLIENT  := TRBF2IMP->F2_CLIENTE
-			Z13->Z13_LOJA    := TRBF2IMP->F2_LOJA
-			Z13->Z13_PEDIDO  := TRBF2IMP->D2_PEDIDO
+			Z13->Z13_DOC     := _cDocum
+			Z13->Z13_SERIE   := _cSerie
+			Z13->Z13_CLIENT  := _cCliente
+			Z13->Z13_LOJA    := _cLoja
+			Z13->Z13_PEDIDO  := _cPedido
+			Z13->Z13_PVREM   := _cPVREM
 			Z13->Z13_EMISS   := STOD(TRBF2IMP->F2_EMISSAO)
 			Z13->Z13_F2REC   := STRZERO(TRBF2IMP->NRECNO,14)
 			Z13->(MsUnlock())
@@ -508,12 +574,7 @@ TRBF2IMP->(DbCloseArea())
 
 Z13->(RestArea(_aRecZ13))
 
-If !oTimer == NIL
-	oMBrowse := GetObjBrow()
-	oMBrowse:Refresh()
-	oTimer:Activate()
-EndIf
-
+lEmExecucao := .F.
 Return
 
 /*/{Protheus.doc} TRK10LD
@@ -554,8 +615,10 @@ SetMVValue(cPergSX1, "MV_PAR07", ctod("  /  /  "), .F.)
 SetMVValue(cPergSX1, "MV_PAR08", date()+360, .F.)
 SetMVValue(cPergSX1, "MV_PAR09", TRBZ13IMP->Z13_PEDIDO, .F.)
 SetMVValue(cPergSX1, "MV_PAR10", TRBZ13IMP->Z13_PEDIDO, .F.)
+SetMVValue(cPergSX1, "MV_PAR11", TRBZ13IMP->Z13_FILIAL, .F.) //-- Adicionado posteriormente com correção da BARENTZ, nos da DO THINK ficamos sabendo somente depois
+Pergunte(cPergSX1, .F.)
 
-U_PRT0688(.F.,.T.,.F.,.F.)
+U_PRT0688(.F.,.T.,.F.,.T.)
 
 Return
 
@@ -573,3 +636,28 @@ Static Function TRK10OS()
 
 	RestArea(aArea)
 Return 
+
+/*/{Protheus.doc} TRK10JB
+Job para atualizacao da tabela 
+@type function
+@version 20250808 
+@author fernando.muta@dothink.com.br
+@since 8/8/2025
+/*/
+User Function TRK10JB(_aParam)
+local _dData := Date()
+wfprepenv(_aParam[1],_aParam[2])
+MayIUseCode("TRK10JB"+FwCodFil()+dtos(date()))
+While .T.
+	Sleep(10000)
+	If lEmExecucao
+		Loop
+	EndIf
+
+	TRK010TM(.F.)
+	If _dData <> Date()
+		exit
+	EndIf	
+End
+FreeUsedCode()
+return

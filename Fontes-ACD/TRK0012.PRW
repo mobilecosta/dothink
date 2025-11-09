@@ -233,7 +233,6 @@ oHTML:ValByName("MSG_INI"	, cMsgIni									)
 If Empty(Z09->Z09_NF)
 	oHTML:ValByName("VLR_TOTAL"	, Trans(nTotal, "@E 999,999,999.99"))
 Else
-	//oHTML:ValByName("MSG_INI"	, "Informamos que o Nota Fiscal  " + Z09->Z09_NF + ", esta disponível para coleta, a partir do dia " + cDtAgenda)
 	oHTML:ValByName("VLR_TOTAL"	, Trans(SF2->(F2_VALBRUT + F2_VALIPI), "@E 999,999,999.99"))
 EndIf
 
@@ -297,13 +296,6 @@ While ! SC6->( Eof() ) .And. SC6->(C6_FILIAL + C6_NUM) == Z09->(Z09_FILIAL + Z09
 
 
 	EndIf
-	/*
-	oHTML:ValByName("C6_NUMITEM", SC6->C6_ITEM									)
-	oHTML:ValByName("C6_PRODUTO", SC6->C6_PRODUTO								)
-	oHTML:ValByName("C6_QUANT"	, Trans(SC6->C6_QTDVEN, "@E 999,999,999.999999"))
-	oHTML:ValByName("B5_ONU"	, cB5_ONU										)
-	oHTML:ValByName("CONTROLADO", ""											)
-	*/
 	
 
     cItens += '<div style="border:1px solid #ccc; border-radius:5px; padding:10px; margin-bottom:10px;">'
@@ -314,7 +306,6 @@ While ! SC6->( Eof() ) .And. SC6->(C6_FILIAL + C6_NUM) == Z09->(Z09_FILIAL + Z09
     cItens += '<p style="margin:5px 0;"><strong>ONU:</strong> ' + cB5_ONU + '</p>'
 	cItens += '<p style="margin:5px 0;"><strong>Risco:</strong> ' + cB5_RISCO + '</p>'
     cItens += '<p style="margin:5px 0;"><strong>Classe:</strong> ' + cB5_CLASS + '</p>'
-    //cItens += '<p style="margin:5px 0;"><strong>PG:</strong> ' + SB5->B5_GRUPO + '</p>'
     cItens += '<p style="margin:5px 0;"><strong>Controlado:</strong> '+cControla+'</p>'
     cItens += '</div>	
 
@@ -375,10 +366,7 @@ User Function xSendMail(cMailDestino,cAssunto,cTexto,cAnexos,lJob,cCopia,cEmailD
 	Local lEnvio 	:= .F.
 	Local cEmailTst	:= GetSrvProfString( "MailTestList", "" )
 	Local lNovoMtd  := GETMV("TI_NVMTDMA",,.T.)  
-	/*
-	ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	³DEFINE valores padroes³
-	ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ*/
+
 	Default	cMailDestino:= ""
 	Default cAssunto	:= ""
 	Default cTexto		:= ""
@@ -1026,7 +1014,7 @@ oHTML:ValByName("DT_AGENDADA"	, cDtAgenda										)
 oHTML:ValByName("A4_NOME"		, SC5->C5_TRANSP + " - " + AllTrim(SA4->A4_NOME))
 oHTML:ValByName("DESTINO"		, cDestino										)
 
-cMsgIni := "Informamos que foi cancelado o agendamento d" + cTitOrig 
+cMsgIni := "Informamos que foi <strong>cancelado</strong> o agendamento d" + cTitOrig 
 cMsgIni += cNomCliFor + ", que estava disponível para coleta, no endereço: "
 cMsgIni += "<strong>" + cEndOrig + "</strong>"
 cMsgIni += ", para o dia <strong>" + cDtAgenda + "</strong>."

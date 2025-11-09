@@ -36,10 +36,11 @@ Static Function MenuDef()
     Local aRot := {}
 
     // As tres opcoes abaixo habilitam as acoes da barra
-    ADD OPTION aRot TITLE "Visualizar" ACTION "VIEWDEF.TRK0017" OPERATION MODEL_OPERATION_VIEW    ACCESS 0
-    ADD OPTION aRot TITLE "Incluir"    ACTION "VIEWDEF.TRK0017" OPERATION MODEL_OPERATION_INSERT  ACCESS 0
-    ADD OPTION aRot TITLE "Alterar"    ACTION "VIEWDEF.TRK0017" OPERATION MODEL_OPERATION_UPDATE  ACCESS 0
-    ADD OPTION aRot TITLE "Excluir"    ACTION "VIEWDEF.TRK0017" OPERATION MODEL_OPERATION_DELETE  ACCESS 0
+    ADD OPTION aRot TITLE "Visualizar"      ACTION "VIEWDEF.TRK0017" OPERATION MODEL_OPERATION_VIEW    ACCESS 0
+    ADD OPTION aRot TITLE "Incluir"         ACTION "VIEWDEF.TRK0017" OPERATION MODEL_OPERATION_INSERT  ACCESS 0
+    ADD OPTION aRot TITLE "Alterar"         ACTION "VIEWDEF.TRK0017" OPERATION MODEL_OPERATION_UPDATE  ACCESS 0
+    ADD OPTION aRot TITLE "Excluir"         ACTION "VIEWDEF.TRK0017" OPERATION MODEL_OPERATION_DELETE  ACCESS 0
+    ADD OPTION aRot TITLE "SLA Adicional"   ACTION "U_TRK0017P"      OPERATION MODEL_OPERATION_UPDATE  ACCESS 0
 
 Return aRot
 
@@ -87,6 +88,52 @@ Static Function ViewDef()
 
 Return oView
 
+/*/{Protheus.doc} TRK0017P
+Ajuste do parâmetro BA_SLAOPER, que é o parametro de controle em dias do SLA da Operacao
+@type function
+@version 20240918
+@author erike.yuri@dothink.com.br
+@since 18/09/2025
+@obs esta funcionalidade foi solicitada pela sra. Janine em reunião com a Fernanda, isso para não aguardar abertura de chamado com o TI.
+/*/
+User Function TRK0017P()
+    local aArea := FWGetArea()
+    local oDlg     as object
+    local oPanel   as object
+    local oSlaOper as object
+    local nSlaOper as numeric
+    local lSalva := .F. as logical
+
+    nSlaOper := GetMV("BA_SLAOPER",.F.,2) 
+
+
+    DEFINE MSDIALOG oDlg FROM 0,0 TO 100,250 TITLE "Informe parâmetro do tempo do SLA" PIXEL OF GetWNDDefault()
+
+        @ 000,000 MSPANEL oPanel OF oDlg
+        oPanel:Align:=CONTROL_ALIGN_ALLCLIENT
+
+        @ 007,005 SAY "Informe o tempo adicional em dias de SLA" SIZE 120,20 OF oPanel PIXEL
+        @ 017,005 MSGET oSlaOper VAR nSlaOper PICTURE "99" SIZE 30,08 OF oPanel PIXEL VALID Positivo(nSlaOper)
+
+        DEFINE SBUTTON oOk     FROM 035,005 TYPE 1 ENABLE OF oPanel PIXEL ACTION (lSalva:=.T.,oDlg:End())
+        DEFINE SBUTTON oCancel FROM 035,035 Type 2 ENABLE OF oPanel PIXEL ACTION oDlg:End()
+
+        oDlg:lEscClose:=.F.
+
+    ACTIVATE MSDIALOG oDlg CENTER ON INIT (oDlg:SetFocus())
+
+
+    If lSalva
+        If nSlaOper >= 0 .And. nSlaOper < 10
+            PutMV("BA_SLAOPER", nSlaOper)
+        Else
+            FWAlertWarning("Valor informado deve ser maior que 0 e menor 10", "Valor")  
+        EndIf
+    EndIf
+
+    FWRestArea(aArea)
+Return
+
 
 /*/{Protheus.doc} TRK0017S
 Atualizacao de data do SLA
@@ -103,7 +150,7 @@ Atualizacao de data do SLA
 User Function TRK0017S(cEstOrig, cEstDest, cMumDest, dEntrega)
     local aArea     := GetArea()
     local dRet 
-    local nSLAOutros := SuperGetMV("BA_SLAOPER",,1) 
+    local nSLAOutros := GetMV("BA_SLAOPER",.F.,2) 
 
     DbSelectArea("Z15")
     Z15->( DbSetOrder(1) )
@@ -113,10 +160,9 @@ User Function TRK0017S(cEstOrig, cEstDest, cMumDest, dEntrega)
     Elseif Z15->( DbSeek(xFilial() + cEstOrig + cEstDest) )
         dRet := dEntrega - (Z15->Z15_TRANSP + nSLAOutros)
     Else
-        dRet := dEntrega
+        dRet := dEntrega - nSLAOutros
     EndIf
 
-    dRet -= nSLAOutros
     RestArea(aArea)
 Return dRet
 
@@ -161,34 +207,38 @@ Static Function ProcUpdSLA()
 Return
 
 
-User Function xTstSLAD()
-     Processa({|| ProcIniSLA()}, "Aguarde...", "Atualizando SLA...")
+/*/{Protheus.doc} TRK0017B
+Processamento para atualização do status de agendamento
+@type function
+@since  31/08/2025
+@author erike.yuri@dothink.com.br
+/*/
+User Function TRK0017B()
+
+    Processa({|| ProcUpdAGT()}, "Aguarde...", "Atualizando Status Agendamento...")
+
 Return
 
-Static Function ProcIniSLA()
-    local aData := {}
-    local cFilInfo := ""
+/*/{Protheus.doc} ProcUpdAGT
+Atualizacao dos status de agendamento
+@type function
+@version 1.0
+@author erike.yuri@dothink.com.br
+@since  01/10/2025
+/*/
+Static Function ProcUpdAGT()
+    Local cUpDate := ""
+    Local cHoje   := DTOS( Date() )
 
-    DbSelectArea("SA1")
-    SA1->( DbSetOrder(1) )
-
-    DbSelectArea("Z09")
-    Z09->( DbSetorder(1) )
-    Z09->( DbSeek("04") )
-    While Z09->( !Eof() )
-
-        If cFilInfo <> Z09->Z09_FILIAL
-            fInfo(@aData, Z09->Z09_FILIAL)
-            cFilInfo := Z09->Z09_FILIAL
-        EndIf
-
-        If SA1->( DbSeek(xFilial() + Z09->(Z09_CLIENT + Z09_LOJA) ) )        
-            
-            RecLock("Z09", .F.)
-            Z09->Z09_DTSLA := u_TRK0017S(aData[6], SA1->A1_EST, SA1->A1_COD_MUN, Z09->Z09_DPEMPV)
-            Z09->( MsUnLock() )
-        EndIf
-        Z09->( DbSkip() )
-    End
+    cUpDate := " UPDATE " + RetSqlName("Z09") +" SET Z09_STAAGE = (CASE WHEN "
+    cUpDate += "  ( CASE "
+    cUpDate += "       WHEN Z09_DC1COL >= Z09_DC2COL AND Z09_DC1COL >= Z09_DC3COL THEN Z09_DC1COL "
+    cUpDate += "       WHEN Z09_DC2COL >= Z09_DC1COL AND Z09_DC2COL >= Z09_DC3COL THEN Z09_DC2COL "
+    cUpDate += "       ELSE Z09_DC3COL "
+    cUpDate += "   END)  > '" + cHoje + "' THEN '2' ELSE '3' END) WHERE D_E_L_E_T_ = ' ' AND Z09_STATUS = '7' "
+    
+    If tcsqlexec(cUpDate)
+        ConOut(tcsqlerror())
+    EndIf 
 
 Return

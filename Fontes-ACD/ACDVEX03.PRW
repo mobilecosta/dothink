@@ -491,9 +491,6 @@ Else
 	_cStatus :=  CBAntProc(CB7->CB7_TIPEXP,"06*")
 	_cPausa  := "1"  //Pausada
 
-	/*If Z09->(FieldPos("Z09_DVIFIS")) .And. Z09->(FieldPos("Z09_HVIFIS")) .And. Z09->(FieldPos("Z09_UVIFIS"))
-		SetTraking("2", "Em Faturamento")
-	EndIf*/
 EndIf
 
 RecLock("CB7",.F.)
@@ -1312,6 +1309,15 @@ Return(cPallet)
 
 
 //--
+/*/{Protheus.doc} SetTraking
+Funcao de atualizacao de tracking
+@type function
+@version 1.0
+@author erike.yuri@dothink.com.br
+@since 10/8/2025
+@param cOpc, character, Opcao de atualizacao
+@param cTitLog, character, Titulo do Log de tracking
+/*/
 Static Function SetTraking(cOpc, cTitLog)
     local aArea   := GetArea()
 	local aASC5   := SC5->( GetArea() )
@@ -1361,6 +1367,7 @@ Static Function SetTraking(cOpc, cTitLog)
 						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "8"							// Status "Em Transito"
 						aTrackS[Z09->(FieldPos("Z09_DTPEMB"))]  := dDataBase	
 						aTrackS[Z09->(FieldPos("Z09_HRPEMB"))]  := Time()
+						aTrackS[Z09->(FieldPos("Z09_STAAGE"))] 	:= "4"							//-- Entregue
 					ElseIf cOpc == "2"
 						aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "6"							// Status "Em Faturamento"
 						aTrackS[Z09->(FieldPos("Z09_DTPEMB"))]  := CTOD("")	

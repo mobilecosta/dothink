@@ -69,30 +69,49 @@ User Function TRK0002()
 Return
  
 Static Function MenuDef()
-    Local aRot := {}
-    Local aAge := {}
-     
+    Local aRot      := {}
+    Local aAge      := {}
+    Local nMnuOpc   := 0 //-- Cockpit Logistica (acesso total)
+
+    DO CASE
+        CASE IsInCallStack('U_TRK0001A') 
+            nMnuOpc := 1    //-- Cockpit Expedicao
+        CASE IsInCallStack('U_TRK0001D') 
+            nMnuOpc := 4    //-- Cockpit CS
+        CASE IsInCallStack('U_TRK0001E')
+            nMnuOpc := 5    //-- Cockpit Faturamento
+    END CASE
+
     //Adicionando opções
-    ADD OPTION aRot TITLE 'Visualizar'              ACTION 'VIEWDEF.TRK0002'    OPERATION MODEL_OPERATION_VIEW      ACCESS 0 //OPERATION 1
-    ADD OPTION aRot TITLE 'Legenda'                 ACTION 'u_TRK0002L'         OPERATION 6                         ACCESS 0 //OPERATION X
-    ADD OPTION aRot TITLE 'Alterar'                 ACTION 'VIEWDEF.TRK0002'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 4
-    ADD OPTION aRot TITLE 'Agendamento'             ACTION aAge                 OPERATION 9                         ACCESS 0 //OPERATION 9   
-    ADD OPTION aRot TITLE 'Registrar Ocorrência'    ACTION 'VIEWDEF.TRK0002A'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aRot TITLE 'Troca Transportadora'    ACTION 'U_TRK00014()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aRot TITLE 'Email Transportadora'    ACTION 'U_TRK02Mtr()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aRot TITLE 'Acao Operação (CS)'      ACTION 'VIEWDEF.TRK0002D'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aRot TITLE 'Informar Operações (CS)' ACTION 'U_TRK0013()'        OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aRot TITLE 'Ajuste Status'           ACTION 'U_TRK0001S()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aRot TITLE 'Import. Plan. Terceiro'  ACTION 'U_TRK0016I()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-
-    ADD OPTION aAge TITLE '1o Coleta'               ACTION 'U_TRK00021()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aAge TITLE '1o Confirmacao'          ACTION 'U_TRK00021(.T.)'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aAge TITLE '2o Coleta'               ACTION 'U_TRK00022()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aAge TITLE '2o Confirmacao'          ACTION 'U_TRK00022(.T.)'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aAge TITLE '3o Coleta'               ACTION 'U_TRK00023()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
-    ADD OPTION aAge TITLE '3o Confirmacao'          ACTION 'U_TRK00023(.T.)'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5 
-    ADD OPTION aAge TITLE 'Cancelar'                ACTION 'U_TRK00025()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5   
-
+    ADD OPTION aRot TITLE 'Visualizar'                      ACTION 'VIEWDEF.TRK0002'    OPERATION MODEL_OPERATION_VIEW      ACCESS 0 //OPERATION 1
+    ADD OPTION aRot TITLE 'Legenda'                         ACTION 'u_TRK0002L'         OPERATION 6                         ACCESS 0 //OPERATION X
+    ADD OPTION aRot TITLE 'Registrar Ocorrência'            ACTION 'VIEWDEF.TRK0002A'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    If nMnuOpc == 0
+        ADD OPTION aRot TITLE 'Alterar'                     ACTION 'VIEWDEF.TRK0002'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 4
+    EndIf
+    If nMnuOpc <= 1
+        ADD OPTION aRot TITLE 'Agendamento'                 ACTION aAge                 OPERATION 9                         ACCESS 0 //OPERATION 9   
+        ADD OPTION aRot TITLE 'Troca Transportadora'        ACTION 'U_TRK00014()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+        ADD OPTION aRot TITLE 'Ajuste Status'               ACTION 'U_TRK0001S()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+        ADD OPTION aRot TITLE 'Integracao Arm. Terceiro'    ACTION 'U_TRK0016()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    EndIf
+    
+    If nMnuOpc == 0 .Or. nMnuOpc == 4
+        ADD OPTION aRot TITLE 'Acao Operação (CS)'          ACTION 'VIEWDEF.TRK0002D'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    EndIf
+    If nMnuOpc <> 4
+        ADD OPTION aRot TITLE 'Informar Operações (CS)'     ACTION 'U_TRK0013()'        OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    EndIf
+    ADD OPTION aRot TITLE 'Inf.Carta Correção'              ACTION 'U_TRK00026()'   OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    
+    ADD OPTION aAge TITLE '1o Coleta'                       ACTION 'U_TRK00021()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    ADD OPTION aAge TITLE '1o Confirmacao'                  ACTION 'U_TRK00021(.T.)'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    ADD OPTION aAge TITLE '2o Coleta'                       ACTION 'U_TRK00022()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    ADD OPTION aAge TITLE '2o Confirmacao'                  ACTION 'U_TRK00022(.T.)'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    ADD OPTION aAge TITLE '3o Coleta'                       ACTION 'U_TRK00023()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
+    ADD OPTION aAge TITLE '3o Confirmacao'                  ACTION 'U_TRK00023(.T.)'    OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5 
+    ADD OPTION aAge TITLE 'Cancelar'                        ACTION 'U_TRK00025()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5   
+    ADD OPTION aAge TITLE 'Email Transportadora'            ACTION 'U_TRK02Mtr()'       OPERATION MODEL_OPERATION_UPDATE    ACCESS 0 //OPERATION 5
 Return aRot
  
 Static Function ModelDef()
@@ -110,7 +129,7 @@ Static Function ModelDef()
     oModel:AddFields("FORMZ09",/*cOwner*/,oStZ09)
 
     For nFields := 1 To Len(aFields)
-        If aPos[nFields] == 0 .Or. (nFields == Len(aFields) - 1) // Hora da Coleta
+        If aPos[nFields] == 0
             oStZ09:SetProperty(aFields[nFields],MODEL_FIELD_WHEN, FWBuildFeature(STRUCT_FEATURE_WHEN , '.F.'  ))
         EndIf
     Next
@@ -130,7 +149,7 @@ Local nPos    := 1
 Local nPosRec := 0
 Local cChave  := ""
 Local cTitLog := ""
-Local lPrivez := .T.
+Local cStatus := ""
 Local aTrackS := {}
 Local aArea   := GetArea()
 Local oZ09    := oModel:GetModel("FORMZ09")
@@ -199,41 +218,47 @@ For nI := 1 To Len(aPVs)
         ElseIf cModel == 'TRK0002C' // Chamada TRK0002C
             cTitLog := "Agendamento"
 
-            oZ09:LoadValue("Z09_STATUS"             , "4"               )  // Em agendamento
-            oZ09:LoadValue(aFields[Len(aFields) - 1], Left(Time(), 5)   )
-            oZ09:LoadValue(aFields[Len(aFields)]    , cUserName         )
+            oZ09:LoadValue("Z09_STATUS"             , "4"                   )  // Em agendamento
+            oZ09:LoadValue(aFields[Len(aFields) - 1], Left(Time(), 5)       )
+            oZ09:LoadValue(aFields[Len(aFields)]    , Left(cUserName, 15)   )
+
+
+            If !Empty( oZ09:GetValue("Z09_DC1COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC2COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC3COL") )
+                cStatus := "1" // Em Separacao
+                cTitLog += " (Confirmação Coleta)"
+            Else
+                cStatus := "8" // Em Agendamento
+            EndIf            
             
-            //If lPrivez
-                SC5->(DbSetOrder(1))
-                If  SC5->(DbSeek( cChave )) .And.;
-                    SC5->(RecLock("SC5", .F.))
-                    If !Empty( oZ09:GetValue("Z09_DC1COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC2COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC3COL") )
-                        SC5->C5_X4SSTAT := "1" // Em Separacao
-                        cTitLog += " (Confirmação Coleta)"
-                    Else
-                        SC5->C5_X4SSTAT := "8" // Em Agendamento
-                    EndIf
-                    SC5->C5_MSEXP := ""
-                    SC5->(MsUnLock())
+            SC5->(DbSetOrder(1))
+            If  SC5->(DbSeek( cChave )) .And.;
+                SC5->(RecLock("SC5", .F.))
+                SC5->C5_X4SSTAT := cStatus
+                SC5->C5_MSEXP   := ""
+                SC5->(MsUnLock())
+            EndIf
+
+            If cStatus == "1"
+                DbSelectArea("CB7")
+                CB7->( DbSetOrder(2) )
+                If CB7->( FieldPos("CB7_XDTAGE") ) > 0 .And. CB7->( DbSeek(cChave) )
+                    CB7->( RecLock("CB7", .F.))
+                        CB7->CB7_XDTAGE := oZ09:GetValue("Z09_DC1COL")
+                    CB7->( MsUnLock() )
                 EndIf
-                lPrivez := .F.
-            //EndIf
+            EndIf
 
             aTrackS[Z09->(FieldPos("Z09_STATUS"))] := oZ09:GetValue("Z09_STATUS")
             For nPos := 1 To Len(aPos)
-                If aPos[nPos] > 0
+                If (aPos[nPos] > 0) .Or. (nPos >= ( Len(aPos) - 2))
                     aTrackS[ Z09->(FieldPos(aFields[nPos]) ) ] := oZ09:GetValue(aFields[nPos])
                 EndIf
             Next
 
             If !Empty( oZ09:GetValue("Z09_DC1COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC2COL") ) .Or. !Empty( oZ09:GetValue("Z09_DC3COL") )
+                aTrackS[ Z09->(FieldPos("Z09_STAAGE") ) ] := "2"
                 aTrackS[ Z09->(FieldPos("Z09_STATUS") ) ] := "5"
             EndIf
-
-            // Envio do Email
-            //cEmail := "erike.yuri@dothink.com.br;mobile.costa@gmail.com" // Alltrim(SA4->A4_EMAIL)
-
-            //FWMsgRun(NIL,{|| U_TRK0012(cEmail, "Agendamento")}, "Aguarde...", "Enviando email para transportadora")
 
         ElseIf cModel == 'TRK0002D'
             cTitLog := "Acao do CS (Customer Services)"
@@ -289,19 +314,44 @@ Envio de email para transportadora
 /*/
 
 User Function TRK02Mtr
-
+    local aArea   := GetArea()
+    local cTransp := Z09->( Z09_TRANSP + " - "+ AllTrim(Z09_NTRANS) )
+    
     SC5->(DbSetOrder(1))
     SC5->(DbSeek(Z09->Z09_FILIAL + Z09->Z09_NUMPV))
 
     // Envio do Email
-    cEmail := "erike.yuri@dothink.com.br;mobile.costa@gmail.com;janine.duarte@barentz.com;" // Alltrim(SA4->A4_EMAIL)
+    cEmail := Posicione("SA4", 1, FWxFilial('SA4') + SC5->C5_TRANSP, "A4_EMAIL")
+    cEmail := u_GetAgEmail(cEmail)
+
     If IsBlind()
         U_TRK0012(cEmail, "Agendamento")
     Else
-        FWMsgRun(NIL,{||U_TRK0012(cEmail, "Agendamento")},"Aguarde...","Enviando email para transportadora")
+        If FWAlertNoYes("Deseja enviar e-mail de <strong>agendamento</strong> para a transportadora ("+cTransp+")?", "Enviar e-mail para Transportadora")
+            FWMsgRun(NIL,{||U_TRK0012(cEmail, "Agendamento")},"Aguarde...","Enviando email para transportadora")
+        EndIf
     EndIf
 
+    RestArea(aArea)
 Return
+
+/*/{Protheus.doc} GetAgEmail
+Funcao que adiciona email complementar contido no parâmetro BA_AGEMAIL. Com isso quando for enviado e-mail de agendamento, este e-mail será adicionado. Neste caso nao foi usado o campo de e-mail em cópia, pois este ponto poderá ser usado para desviar enviao de e-mail em ambiente de testes no futuro.
+@type function
+@version 1.0
+@author erike.yuri@dothink.com.br
+@since 30/08/2025
+@param cEmail, character, email passado por parametro (email do transportador)
+@return character, email ajustado
+/*/
+User Function GetAgEmail(cEmail)
+    local cAdEmail:= GetMV("BA_AGEMAIL",.F., "agendamento@barentz.com") 
+    
+    If !Empty(cAdEmail)
+	    cEmail += ";" + cAdEmail
+	EndIf
+
+Return cEmail
 
 Static Function ViewDef()
     Local oModel := FWLoadModel("TRK0002")

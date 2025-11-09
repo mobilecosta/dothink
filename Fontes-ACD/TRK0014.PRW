@@ -2,7 +2,6 @@
 #include 'FwMVCDef.ch'
 
 static cTitulo := "Troca de Transportadora"
-Static aFields := { "Z09_TRANSP", "Z09_NTRANS","Z09_ICOTER", "Z09_REDESP", "Z09_NREDES", "Z09_REDICO","Z09_IDTRAC" }
 
 
 /*/{Protheus.doc} TRK0014
@@ -25,9 +24,16 @@ User Function TRK00014()
         Return
     EndIf
 
-    If Z09->Z09_ICOTER == "C"
-        FWAlertWarning("Não é possível ajustar o tipo de frete quando o Icoterm é CIF!", "Não Permitido Ajuste")  
-        Return
+    If Z09->Z09_ICOTER == "F"
+
+        FWAlertHelp("Atenção só será permitido a <font color='red'>alteração da transportadora</font> para o pedido de vendas <strong>"+Z09->Z09_NUMPV+"</strong>, " +;
+                    "se o <font color='red'><strong>CS</strong></font> for informado, e autorizar esta alteração.", "Entre em contato com o CS, para verificar com o cliente (use a opção <font color='red'>Registrar Ocorrência</font>), porém caso isso já tenha sido feito por favor prossiga.")
+
+        If !FWAlertNoYes("Se o CS já autorizou, deseja continuar?", "Confirme se o CS já autorizou")
+            //SetTraking("1", SC6->(C6_FILIAL + C6_NUM), SC6->C6_ITEM, "Lote", "Lote não localizado: " + AllTrim(SC6->C6_LOTECTL), "Validação Fisica (Lote não localizado)")
+            Return
+        EndIf
+        
     EndIf
 
     If !Empty(Z09->Z09_NF)
@@ -35,7 +41,7 @@ User Function TRK00014()
         Return
     EndIf
 
-    If !Empty(Z09->Z09_DT1COL) .or. !Empty(Z09->Z09_DT2COL) .or. !Empty(Z09->Z09_DT3COL)
+    If !Empty(Z09->Z09_DC1COL) .or. !Empty(Z09->Z09_DC2COL) .or. !Empty(Z09->Z09_DC3COL)
         FWAlertWarning("Ja existe confirmação de coleta. Para prosseguir será necessário realizar o cancelamento da coleta antes!", "Não Permitido Ajuste")  
         Return
     EndIf
@@ -51,18 +57,31 @@ Static Function ViewDef()
     Local oView   := Nil
     Local nFields := 1
     Local cFields := ""
+    Local aFields := {} 
     Local aPos    := {}
+    
+    aFields := {    "Z09_TRANSP"    , ; //-- 01
+                    "Z09_NTRANS"    , ; //-- 02
+                    "Z09_ICOTER"    , ; //-- 03
+                    "Z09_REDESP"    , ; //-- 04
+                    "Z09_NREDES"    , ; //-- 05
+                    "Z09_REDICO"    , ; //-- 06
+                    "Z09_IDTRAC" }      //-- 07
+ 
+    aPos    := {1 ,; //-- 01
+                0 ,; //-- 02
+                0 ,; //-- 03
+                4 ,; //-- 04
+                0 ,; //-- 05
+                6 ,; //-- 06
+                0 }  //-- 07 
+
+    U_TRK02FL(AClone(aFields), AClone(aPos), 'TRK0014', cTitulo)
 
     cFields := ""
     For nFields := 1 To Len(aFields)
         cFields += aFields[nFields] + "|"
-    Next
-    
-    aFields := { "Z09_TRANSP"                   , "Z09_NTRANS","Z09_ICOTER"  , "Z09_REDESP"                  , "Z09_NREDES", "Z09_REDICO"                    ,"Z09_IDTRAC" }
- 
-    aPos    := { Z09->(FieldPos("Z09_TRANSP"))  ,            0,          0   , Z09->(FieldPos("Z09_REDESP")) ,            0, Z09->(FieldPos("Z09_REDICO"))   ,         0   }
-
-    U_TRK02FL(AClone(aFields), AClone(aPos), 'TRK0014', cTitulo)
+    Next   
 
     oModel := FWLoadModel("TRK0002")
     oStZ09 := FWFormStruct(2, "Z09", { |cCampo| AllTrim(cCampo) $ cFields})

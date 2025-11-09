@@ -4,6 +4,14 @@
 static cTitulo := "Ação CS (Customer Services)"
 Static aFields := { "Z09_ACAOCS", "Z09_OBSCS", "Z09_NUMPV", "Z09_ITEMPV", "Z09_IDTRAC", "Z09_RESTR", "Z09_OBSPV", "Z09_PENCS" }
 
+/*/{Protheus.doc} ViewDef
+View para ação do CS (Customer Services)
+@type function
+@version 1.0
+@author wagner.mobile@dothink.com.br
+@since 10/8/2025
+@return object, Objeto da View
+/*/
 Static Function ViewDef()
     Local oModel  := Nil
     Local oStZ09  := Nil
@@ -36,9 +44,6 @@ Static Function ViewDef()
      
     //Criando um container com nome tela com 100%
     oView:CreateHorizontalBox("TELA",100)
-     
-    //Colocando título do formulário
-    //oView:EnableTitleView('VIEW_Z09', 'Registro do atraso' )  
      
     //Força o fechamento da janela na confirmação
     oView:SetCloseOnOk({||.T.})

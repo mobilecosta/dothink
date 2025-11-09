@@ -45,6 +45,11 @@ Ponto de entrada apos geracao da liberacao do pedido
 /*/
 Static Function sMTA440C9(lRet)
 local xRet      := lRet
+
+    //If lRet
+    //    u_TRKVLFIS(.F., cNumPV)
+    //EndIf
+
 Return xRet
 
 
@@ -651,6 +656,7 @@ Static Function sM410AGRV(aParam)
         ChkCliRet()
     ElseIf nOpcao == 2
         u_Frete()
+        
     EndIf   
 Return
 
@@ -708,11 +714,16 @@ Static Function sFISENVNFE(ParamIXB)
             //F2_FILIAL+F2_DOC+F2_SERIE+F2_CLIENTE+F2_LOJA+F2_FORMUL+F2_TIPO                                                                                                  
             DbSelectAre("Z09")
             Z09->( DbSetOrder(2) )
-            If Z09->( DbSeek( xFilial() + SF2->F2_DOC + SF2->F2_SERIE  ) )
+            Z09->( DbSeek( SF2->F2_FILIAL + SF2->F2_DOC + SF2->F2_SERIE  ) )
+            while Z09->( !Eof() .And. Z09_FILIAL + Z09_NF + Z09_SERIE == SF2->F2_FILIAL + SF2->F2_DOC + SF2->F2_SERIE )
                 RecLock("Z09", .F.)
                 Z09->Z09_CHVNFE := SF2->F2_CHVNFE
                 Z09->( MsUnLock() )
-            EndIf
+                
+                Z09->( DbSkip() )
+            end
+
+            
 
         EndIf
 

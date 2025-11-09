@@ -52,15 +52,25 @@ If Z09->Z09_STATUS > '4'
 
 EndIf
 
+If !Empty(Z09->Z09_DT2COL)
+    FWAlertWarning("Ja existe data informada para segunda coleta, não sendo mais possível ajustar a data da primeira coleta.", "Não Permitido Ajuste")  
+    Return
+EndIf
+
+If !Empty(Z09->Z09_DT3COL)
+    FWAlertWarning("Ja existe data informada para terceira coleta, não sendo mais possível ajustar a data da primeira coleta.", "Não Permitido Ajuste")  
+    Return
+EndIf
+
 If ! lConf
     aFields := { "Z09_FILIAL", "Z09_IDTRAC", "Z09_RESTR", "Z09_OBSPV", "Z09_NUMPV", "Z09_ITEMPV", "Z09_STATUS",;
                  "Z09_TRANSP", "Z09_NTRANS", "Z09_ORDCOL","Z09_DT1COL", "Z09_HR1COL", "Z09_US1COL" }
-    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0, 0, Z09->(FieldPos("Z09_ORDCOL")), Z09->(FieldPos("Z09_DT1COL")), Z09->(FieldPos("Z09_HR1COL")), Z09->(FieldPos("Z09_US1COL")) }
+    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0, 0, Z09->(FieldPos("Z09_ORDCOL")), Z09->(FieldPos("Z09_DT1COL")), 0, 0 }
     cTitulo := "Data Prévia da Coleta 1"
 Else
     aFields := { "Z09_FILIAL", "Z09_IDTRAC", "Z09_RESTR", "Z09_OBSPV", "Z09_NUMPV", "Z09_ITEMPV", "Z09_STATUS",;
-                 "Z09_TRANSP", "Z09_NTRANS", "Z09_ORDCOL", "Z09_DC1COL", "Z09_HC1COL", "Z09_UC1COL" }
-    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0, 0, Z09->(FieldPos("Z09_ORDCOL")), Z09->(FieldPos("Z09_DC1COL")), Z09->(FieldPos("Z09_HC1COL")), Z09->(FieldPos("Z09_UC1COL")) }
+                 "Z09_TRANSP", "Z09_NTRANS","Z09_DT1COL", "Z09_ORDCOL", "Z09_DC1COL", "Z09_HC1COL", "Z09_UC1COL" }
+    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Z09->(FieldPos("Z09_ORDCOL")), Z09->(FieldPos("Z09_DC1COL")), 0, Z09->(FieldPos("Z09_UC1COL")) }
     cTitulo := "Confirmação da Primeira Coleta"
 EndIf
 
@@ -109,29 +119,29 @@ If Empty(Z09->Z09_DT1COL)
     Return
 EndIf
 
-If !Empty(Z09->Z09_DC1COL)
-    ApMsgInfo("A segunda coleta só pode ser informada, se não for confirmada a primeira coleta !")
-    Return
-EndIf
-
 If Z09->Z09_STATUS > '4'
 
-    If !Empty(Z09->Z09_DT2COL) .or. !Empty(Z09->Z09_DT3COL)
+    If !Empty(Z09->Z09_DC2COL) .or. !Empty(Z09->Z09_DC3COL)
         FWAlertWarning("Ja existe confirmação de coleta. Para prosseguir será necessário realizar o cancelamento da coleta antes, ou fazer uma confirmação de um 3o agendamento caso não exista!", "Não Permitido Ajuste")  
         Return
     EndIf
 
 EndIf
 
+If !Empty(Z09->Z09_DT3COL)
+    FWAlertWarning("Ja existe data informada para terceira coleta, não sendo mais possível ajustar a data da primeira coleta.", "Não Permitido Ajuste")  
+    Return
+EndIf
+
 If ! lConf
     aFields := { "Z09_FILIAL", "Z09_IDTRAC", "Z09_RESTR", "Z09_OBSPV", "Z09_NUMPV", "Z09_ITEMPV", "Z09_STATUS",;
-                 "Z09_TRANSP", "Z09_NTRANS", "Z09_DT2COL", "Z09_HR2COL", "Z09_US2COL" }
-    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0, 0, Z09->(FieldPos("Z09_DT2COL")), Z09->(FieldPos("Z09_HR2COL")), Z09->(FieldPos("Z09_US2COL")) }
+                 "Z09_TRANSP", "Z09_NTRANS", "Z09_DT1COL", "Z09_DC1COL", "Z09_DT2COL", "Z09_HR2COL", "Z09_US2COL" }
+    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Z09->(FieldPos("Z09_DT2COL")), 0, 0 }
     cTitulo := "Data Prévia da Coleta 2"
 Else
     aFields := { "Z09_FILIAL", "Z09_IDTRAC", "Z09_RESTR", "Z09_OBSPV", "Z09_NUMPV", "Z09_ITEMPV", "Z09_STATUS",;
-                 "Z09_TRANSP", "Z09_NTRANS", "Z09_DC2COL", "Z09_HC2COL", "Z09_UC2COL" }
-    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0, 0, Z09->(FieldPos("Z09_DC2COL")), Z09->(FieldPos("Z09_HC2COL")), Z09->(FieldPos("Z09_UC2COL")) }
+                 "Z09_TRANSP", "Z09_NTRANS","Z09_DT1COL", "Z09_DC1COL","Z09_DC2COL", "Z09_HC2COL", "Z09_UC2COL" }
+    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Z09->(FieldPos("Z09_DC2COL")), 0, 0 }
     cTitulo := "Confirmação da Segunda Coleta"
 EndIf
 
@@ -159,7 +169,7 @@ If Z09->Z09_ACAOCS == "4"
     Return
 EndIf
 
-If Z09->Z09_STATUS <> '4'
+If Z09->Z09_STATUS < '4'
     FWAlertWarning("Só é possível realizar agendamento estando na etapa [<strong>4="+ X3Combo("Z09_STATUS", "4") +"</strong>], e o registro posicionado esta na etapa [<strong>" + Z09->Z09_STATUS+ "="+ X3Combo("Z09_STATUS", Z09->Z09_STATUS) +"</strong>].", "Fora da Etapa de Agendamento")  
     Return
 EndIf
@@ -197,13 +207,13 @@ EndIf
 
 If ! lConf
     aFields := { "Z09_FILIAL", "Z09_IDTRAC", "Z09_RESTR", "Z09_OBSPV", "Z09_NUMPV", "Z09_ITEMPV", "Z09_STATUS",;
-                 "Z09_TRANSP", "Z09_NTRANS", "Z09_DT3COL", "Z09_HR3COL", "Z09_US3COL" }
-    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0, 0, Z09->(FieldPos("Z09_DT3COL")), Z09->(FieldPos("Z09_HR3COL")), Z09->(FieldPos("Z09_US3COL")) }
+                 "Z09_TRANSP", "Z09_NTRANS", "Z09_DT1COL", "Z09_DC1COL", "Z09_DT2COL", "Z09_DC2COL", "Z09_DT3COL", "Z09_HR3COL", "Z09_US3COL" }
+    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0,0,0,0, 0, 0, Z09->(FieldPos("Z09_DT3COL")), 0, 0 }
     cTitulo := "Data Prévia da Coleta 3"
 Else
     aFields := { "Z09_FILIAL", "Z09_IDTRAC", "Z09_RESTR", "Z09_OBSPV", "Z09_NUMPV", "Z09_ITEMPV", "Z09_STATUS",;
-                 "Z09_TRANSP", "Z09_NTRANS", "Z09_DC3COL", "Z09_HC3COL", "Z09_UC3COL" }
-    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0, 0, Z09->(FieldPos("Z09_DC3COL")), Z09->(FieldPos("Z09_HC3COL")), Z09->(FieldPos("Z09_UC3COL"))  }
+                 "Z09_TRANSP", "Z09_NTRANS", "Z09_DT1COL", "Z09_DC1COL", "Z09_DT2COL", "Z09_DC2COL", "Z09_DT3COL", "Z09_DC3COL", "Z09_HC3COL", "Z09_UC3COL" }
+    aPos    := { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Z09->(FieldPos("Z09_DC3COL")), 0, 0 }
     cTitulo := "Confirmação da terceira Coleta"
 EndIf
 
@@ -211,6 +221,13 @@ GetColeta()
 
 Return
 
+/*/{Protheus.doc} GetColeta
+Funcao generica para chamar o agendamento
+@type function 1.0
+@version 1.0
+@author DoThink
+@since 10/08/2025
+/*/
 Static Function GetColeta
 
 Local nFields := 1
@@ -229,6 +246,13 @@ lAgenda := .F.
 Return
 
 
+/*/{Protheus.doc} TRK00025
+Funcao de Cancelamento do Agendamento
+@type function
+@version 1.0
+@author DoThink
+@since 10/08/2025
+/*/
 User Function TRK00025()
 local aArea   := GetArea()
 local dDtAgen := nil
@@ -269,8 +293,8 @@ If Empty(dDtConf) .And. !Empty(Z09->Z09_DC1COL)
     dDtConf :=  Z09->Z09_DC1COL
 EndIf
 
-If Empty(dDtAgen) .And. Empty(dDtConf) 
-    FWAlertWarning("Não é possível realizar cancelamento pois não existe agendamento", "Sem Agendamento")  
+If Empty(dDtAgen) .or. Empty(dDtConf) 
+    FWAlertWarning("Não é possível realizar cancelamento pois não existe agendamento/confirmação", "Sem Agendamento")  
     Return
 Endif
 
@@ -328,7 +352,8 @@ For nI := 1 To Len(aPVs)
         aTrackS[Z09->(FieldPos("Z09_DC3COL"))] := CTOD("")
         aTrackS[Z09->(FieldPos("Z09_HC3COL"))] := ""
         aTrackS[Z09->(FieldPos("Z09_UC3COL"))] := ""  
-        aTrackS[Z09->(FieldPos("Z09_ORDCOL"))] := ""   
+        aTrackS[Z09->(FieldPos("Z09_ORDCOL"))] := ""  
+        aTrackS[Z09->(FieldPos("Z09_STAAGE"))] := "1"   
 
         //-- Atualiza Tabela de Tracking
         u_TRK006S(aTrackS, "Cancelamento do Agendamento")
@@ -341,15 +366,23 @@ Next nI
 DbSelectArea("SA4")
 SA4->( DbSetOrder(1) )
 If SA4->( DbSeek(xFilial()+ cTransp) )
-
-    cEmail := "erike.yuri@dothink.com.br;janine.duarte@barentz.com" // Alltrim(SA4->A4_EMAIL)
-
+    DbSelectArea("Z09")
+    Z09->( DbGoto(nPosRec) )
+    cEmail := Alltrim(SA4->A4_EMAIL)
+    cEmail := u_GetAgEmail(cEmail)
     FWMsgRun(NIL,{|| U_TRK0012D(cEmail, "Cancelamento do Agendamento")}, "Aguarde...", "Enviando email para transportadora")
 EndIf
 
 RestArea(aArea)
 Return
 
+/*/{Protheus.doc} ViewDef
+View generico do agendamento
+@type function
+@version 1.0
+@author DoThink
+@since 10/08/2025
+/*/
 Static Function ViewDef()
     Local oModel := Nil
     Local oStZ09 := Nil

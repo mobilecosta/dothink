@@ -326,6 +326,7 @@ Local aEmpPrtBkp:= {}
 Local aDadosSD4 := {}
 Local aGRLog    := {}
 Local cGRLog    := ""
+Local cQuery    := ""
 
 Private oGet
 Private Altera  := .T.
@@ -526,6 +527,60 @@ If lContinua
 					AutoGrLog("Processo abortado!") //"Processo abortado!"
 					DisarmTransaction()
 					Break
+				EndIf
+
+				If lAltEmp
+					If Select("_QRYCHK") > 0
+						_QRYCHK->(dbCloseArea())
+					EndIf
+
+					cQuery := " SELECT (TRB1.C9_QTDLIB - TRB2.CB8_QTDORI) DIFF "
+					cQuery += " FROM ( "
+					cQuery += " SELECT C9_FILIAL, C9_PEDIDO, C9_ITEM, C9_PRODUTO, C9_LOTECTL, SUM(C9_QTDLIB) C9_QTDLIB "
+					cQuery += " FROM " + RetSQLName("SC9") + " SC9 "
+					cQuery += " WHERE C9_FILIAL = '" + xFilial("SC9") + "' "
+					cQuery += " AND C9_PEDIDO = '" + CB7->CB7_PEDIDO + "' "
+					cQuery += " AND SC9.D_E_L_E_T_ = ' ' "
+					cQuery += " GROUP BY C9_FILIAL, C9_PEDIDO, C9_ITEM, C9_PRODUTO, C9_LOTECTL "
+					cQuery += " ) TRB1 "
+					cQuery += " LEFT JOIN ( "
+					cQuery += " SELECT CB8_FILIAL, CB8_PEDIDO, CB8_ITEM, CB8_PROD, CB8_LOTECT, SUM(CB8_QTDORI) CB8_QTDORI "
+					cQuery += " FROM " + RetSQLName("CB8") + " CB8 "
+					cQuery += " WHERE CB8_FILIAL = '" + xFilial("CB8") + "' "
+					cQuery += " AND CB8_PEDIDO = '" + CB7->CB7_PEDIDO + "' "
+					cQuery += " AND CB8.D_E_L_E_T_ = ' ' "
+					cQuery += " GROUP BY CB8_FILIAL, CB8_PEDIDO, CB8_ITEM, CB8_PROD, CB8_LOTECT "
+					cQuery += " ) TRB2 "
+					cQuery += " ON TRB2.CB8_FILIAL = TRB1.C9_FILIAL "
+					cQuery += " AND TRB2.CB8_PEDIDO = TRB1.C9_PEDIDO "
+					cQuery += " AND TRB2.CB8_ITEM = TRB1.C9_ITEM "
+					cQuery += " AND TRB2.CB8_PROD = TRB1.C9_PRODUTO "
+					cQuery += " AND TRB2.CB8_LOTECT = TRB1.C9_LOTECTL "
+
+					cQuery := ChangeQuery(cQuery)
+					TCQUERY cQuery NEW ALIAS "_QRYCHK"
+
+					dbSelectArea("_QRYCHK")
+					_QRYCHK->(dbGoTop())
+					While _QRYCHK->(!EoF())
+						If !Empty(_QRYCHK->DIFF)
+							If IsBlind()
+								AutoGrLog("Ocorreu um erro no processo de alteracao de empenho onde as tabelas CB8 e SC9 ficaram desbalanceadas, o processo foi abortado!")
+								AutoGrLog("Processo abortado!")
+							Else
+								Help(Nil, Nil, "NAOALTEMP", Nil, "Ocorreu um erro no processo de alteracao de empenho onde as tabelas CB8 e SC9 ficaram desbalanceadas, o processo foi abortado!", 1, 0)
+							EndIf
+
+							DisarmTransaction()
+							Break
+						EndIf
+						
+						_QRYCHK->(dbSkip())
+					EndDo
+
+					If Select("_QRYCHK") > 0
+						_QRYCHK->(dbCloseArea())
+					EndIf
 				EndIf
 	
 				AutoGrLog(" ")
@@ -1382,7 +1437,8 @@ Local cTblTmp   := ""
 Local cRemessa  := ""
 Local cCliRem   := ""
 Local cLojaRem  := ""
-
+Local cLoteFor	:= ""
+Local cQLoteFor := ""
 Private aLogOS	:= {}
 Default oBrwMrk	:= Nil
 Default cPedidoPar	:= Nil
@@ -1407,9 +1463,7 @@ EndIF
 If nImpEtVol == 1 // Imprime Etiquetas Oficiais de Volume
 	cTipExp += "05*"
 EndIF
-If nEmbarque == 1 // Embarque
-	cTipExp += "06*"
-EndIF
+cTipExp += "06*"
 If nAglutPed == 1 // Aglutina pedido
 	cTipExp +="11*"
 EndIf
@@ -1621,6 +1675,10 @@ For nInd := 1 To Len( aItens )
                     CB7->CB7_TIPEXP := cTipExp + "99*" //-- 99 indica que devera ser feita "Validacao Fisica"
 					CB7->CB7_TRANSP := cTransp
 					CB7->CB7_AGREG  := cAgreg 
+
+					If !("06*" $ CB7->CB7_TIPEXP)
+						CB7->CB7_TIPEXP += AllTrim(CB7->CB7_TIPEXP) + "06*"
+					EndIf
 					//-- Priorizacao de endereco na separacao
 					If lCB7Priore .And. ValType(nPriorEnd) == "N" .And. nPriorEnd == 1
 						CB7->CB7_PRIORE := CValToChar(nPriorEnd)
@@ -1739,12 +1797,26 @@ For nInd := 1 To Len( aItens )
                         CB8->CB8_XSALDO := (cTblTmp)->DC_QUANT
                     EndIf
 
-                    If CB8->(FieldPos("B1_XCODSIM") > 0)
-                        CB8->B1_XCODSIM := (cTblTmp)->B1_XCODSIM
+                    If CB8->(FieldPos("CB8_XCODSI") > 0)
+                        CB8->CB8_XCODSI := (cTblTmp)->B1_XCODSIM
                     EndIf
 
                     If CB8->(FieldPos("CB8_XLOTFO") > 0)
-                        CB8->CB8_XLOTFO := Posicione("SB8",3,xFilial("SB8")+(cTblTmp)->DC_PRODUTO+(cTblTmp)->DC_LOCAL+SC9->C9_LOTECTL+SC9->C9_LOTECTL, "B8_LOTEFOR")
+						cQLoteFor := "SELECT IsNull(CB8_LOTECT, '') AS LOTEFOR FROM " + RetSQLName("SC2") + " SC2 "
+						cQLoteFor += "INNER JOIN " + RetSQLName("CB8") + " CB8 ON CB8_FILIAL = C2_FILIAL AND CB8_OP = C2_NUM+C2_ITEM+C2_SEQUEN AND CB8.D_E_L_E_T_ = ' ' "
+						cQLoteFor += "WHERE SC2.D_E_L_E_T_ = ' ' "
+						cQLoteFor += "AND C2_FILIAL = '" + xFilial("SC2") + "' "
+						cQLoteFor += "AND C2_PEDIDO = '" + SC9->C9_PEDIDO + "' "
+						cQLoteFor += "AND C2_ITEM = '" + SC9->C9_ITEM + "' "
+
+						cLoteFor := MpSysExecScalar(cQLoteFor, "LOTEFOR")
+
+						If Empty(cLoteFor)
+                        	CB8->CB8_XLOTFO := Posicione("SB8",3,xFilial("SB8")+(cTblTmp)->DC_PRODUTO+(cTblTmp)->DC_LOCAL+SC9->C9_LOTECTL+SC9->C9_LOTECTL, "B8_LOTEFOR")
+						Else
+							CB8->CB8_XLOTFO := cLoteFor
+						EndIf
+
                     EndIf					
 
 					If	lACD100GI
@@ -5107,6 +5179,7 @@ If nOSOpc == 1
 	AADD(aRotina,{"Desfaz Validação","U_DVACDA100",0,5})  //-- Desfaz Validacao Fisica
 Else
 	AADD(aRotina,{"Desfaz Separação","U_DSACDA100",0,5})  //-- Desfaz Separacao
+	AADD(aRotina,{"Desfaz Embarque"	,"U_DEACDA100",0,5})  //-- Desfaz Embarque
 EndIf
 
 If ExistBlock("ACD100M")
@@ -5537,6 +5610,105 @@ User Function DVACDA100()
 
 Return lRetDesf
 
+//-- Desfaz embarque
+User Function DEACDA100()
+	local aArea		:= GetArea()
+	local cQryEmb	:= ""
+	local nQtEEBQ 	:= 0
+
+	If !("06*" $ CB7->CB7_TIPEXP)
+		FWAlertWarning("Não possui embarque configurado!", "Sem Embarque")  
+		Return
+	EndIf
+
+	cQryEmb := "SELECT SUM(CB9_QTEEBQ) QTEEBQ FROM " + RetSQLName("CB9") + " CB9 "
+	cQryEmb += " WHERE CB9.D_E_L_E_T_ = ' ' AND CB9.CB9_FILIAL = '" + xFilial("CB9") + "' "
+	cQryEmb += " AND CB9.CB9_ORDSEP = '"+ CB7->CB7_ORDSEP +"' "
+	nQtEEBQ := MpSysExecScalar(cQryEmb, "QTEEBQ")
+
+	If Empty(nQtEEBQ)
+		FWAlertWarning("A ordem de separação <strong>"+CB7->CB7_ORDSEP+"</strong>, não possui itens embarcados!", "Sem Embarque")  
+		RestArea(aArea)
+		Return
+	EndIf
+
+	DbSelectArea("Z09")
+	Z09->( DbSetOrder(3) )
+	If !Z09->( DbSeek(CB7->(CB7_FILIAL+CB7_PEDIDO)) )
+		FWAlertWarning("A ordem de separação <strong>"+CB7->CB7_ORDSEP+"</strong>, não possui tracking (Filial: "+CB7->CB7_FILIAL+", Pedido: "+CB7->CB7_PEDIDO+")!", "Sem Embarque")  
+		RestArea(aArea)
+		Return
+	EndIf
+
+	If Z09->Z09_ACAOCS == '2'
+    	FWAlertWarning("Aguardando Ação CS!", "Aguardando CS")  
+		RestArea(aArea)
+		Return
+	EndIf
+
+	If Z09->Z09_STATUS > '7' .And. !FWAlertNoYes("O pedido <strong>"+Z09->Z09_NUMPV+"</strong>, já foi enviado para o cliente. Mesmo assim deseja prosseguir com o estorno?" , "Pedido enviado para o cliente")
+		RestArea(aArea)
+		Return
+	EndIf	
+
+	If !FWAlertNoYes("Deseja estornar <strong>TODOS ITENS EMBARCADOS</strong> da ordem de separação <strong>"+CB7->CB7_ORDSEP+"</strong>?" , "Confirma Estorno?")
+		RestArea(aArea)
+		Return
+	EndIf
+
+	FWMsgRun(NIL,{|| ProcDsEmb()  },"Aguarde...","Estornando Embarque")
+	
+	FWAlertSucess("Estorno executado!", "Finalizada")
+
+	RestArea(aArea)
+Return
+
+Static Function ProcDsEmb()
+	local nI		:= 0
+	local nJ		:= 0
+	local aItens	:= {}
+	local aPVs		:= {}
+	local cItemAnt	:= ""
+	local cChave	:= ""
+
+	DbSelectArea("CB9")
+	CB9->( DbSetOrder(1) )
+	CB9->( DbSeek(CB7->(CB7_FILIAL+CB7_ORDSEP)) )
+	While CB9->(!Eof() .And. CB9_FILIAL+CB9_ORDSEP == CB7->(CB7_FILIAL+CB7_ORDSEP))
+		If Empty(CB9->CB9_QTEEBQ)
+			CB9->(DBSkip())
+			Loop
+		EndIf
+
+		RecLock("CB9", .F.)
+			CB9->CB9_QTEEBQ := 0
+			CB9->CB9_STATUS := "1"  // em aberto
+		CB9->( MsUnLock() )
+
+		If Ascan(aItens, {|x| x[2] == CB9->CB9_ITESEP}) == 0
+			aadd(aItens, {CB9->CB9_PEDIDO, CB9->CB9_ITESEP})
+		EndIf
+
+		CB9->( DbSkip() )
+	End
+
+	aAdd(aPVs, CB7->( CB7_FILIAL + CB7_PEDIDO ))
+	If !Empty(CB7->CB7_XPVTRI)
+		aAdd(aPVs, CB7->( CB7_FILIAL + CB7_XPVTRI ))
+	Endif
+
+	For nJ := 1 To Len(aPVs)
+		cChave	:= aPVs[nJ]
+		cItemAnt:= ""
+		For nI:=1 To Len(aItens)
+			If cItemAnt != aItens[nI,1]+aItens[nI,2]
+				SetTraking("6", cChave, aItens[nI,2], Nil, "Estorno embarque PV-Item: " + AllTrim(aItens[nI,1]) + "-" + AllTrim(aItens[nI,2]), "Estorno Embarque" )
+			EndIf
+			cItemAnt := aItens[nI,1]+aItens[nI,2]
+		Next nI
+	Next nJ
+
+Return
 
 //-- Monta a tela de selecao de itens separados para desfazer
 User Function DSACDA100()
@@ -6127,6 +6299,8 @@ Static Function SetTraking(cOpc, cChave, cItem, cMotivo, cObs, cTitLog)
 			ElseIf cOpc == "5"
 				SC5->C5_X4SSTAT := "9" // Em Validacao Fiscal
 				SC5->C5_XBLFIS	:= "1"
+			ElseIf cOpc == "6"
+				SC5->C5_X4SSTAT := "B" // Em Embarque				
 			EndIf
 
 			//Grava o campo C5_MSEXP para sinalizaro ao Scheduler
@@ -6160,13 +6334,13 @@ Static Function SetTraking(cOpc, cChave, cItem, cMotivo, cObs, cTitLog)
 				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
 				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
 
-				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs							// Obs.Logistic para a alteracao do empenho
+				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs	+ Trim(Z09->Z09_OBSLOG)						// Obs.Logistic para a alteracao do empenho
 			ElseIf cOpc == "3"
 				cAuxObs += "--[" + DTOC(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
 				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
 				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
 
-				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs							// Obs.Logistic para a Desfaz Validacao Fisica
+				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs + Trim(Z09->Z09_OBSLOG)						// Obs.Logistic para a Desfaz Validacao Fisica
 				aTrackS[Z09->(FieldPos("Z09_DVIFIS"))]  := CTOD("")		
 				aTrackS[Z09->(FieldPos("Z09_HVIFIS"))]  := Space(5)
 				aTrackS[Z09->(FieldPos("Z09_UVIFIS"))]  := Space(15)
@@ -6180,7 +6354,7 @@ Static Function SetTraking(cOpc, cChave, cItem, cMotivo, cObs, cTitLog)
 				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
 				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
 
-				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs							// Obs.Logistic para a Desfaz Separacao
+				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs + Trim(Z09->Z09_OBSLOG)							// Obs.Logistic para a Desfaz Separacao
 				aTrackS[Z09->(FieldPos("Z09_DTEXPE"))]  := CTOD("")
 				aTrackS[Z09->(FieldPos("Z09_HREXPE"))]  := Space(5)
 				aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "4"							    // Status "Em Agendamento"
@@ -6189,8 +6363,17 @@ Static Function SetTraking(cOpc, cChave, cItem, cMotivo, cObs, cTitLog)
 				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
 				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
 
-				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs							// Obs.Logistic para a Desfaz Separacao
+				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs + Trim(Z09->Z09_OBSLOG)							// Obs.Logistic para a Desfaz Separacao
 				aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "2"							    // Status "Em Validacao Fiscal"
+			ElseIf cOpc == "6"
+				cAuxObs += "--[" + DTOC(Date()) + " " + Time() + "]----------"+ chr(13)+chr(10)
+				cAuxObs += "Quem: " + cUserName + chr(13)+chr(10)
+				cAuxObs += "O que: " + chr(13)+chr(10) + cObs + chr(13)+chr(10)
+
+				aTrackS[Z09->(FieldPos("Z09_OBSLOG")) ]	:= cAuxObs + Trim(Z09->Z09_OBSLOG)						// Obs.Logistic para a Desfaz Embarque
+				aTrackS[Z09->(FieldPos("Z09_DTPEMB"))]  := CTOD("")
+				aTrackS[Z09->(FieldPos("Z09_HRPEMB"))]  := Space(5)
+				aTrackS[Z09->(FieldPos("Z09_STATUS"))]  := "7"							    // Status "Em Embarque"				
 			EndIf
 
 			u_TRK006S(aTrackS, cTitLog)
